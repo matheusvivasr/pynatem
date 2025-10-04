@@ -1,31 +1,44 @@
-# pyanatem (v0.11.3)
+# pyanatem (v0.14.2)
 
 Biblioteca Python para **geração, manipulação, parsing e execução automatizada** de arquivos de caso do simulador de estabilidade eletromecânica transitória **ANATEM** (CEPEL).
 
 O pyanatem representa um arquivo `.stb` como um grafo de blocos serializáveis (padrão *AST + Serializer*): cada bloco é um objeto Python que sabe se serializar no texto posicional exato esperado pelo ANATEM, e o parser reconstrói a mesma árvore a partir de um `.stb` existente, garantindo *roundtrip*.
 
-> **Versão:** 0.11.3  
-> **Status:** Etapa 11 completa (polimento final, type hints)  
+> **Versão:** 0.14.2 — **Final (pré-v1.0)**  
+> **Status:** Etapas 1–14 completas (consolidação, robustez I/O, reconciliação)  
 > Referência técnica: Manual ANATEM 12.10 (CEPEL)  
 
 ---
 
-## Estado Atual
+## Estado Atual (v0.14.2)
 
-✅ **Estável e pronto para produção**
+✅ **Produção-ready: Consolidado, robusto, pré-v1.0**
 
-- **Etapa 1–2:** Blocos básicos, parser, ensaios — ✅ Completo
-- **Etapa 3:** FACTS, HVDC, CDU — ✅ Implementado
-- **Etapa 4:** Modelos de geradores (DMDG) — ✅ Completo
-- **Etapa 5:** Associação máquina (DMAQ) — ✅ Posicional, completo
-- **Etapa 6:** Integração FACTS/HVDC/CDU — ✅ Completo
-- **Etapa 7:** Validações cruzadas (DMAQ ↔ DMDG) — ✅ Completo
-- **Etapa 8:** Cobertura de testes CDU (46+ testes) — ✅ Completo
-- **Etapa 9:** Limpeza estrutural (eventos/, modelos/) — ✅ Completo
-- **Etapa 10:** Documentação pública (README, API) — ✅ Completo
-- **Etapa 11:** Polimento final (type hints, refinamentos) — ✅ Completo ⭐
+### Etapas Concluídas (1–14)
 
-**Roadmap futuro:** v1.0 (lançamento público), v1.1+ (features avançadas).
+| Etapa | Foco | Status |
+|-------|------|--------|
+| **0.4** | MVP: blocos, parser, ensaios | ✅ v0.4.7 |
+| **0.5** | DMAQ posicional | ✅ v0.5.3 |
+| **0.6** | Integração FACTS/HVDC/CDU | ✅ v0.6.4 |
+| **0.7** | Validações cruzadas | ✅ v0.7.3 |
+| **0.8** | Cobertura CDU (46+ testes) | ✅ v0.8.4 |
+| **0.9** | Limpeza estrutural | ✅ v0.9.2 |
+| **0.10** | Documentação pública | ✅ v0.10.3 |
+| **0.11** | Polimento (type hints) | ✅ v0.11.3 |
+| **0.12** | Robustez parser CDU | ✅ v0.12.3 |
+| **0.13** | Validação FACTS/HVDC/CDU | ✅ v0.13.3 |
+| **0.14** | Robustez I/O (latin-1, reconciliação) | ✅ v0.14.2 ⭐ |
+
+### Destaques v0.14.2
+
+- ✅ **163+ testes** (roundtrip, encoding, blocos, parser, CDU)
+- ✅ **Encoding latin-1 garantido** — sem corrupção silenciosa, erro explícito
+- ✅ **Parser CDU finalizado** — desambiguação por tipo (Cap. 29), IMPORT/EXPORT/INPUT/OUTPUT/SERIET validados
+- ✅ **Robustez consolidada** — validação cruzada, pós-processamento, interface ANAREDE
+- ✅ **20+ classes públicas** com type hints, documentação, API estável
+
+**Próximo:** v1.0 (lançamento público estável, roadmap em v0.15+)
 
 ---
 
@@ -189,7 +202,7 @@ A biblioteca segue o padrão **AST + Serializer**:
 
 ## Confiabilidade dos Códigos
 
-Para transparência sobre validação (v0.11.3):
+Para transparência sobre validação (v0.14.2):
 
 | Componente | Confiança | Base de Validação | Desde |
 |---|---|---|---|
@@ -207,17 +220,19 @@ Para transparência sobre validação (v0.11.3):
 | **BlocoCDU** — parâmetros/roundtrip | Alta | Desambiguação por tipo (Cap. 29), 163+ testes | v0.4.4 |
 | **Formato `.plt` binário** | ❌ Não implementado | Estrutura de bytes desconhecida | — |
 
-**Safeguards em v0.11.3:**
-- ✅ **Encoding latin-1 garantido** — sem corrupção silenciosa, erro explícito se fora do intervalo
-- ✅ **Desambiguação CDU por tipo** — IMPORT/EXPORT/INPUT/OUTPUT/SERIET/LOGIC/COMPAR reconhecidos corretamente
-- ✅ **Validação cruzada automática** — DMAQ referencia modelos válidos do DMDG, caminhos de arquivo corrigidos
-- ✅ **163+ testes** cobrindo roundtrip, encoding, blocos, parser, CDU, pós-processamento
+**Safeguards em v0.14.2 (Reconciliação Final):**
+- ✅ **Encoding latin-1 garantido** — sem corrupção silenciosa, `ValueError` descritivo se fora do intervalo
+- ✅ **Desambiguação CDU por tipo** — IMPORT/EXPORT/INPUT/OUTPUT/SERIET/LOGIC/COMPAR reconhecidos corretamente (Cap. 29)
+- ✅ **Validação cruzada automática** — DMAQ ↔ DMDG, caminhos de arquivo, campos vazios em IMPORT/EXPORT
+- ✅ **Parser CDU robusto** — Roundtrip garantido para IMPORT/EXPORT com `stip`, LOGIC/COMPAR, blocos com <4 parâmetros
+- ✅ **163+ testes** cobrindo roundtrip, encoding, blocos, parser, CDU, pós-processamento, reconciliação
+- ✅ **Documentação consolidada** — README.md, ROADMAP, CHANGELOG retroativo com decisões documentadas
 
-**Recomendação:** Para códigos marcados como best-effort, valide contra um `.stb`/`.plt` real ou manual. O método `linha_bruta()` (em `BlocoDEVT` e `BlocoDPLT`) é a alternativa segura para confirmação verbatim.
+**Recomendação:** Para códigos marcados como best-effort (CDU curvas RELINV), valide contra um `.stb`/`.plt` real ou manual. O método `linha_bruta()` (em `BlocoDEVT` e `BlocoDPLT`) é a alternativa segura para confirmação verbatim.
 
 ---
 
-## Componentes Principais (v0.11.3)
+## Componentes Principais (v0.14.2)
 
 | Classe | Descrição | Desde | Status |
 |---|---|---|---|
@@ -260,18 +275,21 @@ pytest tests/ --cov=pyanatem
 
 ## Histórico de Versões
 
-| Versão | Data | Status | Destaques |
-|--------|------|--------|----------|
-| **v0.11.3** | 2026-06-XX | ⭐ Atual | Type hints, polimento final, 163+ testes, API consolidada |
-| v0.10.x | — | Estável | README e documentação pública expandida |
-| v0.9.x | — | Estável | Limpeza estrutural de eventos/ e modelos/ |
-| v0.8.x | — | Estável | Cobertura CDU (46+ testes), validação cruzada |
-| v0.7.x | — | Estável | Validações cruzadas DMAQ ↔ DMDG |
-| v0.6.0 | — | Estável | FACTS, HVDC, CDU completo, pós-processamento, LeitorSAV |
-| v0.5.x | — | Arquivada | Serialização posicional DMAQ |
-| v0.4.x | — | Arquivada | MVP: blocos básicos, parser, ensaios |
+| Versão | Status | Destaques |
+|--------|--------|----------|
+| **v0.14.2** | ⭐ **Atual (Final pré-v1.0)** | **Encoding latin-1 garantido, CDU robusto, 163+ testes, reconciliação completa** |
+| v0.13.x | Estável | Validação FACTS/HVDC/CDU contra manual, 140+ testes |
+| v0.12.x | Estável | Robustez parser CDU (IMPORT/EXPORT, parâmetros/limites) |
+| v0.11.3 | Estável | Type hints, polimento final |
+| v0.10.x | Estável | Documentação pública, README consolidado |
+| v0.9.x | Estável | Limpeza estrutural (eventos/, modelos/) |
+| v0.8.x | Estável | Cobertura CDU expandida (46+ testes) |
+| v0.7.x | Estável | Validações cruzadas (DMAQ ↔ DMDG) |
+| v0.6.0 | Estável | FACTS, HVDC, CDU, pós-processamento, LeitorSAV |
+| v0.5.x | Arquivada | Serialização posicional DMAQ |
+| v0.4.x | Arquivada | MVP: blocos, parser, ensaios |
 
-**Nota:** Todas as versões estão disponíveis no repositório como referência histórica. **Use v0.11.3 para novos projetos.**
+**Recomendação:** Use **v0.14.2** para novos projetos. Todas as versões estão disponíveis no repositório como referência histórica.
 
 ---
 
