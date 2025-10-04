@@ -1,26 +1,31 @@
-# pyanatem (v0.8.0)
+# pyanatem (v0.11.3)
 
 Biblioteca Python para **geração, manipulação, parsing e execução automatizada** de arquivos de caso do simulador de estabilidade eletromecânica transitória **ANATEM** (CEPEL).
 
-> **Versão:** 0.8.0  
-> **Status:** Etapa 8 completa (cobertura de testes CDU)  
-> Referência técnica: Manual ANATEM 12.10 — 903 páginas  
+O pyanatem representa um arquivo `.stb` como um grafo de blocos serializáveis (padrão *AST + Serializer*): cada bloco é um objeto Python que sabe se serializar no texto posicional exato esperado pelo ANATEM, e o parser reconstrói a mesma árvore a partir de um `.stb` existente, garantindo *roundtrip*.
+
+> **Versão:** 0.11.3  
+> **Status:** Etapa 11 completa (polimento final, type hints)  
+> Referência técnica: Manual ANATEM 12.10 (CEPEL)  
 
 ---
 
 ## Estado Atual
 
-✅ **Pronto para uso em produção** (com ressalvas)
+✅ **Estável e pronto para produção**
 
-- **Etapa 1–2:** Blocos básicos, parser, ensaios — Completo
-- **Etapa 3:** FACTS, HVDC, CDU — Implementado (best-effort)
-- **Etapa 4:** Modelos de geradores (DMDG) — Completo
-- **Etapa 5:** Associação máquina (DMAQ) — Posicional, completo
-- **Etapa 6:** Integração FACTS/HVDC/CDU — Completo
-- **Etapa 7:** Validações cruzadas — Completo ✨
-- **Etapa 8:** Cobertura de testes CDU — Completo ✨
+- **Etapa 1–2:** Blocos básicos, parser, ensaios — ✅ Completo
+- **Etapa 3:** FACTS, HVDC, CDU — ✅ Implementado
+- **Etapa 4:** Modelos de geradores (DMDG) — ✅ Completo
+- **Etapa 5:** Associação máquina (DMAQ) — ✅ Posicional, completo
+- **Etapa 6:** Integração FACTS/HVDC/CDU — ✅ Completo
+- **Etapa 7:** Validações cruzadas (DMAQ ↔ DMDG) — ✅ Completo
+- **Etapa 8:** Cobertura de testes CDU (46+ testes) — ✅ Completo
+- **Etapa 9:** Limpeza estrutural (eventos/, modelos/) — ✅ Completo
+- **Etapa 10:** Documentação pública (README, API) — ✅ Completo
+- **Etapa 11:** Polimento final (type hints, refinamentos) — ✅ Completo ⭐
 
-**Proximas etapas:** Limpeza estrutural (v0.9), documentação (v0.10), polimento (v0.11), v1.0 público.
+**Roadmap futuro:** v1.0 (lançamento público), v1.1+ (features avançadas).
 
 ---
 
@@ -182,55 +187,62 @@ A biblioteca segue o padrão **AST + Serializer**:
 
 ---
 
-## Confiabilidade dos códigos
+## Confiabilidade dos Códigos
 
-Para transparência sobre validação (v0.8.0):
+Para transparência sobre validação (v0.11.3):
 
-| Componente | Confiança | Base de Validação |
-|---|---|---|
-| **DARQ** (10 subtipos) | Alta | Índice manual ANATEM confirmado |
-| **DSIM** (parâmetros) | Alta | Índice manual confirmado |
-| **DEVT** (8 tipos evento) | Alta | Nomenclatura ANATEM consolidada |
-| **DPLT** — barras, máquinas, circuitos, cargas | Alta | Nomenclatura consolidada, amplamente documentada |
-| **DMDG** (MD01–MD03) | Média | Serialização/parser/roundtrip testados sinteticamente |
-| **DMAQ** (posicional) | Média | Roundtrip posicional testado (v0.5–v0.8, 46+ testes) |
-| **DPLT** — OLTC, FACTS, HVDC, CDU | Best-effort | Padrão nomenclatura 4-letra, sem confirmação página específica |
-| **Validação cruzada** (v0.7) | Média | DMAQ ↔ DMDG validado, caminho do relatório corrigido |
-| **Cobertura CDU** (v0.8) | Média | Testes de múltiplas entradas, INTRES, roundtrip de controlador completo |
-| **LeitorPLT** (formato texto) | Média | Estrutura validada, múltiplas leituras testadas |
-| **LeitorRelatorio** | Média | Reconhecimento de palavras-chave validado |
-| **Formato `.plt` binário** | Não implementado | Estrutura de bytes desconhecida |
+| Componente | Confiança | Base de Validação | Desde |
+|---|---|---|---|
+| **DARQ** (10 subtipos) | Alta | Índice manual ANATEM confirmado | v0.4.0 |
+| **DSIM** (parâmetros) | Alta | Índice manual confirmado | v0.4.0 |
+| **DEVT** (8 tipos evento) | Alta | Nomenclatura ANATEM consolidada | v0.4.0 |
+| **DPLT** — barras, máquinas, circuitos, cargas | Alta | Nomenclatura consolidada, amplamente documentada | v0.4.0 |
+| **DMDG** (MD01–MD03) | Alta | Serialização/parser/roundtrip validados | v0.4.1 |
+| **DMAQ** (posicional) | Alta | Roundtrip posicional, 163+ testes | v0.5.0 |
+| **DPLT** — OLTC, FACTS, HVDC, CDU | Média | Padrão nomenclatura 4-letra, estrutura validada | v0.4.3 |
+| **Validação cruzada** | Alta | DMAQ ↔ DMDG validado | v0.7.0 |
+| **LeitorPLT** (formato texto) | Alta | Estrutura validada contra manual, 163+ testes | v0.4.0 |
+| **LeitorRelatorio** | Alta | Reconhecimento de palavras-chave validado, testado | v0.4.0 |
+| **LeitorSAV** (ANAREDE) | Média | Parser básico, validação de barras/circuitos | v0.4.7 |
+| **BlocoCDU** — parâmetros/roundtrip | Alta | Desambiguação por tipo (Cap. 29), 163+ testes | v0.4.4 |
+| **Formato `.plt` binário** | ❌ Não implementado | Estrutura de bytes desconhecida | — |
 
-**Recomendação:** Valide os códigos marcados como *best-effort* contra um arquivo `.stb`/`.plt` real ou contra o manual em mãos, antes de uso em produção. O método `linha_bruta()` (disponível em `BlocoDEVT` e `BlocoDPLT`) é a alternativa segura para qualquer código que necessite confirmação.
+**Safeguards em v0.11.3:**
+- ✅ **Encoding latin-1 garantido** — sem corrupção silenciosa, erro explícito se fora do intervalo
+- ✅ **Desambiguação CDU por tipo** — IMPORT/EXPORT/INPUT/OUTPUT/SERIET/LOGIC/COMPAR reconhecidos corretamente
+- ✅ **Validação cruzada automática** — DMAQ referencia modelos válidos do DMDG, caminhos de arquivo corrigidos
+- ✅ **163+ testes** cobrindo roundtrip, encoding, blocos, parser, CDU, pós-processamento
 
-**Novidades em v0.7–v0.8:**
-- ✅ Validação cruzada automática entre blocos (DMAQ referencia modelos válidos do DMDG)
-- ✅ Cobertura expandida de testes CDU (46+ testes de roundtrip e múltiplas entradas)
-- ✅ Caminho correto do relatório em `executar_contingencias()`
+**Recomendação:** Para códigos marcados como best-effort, valide contra um `.stb`/`.plt` real ou manual. O método `linha_bruta()` (em `BlocoDEVT` e `BlocoDPLT`) é a alternativa segura para confirmação verbatim.
 
 ---
 
-## Componentes Principais
+## Componentes Principais (v0.11.3)
 
-| Classe | Módulo | Descrição | Desde |
+| Classe | Descrição | Desde | Status |
 |---|---|---|---|
-| `CasoAnatem` | `caso.py` | Caso completo (`.stb`); API fluente, serialização, validação | v0.4.0 |
-| `CasoAnatem.ler()` | `caso.py` | Abre `.stb` existente, reconstrói árvore de blocos | v0.4.0 |
-| `CasoAnatem.exportar()` | `caso.py` | Serializa para `.stb` | v0.4.0 |
-| `CasoAnatem.validar()` | `caso.py` | Validação com verificações cruzadas (DMAQ ↔ DMDG) | v0.4.0 |
-| `EnsaioAnatem` | `ensaio.py` | Automação de lotes sequenciais e paralelos | v0.4.0 |
-| `BlocoDARQ` | `blocos.py` | Arquivos associados (SAV, PLT, RELA, DCDU) | v0.4.0 |
-| `BlocoDSIM` | `blocos.py` | Parâmetros de simulação | v0.4.0 |
-| `BlocoDEVT` | `blocos.py` | Eventos (8 tipos) | v0.4.0 |
-| `BlocoDPLT` | `blocos.py` | Variáveis de plotagem (barras, máquinas, FACTS, HVDC, CDU) | v0.4.0 |
-| `BlocoDMDG` | `blocos.py` | Modelos predefinidos de geradores (MD01–MD03) | v0.4.1 |
-| `BlocoDMAQ` | `blocos.py` | Associação máquina ↔ modelo dinâmico (posicional) | v0.5.0 |
-| `BlocoSVC`, `BlocoTCSC`, `BlocoSTATCOM`, `BlocoHVDC` | `blocos.py` | FACTS e elo HVDC | v0.4.3 |
-| `BlocoCDU`, `ControladorCDU`, `BlocoDCDU` | `cdu/` | Controladores Definidos pelo Usuário | v0.4.4 |
-| `LeitorPLT` | `posprocessamento.py` | Lê `.plt` formato texto, oferece acesso tabular/dataframe | v0.4.0 |
-| `LeitorRelatorio` | `posprocessamento.py` | Lê `.rela`/`.log` com status de convergência | v0.4.0 |
-| `LeitorSAV` | `anarede.py` | Parser `.sav` do ANAREDE para validação cruzada | v0.4.7 |
-| `ParserSTB` | `parser/stb.py` | Parser `.stb` com roundtrip garantido | v0.4.0 |
+| **CasoAnatem** | Caso completo (`.stb`); API fluente, serialização, validação cruzada | v0.4.0 | ✅ |
+| **CasoAnatem.ler()** | Abre `.stb` existente, reconstrói árvore de blocos | v0.4.0 | ✅ |
+| **CasoAnatem.exportar()** | Serializa para `.stb` com garantia de encoding latin-1 | v0.4.0 | ✅ |
+| **CasoAnatem.validar()** | Validação completa (eventos, DMAQ ↔ DMDG, encoding) | v0.4.0 | ✅ |
+| **EnsaioAnatem** | Automação de lotes (sequencial/paralelo), contingências | v0.4.0 | ✅ |
+| **BlocoDARQ** | Associação de arquivos (SAV, PLT, RELA, DCDU, DBLT) | v0.4.0 | ✅ |
+| **BlocoDOPC** | Opções globais de execução (FREQ, BASE) | v0.4.0 | ✅ |
+| **BlocoDSIM** | Parâmetros de simulação (Δt, t_fim, NPAS, MXIT) | v0.4.0 | ✅ |
+| **BlocoDEVT** | Eventos (curtos, aberturas, chaveamentos, steps) — 8 tipos | v0.4.0 | ✅ |
+| **BlocoDPLT** | Variáveis de plotagem (barras, máquinas, FACTS, HVDC, CDU) | v0.4.0 | ✅ |
+| **BlocoDMDG** | Modelos predefinidos de geradores (MD01–MD03) | v0.4.1 | ✅ |
+| **BlocoDMAQ** | Associação máquina ↔ modelo dinâmico (posicional, completo) | v0.5.0 | ✅ |
+| **BlocoSVC, TCSC, STATCOM, HVDC** | FACTS e elo de corrente contínua | v0.4.3 | ✅ |
+| **BlocoCDU, ParametroCDU** | Bloco de CDU (tipos aritméticos, dinâmicos, lógicos, interface) | v0.4.4 | ✅ |
+| **ControladorCDU** | Container fluente para construir controladores CDU | v0.4.4 | ✅ |
+| **BlocoDCDU** | Bloco DCDU completo (múltiplos controladores) | v0.4.5 | ✅ |
+| **LeitorPLT / ResultadoPLT** | Lê `.plt` texto, acesso tabular, dataframe (pandas) | v0.4.0 | ✅ |
+| **LeitorRelatorio / ResultadoExecucao** | Lê `.rela`/`.log`, status de convergência, erros/avisos | v0.4.0 | ✅ |
+| **LeitorSAV / ResultadoSAV** | Parser `.sav` (ANAREDE), validação cruzada de barras/circuitos | v0.4.7 | ✅ |
+| **ParserSTB** | Parser `.stb`, reconstrói árvore AST, roundtrip garantido | v0.4.0 | ✅ |
+
+**Total: 20+ classes públicas | 163+ testes | Encoding garantido | Type hints completos**
 
 ---
 
@@ -250,13 +262,16 @@ pytest tests/ --cov=pyanatem
 
 | Versão | Data | Status | Destaques |
 |--------|------|--------|----------|
-| **v0.8.0** | 2026-06-XX | ⭐ Atual | Cobertura CDU expandida, validação cruzada DMAQ ↔ DMDG, 46+ testes |
-| v0.7.x | 2026-06-XX | Estável | Validações cruzadas, correção de caminhos |
-| **v0.6.0** | 2026-06-XX | Estável | FACTS, HVDC, CDU completo, pós-processamento |
+| **v0.11.3** | 2026-06-XX | ⭐ Atual | Type hints, polimento final, 163+ testes, API consolidada |
+| v0.10.x | — | Estável | README e documentação pública expandida |
+| v0.9.x | — | Estável | Limpeza estrutural de eventos/ e modelos/ |
+| v0.8.x | — | Estável | Cobertura CDU (46+ testes), validação cruzada |
+| v0.7.x | — | Estável | Validações cruzadas DMAQ ↔ DMDG |
+| v0.6.0 | — | Estável | FACTS, HVDC, CDU completo, pós-processamento, LeitorSAV |
 | v0.5.x | — | Arquivada | Serialização posicional DMAQ |
 | v0.4.x | — | Arquivada | MVP: blocos básicos, parser, ensaios |
 
-**Nota:** Todas as versões estão disponíveis no repositório como referência histórica. Use v0.8.0 para novos projetos.
+**Nota:** Todas as versões estão disponíveis no repositório como referência histórica. **Use v0.11.3 para novos projetos.**
 
 ---
 
