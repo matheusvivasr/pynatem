@@ -1,0 +1,29 @@
+name: Code Quality
+
+on: [push, pull_request]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install black flake8 isort mypy
+
+      - name: Check formatting (black)
+        run: black --check pynatem/ tests/
+
+      - name: Check imports (isort)
+        run: isort --check-only pynatem/ tests/
+
+      - name: Lint (flake8)
+        run: flake8 pynatem/ tests/ --max-line-length=100
+
+      - name: Type check (mypy)
+        run: mypy pynatem/ --ignore-missing-imports
