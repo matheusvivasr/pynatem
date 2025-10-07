@@ -1,0 +1,15 @@
+site_name: pyanatem
+site_description: Python library for ANATEM simulator
+site_author: Matheus Vivas
+repo_url: https://github.com/MatheusVivas/ana-estatica
+
+theme:
+  name: material
+  language: pt
+
+nav:
+  - Início: index.md
+  - Guia de Início: getting-started.md
+  - Tutorial: tutorial.md
+  - API: api.md
+  - Contribuindo: contributing.md
