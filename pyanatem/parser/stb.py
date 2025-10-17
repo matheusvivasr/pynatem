@@ -26,7 +26,7 @@ from typing import List, Optional, Tuple
 
 def _strip_comment(linha: str) -> str:
     idx = linha.find("(")
-    return (linha[:idx].rstrip() if idx >= 0 else linha.rstrip())
+    return linha[:idx].rstrip() if idx >= 0 else linha.rstrip()
 
 
 def _e_terminador(linha: str) -> bool:
@@ -65,12 +65,12 @@ _DARQ_MAPA_SIMPLES = {
 }
 
 _DEVT_COM_CIRCUITO = {"APCC", "RMCC", "ABLN", "FCLN"}
-_DEVT_SIMPLES      = {"APCB", "RMCB", "ABSH", "FCSH"}
-_DEVT_MAQUINA      = {"ALTG"}
+_DEVT_SIMPLES = {"APCB", "RMCB", "ABSH", "FCSH"}
+_DEVT_MAQUINA = {"ALTG"}
 
-_DPLT_BARRA      = {"VBAR", "TBAR", "FREQ", "PCAG", "QCAG"}
-_DPLT_MAQUINA    = {"DELT", "OMEG", "PGER", "QGER", "ICAM", "EEXC", "VTER", "PELM", "PMEC"}
-_DPLT_CIRCUITO   = {"FLXP", "FLXQ", "FLXC"}
+_DPLT_BARRA = {"VBAR", "TBAR", "FREQ", "PCAG", "QCAG"}
+_DPLT_MAQUINA = {"DELT", "OMEG", "PGER", "QGER", "ICAM", "EEXC", "VTER", "PELM", "PMEC"}
+_DPLT_CIRCUITO = {"FLXP", "FLXQ", "FLXC"}
 
 
 class ParserSTB:
@@ -198,6 +198,7 @@ class ParserSTB:
     @staticmethod
     def _ler_devt(linhas, inicio, caso) -> int:
         from pyanatem.blocos import _Evento
+
         i = inicio
         while i < len(linhas):
             linha = _strip_comment(linhas[i])
@@ -211,27 +212,28 @@ class ParserSTB:
             cod = partes[0].upper() if partes else ""
 
             if cod in _DEVT_SIMPLES:
-                nb1  = _safe_int(partes[1])   if len(partes) > 1 else 0
+                nb1 = _safe_int(partes[1]) if len(partes) > 1 else 0
                 tini = _safe_float(partes[2]) if len(partes) > 2 else 0.0
-                r    = _safe_float(partes[3]) if len(partes) > 3 else 0.0
-                x    = _safe_float(partes[4]) if len(partes) > 4 else 0.0
+                r = _safe_float(partes[3]) if len(partes) > 3 else 0.0
+                x = _safe_float(partes[4]) if len(partes) > 4 else 0.0
                 caso.devt._eventos.append(_Evento(codigo=cod, nb1=nb1, tini=tini, p1=r, p2=x))
 
             elif cod in _DEVT_COM_CIRCUITO:
-                nb1  = _safe_int(partes[1])   if len(partes) > 1 else 0
-                nb2  = _safe_int(partes[2])   if len(partes) > 2 else 0
-                nc   = _safe_int(partes[3])   if len(partes) > 3 else 1
+                nb1 = _safe_int(partes[1]) if len(partes) > 1 else 0
+                nb2 = _safe_int(partes[2]) if len(partes) > 2 else 0
+                nc = _safe_int(partes[3]) if len(partes) > 3 else 1
                 tini = _safe_float(partes[4]) if len(partes) > 4 else 0.0
-                p1   = _safe_float(partes[5]) if len(partes) > 5 else 0.0
-                p2   = _safe_float(partes[6]) if len(partes) > 6 else 0.0
-                caso.devt._eventos.append(_Evento(codigo=cod, nb1=nb1, nb2=nb2, nc=nc,
-                                                   tini=tini, p1=p1, p2=p2))
+                p1 = _safe_float(partes[5]) if len(partes) > 5 else 0.0
+                p2 = _safe_float(partes[6]) if len(partes) > 6 else 0.0
+                caso.devt._eventos.append(
+                    _Evento(codigo=cod, nb1=nb1, nb2=nb2, nc=nc, tini=tini, p1=p1, p2=p2)
+                )
 
             elif cod in _DEVT_MAQUINA:
-                nb1  = _safe_int(partes[1])   if len(partes) > 1 else 0
-                nb2  = _safe_int(partes[2])   if len(partes) > 2 else 1
+                nb1 = _safe_int(partes[1]) if len(partes) > 1 else 0
+                nb2 = _safe_int(partes[2]) if len(partes) > 2 else 1
                 tini = _safe_float(partes[3]) if len(partes) > 3 else 0.0
-                p1   = _safe_float(partes[4]) if len(partes) > 4 else 0.0
+                p1 = _safe_float(partes[4]) if len(partes) > 4 else 0.0
                 caso.devt._eventos.append(_Evento(codigo=cod, nb1=nb1, nb2=nb2, tini=tini, p1=p1))
 
             else:
@@ -332,31 +334,38 @@ class ParserSTB:
                 grupo = _slice_int(linha, 6, 10)
                 if barra is None or grupo is None:
                     raise ValueError("Nb ou Gr ausente")
-                p   = _slice_int(linha, 10, 14)
-                q   = _slice_int(linha, 14, 18)
+                p = _slice_int(linha, 10, 14)
+                q = _slice_int(linha, 14, 18)
                 und = _slice_int(linha, 18, 22)
-                mg  = _slice_int(linha, 22, 28)
-                mt  = _slice_int(linha, 28, 34)
+                mg = _slice_int(linha, 22, 28)
+                mt = _slice_int(linha, 28, 34)
                 mt_cdu = _slice_cdu(linha, 34)
-                mv  = _slice_int(linha, 35, 41)
+                mv = _slice_int(linha, 35, 41)
                 mv_cdu = _slice_cdu(linha, 41)
-                me  = _slice_int(linha, 42, 48)
+                me = _slice_int(linha, 42, 48)
                 me_cdu = _slice_cdu(linha, 48)
                 xvd = _slice_float(linha, 49, 57)
                 nbc = _slice_int(linha, 57, 63)
 
                 caso.dmaq.adicionar_maquina(
-                    barra=barra, grupo=grupo, p=p, q=q, und=und,
-                    mg=mg, mt=mt, mt_cdu=mt_cdu,
-                    mv=mv, mv_cdu=mv_cdu,
-                    me=me, me_cdu=me_cdu,
-                    xvd=xvd, nbc=nbc,
+                    barra=barra,
+                    grupo=grupo,
+                    p=p,
+                    q=q,
+                    und=und,
+                    mg=mg,
+                    mt=mt,
+                    mt_cdu=mt_cdu,
+                    mv=mv,
+                    mv_cdu=mv_cdu,
+                    me=me,
+                    me_cdu=me_cdu,
+                    xvd=xvd,
+                    nbc=nbc,
                 )
             except (ValueError, IndexError):
                 # Fallback: preserva como texto bruto para não perder dados
-                caso.dmaq.associacoes.append(
-                    _AssocMaquina(barra=0, grupo=0, texto_bruto=linha)
-                )
+                caso.dmaq.associacoes.append(_AssocMaquina(barra=0, grupo=0, texto_bruto=linha))
             i += 1
         return i
 
@@ -381,6 +390,7 @@ class ParserSTB:
         Cada variante (MD01/MD02/MD03) tem layout de colunas distinto.
         """
         from pyanatem.blocos import BlocoDMDG
+
         if not hasattr(caso, "dmdg") or caso.dmdg is None:
             caso.dmdg = BlocoDMDG()
 
@@ -405,16 +415,17 @@ class ParserSTB:
                     i += 1
                     continue
                 p = linha.split()
-                no  = _safe_int(p[0])
-                ld  = _safe_float(p[1]) if len(p) > 1 else 0.0
-                ra  = _safe_float(p[2]) if len(p) > 2 else 0.0
-                h   = _safe_float(p[3]) if len(p) > 3 else 0.0
-                d   = _safe_float(p[4]) if len(p) > 4 else 0.0
+                no = _safe_int(p[0])
+                ld = _safe_float(p[1]) if len(p) > 1 else 0.0
+                ra = _safe_float(p[2]) if len(p) > 2 else 0.0
+                h = _safe_float(p[3]) if len(p) > 3 else 0.0
+                d = _safe_float(p[4]) if len(p) > 4 else 0.0
                 mva = _safe_float(p[5]) if len(p) > 5 else 100.0
-                fr  = _safe_float(p[6]) if len(p) > 6 else 60.0
+                fr = _safe_float(p[6]) if len(p) > 6 else 60.0
                 corfreq = p[7].upper() if len(p) > 7 else "N"
-                caso.dmdg.adicionar_md01(no=no, ld=ld, ra=ra, h=h, d=d,
-                                          mva=mva, fr=fr, corfreq=corfreq)
+                caso.dmdg.adicionar_md01(
+                    no=no, ld=ld, ra=ra, h=h, d=d, mva=mva, fr=fr, corfreq=corfreq
+                )
                 i += 1
             return i
 
@@ -446,28 +457,40 @@ class ParserSTB:
 
                 p1 = linha1.split()
                 p2 = linha2.split()
-                no        = _safe_int(p1[0])
-                cs        = _safe_int(p1[1])  if len(p1) > 1 else 0
-                ld        = _safe_float(p1[2]) if len(p1) > 2 else 0.0
-                lq        = _safe_float(p1[3]) if len(p1) > 3 else 0.0
-                ld_trans  = _safe_float(p1[4]) if len(p1) > 4 else 0.0
-                ld_sub    = _safe_float(p1[5]) if len(p1) > 5 else 0.0
-                ll        = _safe_float(p1[6]) if len(p1) > 6 else 0.0
-                td_trans  = _safe_float(p1[7]) if len(p1) > 7 else 0.0
-                td_sub    = _safe_float(p1[8]) if len(p1) > 8 else 0.0
-                tq_sub    = _safe_float(p1[9]) if len(p1) > 9 else 0.0
+                no = _safe_int(p1[0])
+                cs = _safe_int(p1[1]) if len(p1) > 1 else 0
+                ld = _safe_float(p1[2]) if len(p1) > 2 else 0.0
+                lq = _safe_float(p1[3]) if len(p1) > 3 else 0.0
+                ld_trans = _safe_float(p1[4]) if len(p1) > 4 else 0.0
+                ld_sub = _safe_float(p1[5]) if len(p1) > 5 else 0.0
+                ll = _safe_float(p1[6]) if len(p1) > 6 else 0.0
+                td_trans = _safe_float(p1[7]) if len(p1) > 7 else 0.0
+                td_sub = _safe_float(p1[8]) if len(p1) > 8 else 0.0
+                tq_sub = _safe_float(p1[9]) if len(p1) > 9 else 0.0
                 # régua 2 (No já é p2[0], ignorado — usa No da régua 1)
-                ra  = _safe_float(p2[1]) if len(p2) > 1 else 0.0
-                h   = _safe_float(p2[2]) if len(p2) > 2 else 3.0
-                d   = _safe_float(p2[3]) if len(p2) > 3 else 0.0
+                ra = _safe_float(p2[1]) if len(p2) > 1 else 0.0
+                h = _safe_float(p2[2]) if len(p2) > 2 else 3.0
+                d = _safe_float(p2[3]) if len(p2) > 3 else 0.0
                 mva = _safe_float(p2[4]) if len(p2) > 4 else 100.0
-                fr  = _safe_float(p2[5]) if len(p2) > 5 else 60.0
+                fr = _safe_float(p2[5]) if len(p2) > 5 else 60.0
                 corfreq = p2[6].upper() if len(p2) > 6 else "N"
                 caso.dmdg.adicionar_md02(
-                    no=no, cs=cs, ld=ld, lq=lq, ld_trans=ld_trans,
-                    ld_sub=ld_sub, ll=ll, td_trans=td_trans,
-                    td_sub=td_sub, tq_sub=tq_sub,
-                    ra=ra, h=h, d=d, mva=mva, fr=fr, corfreq=corfreq,
+                    no=no,
+                    cs=cs,
+                    ld=ld,
+                    lq=lq,
+                    ld_trans=ld_trans,
+                    ld_sub=ld_sub,
+                    ll=ll,
+                    td_trans=td_trans,
+                    td_sub=td_sub,
+                    tq_sub=tq_sub,
+                    ra=ra,
+                    h=h,
+                    d=d,
+                    mva=mva,
+                    fr=fr,
+                    corfreq=corfreq,
                 )
                 i = j + 1
             return i
@@ -497,29 +520,43 @@ class ParserSTB:
 
                 p1 = linha1.split()
                 p2 = linha2.split()
-                no        = _safe_int(p1[0])
-                cs        = _safe_int(p1[1])   if len(p1) > 1 else 0
-                ld        = _safe_float(p1[2])  if len(p1) > 2 else 0.0
-                lq        = _safe_float(p1[3])  if len(p1) > 3 else 0.0
-                ld_trans  = _safe_float(p1[4])  if len(p1) > 4 else 0.0
-                lq_trans  = _safe_float(p1[5])  if len(p1) > 5 else 0.0
-                ld_sub    = _safe_float(p1[6])  if len(p1) > 6 else 0.0
-                ll        = _safe_float(p1[7])  if len(p1) > 7 else 0.0
-                td_trans  = _safe_float(p1[8])  if len(p1) > 8 else 0.0
-                tq_trans  = _safe_float(p1[9])  if len(p1) > 9 else 0.0
-                td_sub    = _safe_float(p1[10]) if len(p1) > 10 else 0.0
-                tq_sub    = _safe_float(p1[11]) if len(p1) > 11 else 0.0
-                ra  = _safe_float(p2[1]) if len(p2) > 1 else 0.0
-                h   = _safe_float(p2[2]) if len(p2) > 2 else 3.0
-                d   = _safe_float(p2[3]) if len(p2) > 3 else 0.0
+                no = _safe_int(p1[0])
+                cs = _safe_int(p1[1]) if len(p1) > 1 else 0
+                ld = _safe_float(p1[2]) if len(p1) > 2 else 0.0
+                lq = _safe_float(p1[3]) if len(p1) > 3 else 0.0
+                ld_trans = _safe_float(p1[4]) if len(p1) > 4 else 0.0
+                lq_trans = _safe_float(p1[5]) if len(p1) > 5 else 0.0
+                ld_sub = _safe_float(p1[6]) if len(p1) > 6 else 0.0
+                ll = _safe_float(p1[7]) if len(p1) > 7 else 0.0
+                td_trans = _safe_float(p1[8]) if len(p1) > 8 else 0.0
+                tq_trans = _safe_float(p1[9]) if len(p1) > 9 else 0.0
+                td_sub = _safe_float(p1[10]) if len(p1) > 10 else 0.0
+                tq_sub = _safe_float(p1[11]) if len(p1) > 11 else 0.0
+                ra = _safe_float(p2[1]) if len(p2) > 1 else 0.0
+                h = _safe_float(p2[2]) if len(p2) > 2 else 3.0
+                d = _safe_float(p2[3]) if len(p2) > 3 else 0.0
                 mva = _safe_float(p2[4]) if len(p2) > 4 else 100.0
-                fr  = _safe_float(p2[5]) if len(p2) > 5 else 60.0
+                fr = _safe_float(p2[5]) if len(p2) > 5 else 60.0
                 corfreq = p2[6].upper() if len(p2) > 6 else "N"
                 caso.dmdg.adicionar_md03(
-                    no=no, cs=cs, ld=ld, lq=lq, ld_trans=ld_trans, lq_trans=lq_trans,
-                    ld_sub=ld_sub, ll=ll, td_trans=td_trans, tq_trans=tq_trans,
-                    td_sub=td_sub, tq_sub=tq_sub,
-                    ra=ra, h=h, d=d, mva=mva, fr=fr, corfreq=corfreq,
+                    no=no,
+                    cs=cs,
+                    ld=ld,
+                    lq=lq,
+                    ld_trans=ld_trans,
+                    lq_trans=lq_trans,
+                    ld_sub=ld_sub,
+                    ll=ll,
+                    td_trans=td_trans,
+                    tq_trans=tq_trans,
+                    td_sub=td_sub,
+                    tq_sub=tq_sub,
+                    ra=ra,
+                    h=h,
+                    d=d,
+                    mva=mva,
+                    fr=fr,
+                    corfreq=corfreq,
                 )
                 i = j + 1
             return i
@@ -532,6 +569,7 @@ class ParserSTB:
     def _ler_dcdu(linhas, inicio, caso) -> int:
         """Lê um bloco DCDU e popula caso.dcdu (se existir) ou ignora graciosamente."""
         from pyanatem.cdu import parsear_dcdu, BlocoDCDU
+
         try:
             dcdu, proximo = parsear_dcdu(linhas, inicio)
             # Armazena em caso.dcdu se o atributo existir; caso contrário ignora

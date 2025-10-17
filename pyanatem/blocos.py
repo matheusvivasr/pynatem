@@ -25,10 +25,10 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import List, Optional, Tuple
 
-
 # ---------------------------------------------------------------------------
 # Base
 # ---------------------------------------------------------------------------
+
 
 class BlocoBase:
     """Interface comum para todos os blocos."""
@@ -51,6 +51,7 @@ class BlocoBase:
 # ---------------------------------------------------------------------------
 # DOPC – Opções globais de execução  (manual §46.53, pág. 773)
 # ---------------------------------------------------------------------------
+
 
 @dataclass
 class BlocoDOPC(BlocoBase):
@@ -89,6 +90,7 @@ class BlocoDOPC(BlocoBase):
 # e de modelos podem ser combinadas a partir de vários arquivos)
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class BlocoDARQ(BlocoBase):
     """Associação dos arquivos de entrada e saída (DARQ).
@@ -102,19 +104,19 @@ class BlocoDARQ(BlocoBase):
     """
 
     keyword: str = field(default="DARQ", init=False, repr=False)
-    sav:      Optional[str] = None   # SIST
-    rela:     Optional[str] = None   # RELA (relatório de saída)
-    log:      Optional[str] = None   # LOGI
-    plt:      Optional[str] = None   # PLOT
-    plt_cdu:  Optional[str] = None   # PLOC
-    plt_rele: Optional[str] = None   # PLOR
-    snap:     Optional[str] = None   # SNAP
-    sina:     Optional[str] = None   # SINA
-    cdu:      Optional[str] = None   # DCDU (primeiro arquivo)
-    blt:      Optional[str] = None   # DBLT (primeiro arquivo)
+    sav: Optional[str] = None  # SIST
+    rela: Optional[str] = None  # RELA (relatório de saída)
+    log: Optional[str] = None  # LOGI
+    plt: Optional[str] = None  # PLOT
+    plt_cdu: Optional[str] = None  # PLOC
+    plt_rele: Optional[str] = None  # PLOR
+    snap: Optional[str] = None  # SNAP
+    sina: Optional[str] = None  # SINA
+    cdu: Optional[str] = None  # DCDU (primeiro arquivo)
+    blt: Optional[str] = None  # DBLT (primeiro arquivo)
     cdu_extras: List[str] = field(default_factory=list)
     blt_extras: List[str] = field(default_factory=list)
-    extras:   List[str] = field(default_factory=list)
+    extras: List[str] = field(default_factory=list)
 
     # alias retrocompatível (sessão 1 usava .out)
     @property
@@ -170,14 +172,14 @@ class BlocoDARQ(BlocoBase):
     def serializar(self) -> str:
         linhas = [self._cabecalho()]
         mapa_simples = [
-            ("sav",      "SIST"),
-            ("rela",     "RELA"),
-            ("log",      "LOGI"),
-            ("plt",      "PLOT"),
-            ("plt_cdu",  "PLOC"),
+            ("sav", "SIST"),
+            ("rela", "RELA"),
+            ("log", "LOGI"),
+            ("plt", "PLOT"),
+            ("plt_cdu", "PLOC"),
             ("plt_rele", "PLOR"),
-            ("snap",     "SNAP"),
-            ("sina",     "SINA"),
+            ("snap", "SNAP"),
+            ("sina", "SINA"),
         ]
         for attr, subtipo in mapa_simples:
             arq = getattr(self, attr)
@@ -196,6 +198,7 @@ class BlocoDARQ(BlocoBase):
 # ---------------------------------------------------------------------------
 # DSIM – Parâmetros de simulação  (manual §46.59, pág. 819)
 # ---------------------------------------------------------------------------
+
 
 @dataclass
 class BlocoDSIM(BlocoBase):
@@ -231,9 +234,11 @@ class BlocoDSIM(BlocoBase):
 # DEVT – Eventos da simulação  (manual §46.31, pág. 722)
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class _Evento:
     """Representa uma linha de evento DEVT."""
+
     codigo: str
     nb1: int
     nb2: int = 0
@@ -245,11 +250,14 @@ class _Evento:
     def serializar(self) -> str:
         cod = f"{self.codigo:<4}"
         if self.nb2 or self.nc:
-            return (f"{cod}  {self.nb1:>5}  {self.nb2:>5}  {self.nc:>3}"
-                    f"  {self.tini:>10.4f}  {self.p1:>10.4f}  {self.p2:>10.4f}")
+            return (
+                f"{cod}  {self.nb1:>5}  {self.nb2:>5}  {self.nc:>3}"
+                f"  {self.tini:>10.4f}  {self.p1:>10.4f}  {self.p2:>10.4f}"
+            )
         else:
-            return (f"{cod}  {self.nb1:>5}"
-                    f"  {self.tini:>10.4f}  {self.p1:>10.4f}  {self.p2:>10.4f}")
+            return (
+                f"{cod}  {self.nb1:>5}" f"  {self.tini:>10.4f}  {self.p1:>10.4f}  {self.p2:>10.4f}"
+            )
 
 
 @dataclass
@@ -269,17 +277,25 @@ class BlocoDEVT(BlocoBase):
     def linhas(self, v: List[str]) -> None:
         self._linhas_brutas = v
 
-    def curto_barra(self, barra: int, tini: float, tipo: str = "APCB",
-                     r: float = 0.0, x: float = 0.0) -> "BlocoDEVT":
+    def curto_barra(
+        self, barra: int, tini: float, tipo: str = "APCB", r: float = 0.0, x: float = 0.0
+    ) -> "BlocoDEVT":
         """Aplica (APCB) ou remove (RMCB) curto-circuito em barra CA."""
         self._eventos.append(_Evento(codigo=tipo, nb1=barra, tini=tini, p1=r, p2=x))
         return self
 
-    def curto_circuito(self, de: int, para: int, circ: int, tini: float,
-                        tipo: str = "APCC", r: float = 0.0, x: float = 0.0) -> "BlocoDEVT":
+    def curto_circuito(
+        self,
+        de: int,
+        para: int,
+        circ: int,
+        tini: float,
+        tipo: str = "APCC",
+        r: float = 0.0,
+        x: float = 0.0,
+    ) -> "BlocoDEVT":
         """Aplica (APCC) ou remove (RMCC) curto-circuito em circuito CA."""
-        self._eventos.append(_Evento(codigo=tipo, nb1=de, nb2=para, nc=circ,
-                                      tini=tini, p1=r, p2=x))
+        self._eventos.append(_Evento(codigo=tipo, nb1=de, nb2=para, nc=circ, tini=tini, p1=r, p2=x))
         return self
 
     def abertura_linha(self, de: int, para: int, tini: float, circ: int = 1) -> "BlocoDEVT":
@@ -302,8 +318,9 @@ class BlocoDEVT(BlocoBase):
         self._eventos.append(_Evento(codigo="FCSH", nb1=barra, tini=tini))
         return self
 
-    def step_referencia(self, barra: int, unidade: int, tini: float,
-                         delta: float, tipo: str = "ALTG") -> "BlocoDEVT":
+    def step_referencia(
+        self, barra: int, unidade: int, tini: float, delta: float, tipo: str = "ALTG"
+    ) -> "BlocoDEVT":
         """Step em sinal de referência de máquina (ALTG)."""
         self._eventos.append(_Evento(codigo=tipo, nb1=barra, nb2=unidade, tini=tini, p1=delta))
         return self
@@ -326,6 +343,7 @@ class BlocoDEVT(BlocoBase):
 # ---------------------------------------------------------------------------
 # DPLT – Variáveis de plotagem  (manual §46.55, pág. 774-791)
 # ---------------------------------------------------------------------------
+
 
 @dataclass
 class BlocoDPLT(BlocoBase):
@@ -516,6 +534,7 @@ class BlocoDPLT(BlocoBase):
 # DMAQ – Associação máquina↔modelo  (manual §46.41, pág. 751)
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class _AssocMaquina:
     """Linha de associação máquina↔modelo no bloco DMAQ.
@@ -537,6 +556,7 @@ class _AssocMaquina:
         nbc      – nº da barra controlada (None = terminal, 0 = ANAREDE)
         texto_bruto – se preenchido, serializa literalmente (retrocompat.)
     """
+
     barra: int
     grupo: int
     p: Optional[int] = None
@@ -602,9 +622,12 @@ class _AssocMaquina:
             + fi(self.q, 4)
             + fi(self.und, 4)
             + fi(self.mg, 6)
-            + fi(self.mt, 6) + fu(self.mt_cdu)
-            + fi(self.mv, 6) + fu(self.mv_cdu)
-            + fi(self.me, 6) + fu(self.me_cdu)
+            + fi(self.mt, 6)
+            + fu(self.mt_cdu)
+            + fi(self.mv, 6)
+            + fu(self.mv_cdu)
+            + fi(self.me, 6)
+            + fu(self.me_cdu)
             + ff(self.xvd, 8)
             + fi(self.nbc, 6)
         )
@@ -691,23 +714,34 @@ class BlocoDMAQ(BlocoBase):
         Returns:
             self (encadeável).
         """
-        self.associacoes.append(_AssocMaquina(
-            barra=barra, grupo=grupo, p=p, q=q, und=und,
-            mg=mg, mt=mt, mt_cdu=mt_cdu,
-            mv=mv, mv_cdu=mv_cdu,
-            me=me, me_cdu=me_cdu,
-            xvd=xvd, nbc=nbc,
-        ))
+        self.associacoes.append(
+            _AssocMaquina(
+                barra=barra,
+                grupo=grupo,
+                p=p,
+                q=q,
+                und=und,
+                mg=mg,
+                mt=mt,
+                mt_cdu=mt_cdu,
+                mv=mv,
+                mv_cdu=mv_cdu,
+                me=me,
+                me_cdu=me_cdu,
+                xvd=xvd,
+                nbc=nbc,
+            )
+        )
         return self
 
-    def adicionar(self, barra: int, unidade: int, modelo: str,
-                  params: Optional[List[float]] = None) -> "BlocoDMAQ":
+    def adicionar(
+        self, barra: int, unidade: int, modelo: str, params: Optional[List[float]] = None
+    ) -> "BlocoDMAQ":
         """API legada (retrocompatibilidade) — preserva texto bruto."""
         base = f"{barra:>6}  {unidade:>4}  {modelo:<8}"
         if params:
             base += "  " + "  ".join(f"{p:>10.4f}" for p in params)
-        self.associacoes.append(_AssocMaquina(barra=barra, grupo=unidade,
-                                               texto_bruto=base))
+        self.associacoes.append(_AssocMaquina(barra=barra, grupo=unidade, texto_bruto=base))
         return self
 
     def serializar(self) -> str:
@@ -734,6 +768,7 @@ class BlocoDMAQ(BlocoBase):
 # EXSI – Executa simulação  (manual §46.68, pág. 836)
 # ---------------------------------------------------------------------------
 
+
 class BlocoEXSI(BlocoBase):
     """Comando de execução do caso (EXSI)."""
 
@@ -755,23 +790,27 @@ class BlocoEXSI(BlocoBase):
 # §46.46 do manual (markdowns_referencia/DMDG.md).
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class _ModeloMD01:
     """Modelo Clássico (MD01) — fonte de tensão constante + X'd."""
+
     no: int
-    ld: float                      # L'd – indutância transitória d [%]
-    h: float                       # constante de inércia [s]
-    mva: float                     # potência nominal [MVA]
-    ra: float = 0.0                # resistência de armadura [%]
-    d: float = 0.0                 # constante de amortecimento [pu/pu]
-    fr: float = 60.0               # frequência nominal [Hz]
-    corfreq: str = "N"             # correção de frequência (S/N)
+    ld: float  # L'd – indutância transitória d [%]
+    h: float  # constante de inércia [s]
+    mva: float  # potência nominal [MVA]
+    ra: float = 0.0  # resistência de armadura [%]
+    d: float = 0.0  # constante de amortecimento [pu/pu]
+    fr: float = 60.0  # frequência nominal [Hz]
+    corfreq: str = "N"  # correção de frequência (S/N)
 
     def serializar(self) -> str:
         fr_str = f"{self.fr:.1f}" if self.fr != 60.0 else ""
         c_str = self.corfreq if self.corfreq.upper() == "S" else ""
-        linha = (f"{self.no:>4}  {self.ld:>6.3f}{self.ra:>6.3f}"
-                 f"{self.h:>7.3f}{self.d:>6.3f}{self.mva:>8.1f}")
+        linha = (
+            f"{self.no:>4}  {self.ld:>6.3f}{self.ra:>6.3f}"
+            f"{self.h:>7.3f}{self.d:>6.3f}{self.mva:>8.1f}"
+        )
         if fr_str:
             linha += f"  {fr_str}"
         if c_str:
@@ -782,18 +821,19 @@ class _ModeloMD01:
 @dataclass
 class _ModeloMD02:
     """Modelo de polos salientes (MD02) — hidráulico, 2 réguas."""
+
     no: int
-    ld: float                      # indutância síncrona d [%]
-    lq: float                      # indutância síncrona q [%]
-    ld_trans: float                # L'd transitória d [%]
-    ld_sub: float                  # L"d subtransitória d [%]
-    ll: float                      # indutância de dispersão [%]
-    td_trans: float                # T'd transitória em CA [s]
-    td_sub: float                  # T"d subtransitória em CA [s]
-    tq_sub: float                  # T"q subtransitória em CA [s]
-    h: float = 3.0                 # constante de inércia [s]
-    mva: float = 100.0             # potência nominal [MVA]
-    cs: int = 0                    # nº curva de saturação (0 = sem saturação)
+    ld: float  # indutância síncrona d [%]
+    lq: float  # indutância síncrona q [%]
+    ld_trans: float  # L'd transitória d [%]
+    ld_sub: float  # L"d subtransitória d [%]
+    ll: float  # indutância de dispersão [%]
+    td_trans: float  # T'd transitória em CA [s]
+    td_sub: float  # T"d subtransitória em CA [s]
+    tq_sub: float  # T"q subtransitória em CA [s]
+    h: float = 3.0  # constante de inércia [s]
+    mva: float = 100.0  # potência nominal [MVA]
+    cs: int = 0  # nº curva de saturação (0 = sem saturação)
     ra: float = 0.0
     d: float = 0.0
     fr: float = 60.0
@@ -802,33 +842,38 @@ class _ModeloMD02:
     def serializar(self) -> str:
         cs_str = f"{self.cs:>4}"  # sempre emite (0 inclusive) — evita deslocamento de colunas
         # régua 1
-        r1 = (f"{self.no:>4}  {cs_str}"
-              f"  {self.ld:>7.3f} {self.lq:>7.3f} {self.ld_trans:>7.3f}"
-              f" {self.ld_sub:>7.3f} {self.ll:>7.3f}"
-              f"  {self.td_trans:>7.4f}  {self.td_sub:>7.4f} {self.tq_sub:>7.4f}")
+        r1 = (
+            f"{self.no:>4}  {cs_str}"
+            f"  {self.ld:>7.3f} {self.lq:>7.3f} {self.ld_trans:>7.3f}"
+            f" {self.ld_sub:>7.3f} {self.ll:>7.3f}"
+            f"  {self.td_trans:>7.4f}  {self.td_sub:>7.4f} {self.tq_sub:>7.4f}"
+        )
         # régua 2
         fr_str = f"  {self.fr:.1f}" if self.fr != 60.0 else ""
         c_str = f"  {self.corfreq}" if self.corfreq.upper() == "S" else ""
-        r2 = (f"{self.no:>4}  {self.ra:>6.3f}"
-              f"  {self.h:>7.3f}{self.d:>6.3f}{self.mva:>8.1f}"
-              f"{fr_str}{c_str}")
+        r2 = (
+            f"{self.no:>4}  {self.ra:>6.3f}"
+            f"  {self.h:>7.3f}{self.d:>6.3f}{self.mva:>8.1f}"
+            f"{fr_str}{c_str}"
+        )
         return f"{r1}\n{r2}"
 
 
 @dataclass
 class _ModeloMD03:
     """Modelo de rotor liso (MD03) — térmico, 2 réguas."""
+
     no: int
-    ld: float                      # indutância síncrona d [%]
-    lq: float                      # indutância síncrona q [%]
-    ld_trans: float                # L'd [%]
-    lq_trans: float                # L'q [%]
-    ld_sub: float                  # L"d [%]
-    ll: float                      # indutância de dispersão [%]
-    td_trans: float                # T'd [s]
-    tq_trans: float                # T'q [s]
-    td_sub: float                  # T"d [s]
-    tq_sub: float                  # T"q [s]
+    ld: float  # indutância síncrona d [%]
+    lq: float  # indutância síncrona q [%]
+    ld_trans: float  # L'd [%]
+    lq_trans: float  # L'q [%]
+    ld_sub: float  # L"d [%]
+    ll: float  # indutância de dispersão [%]
+    td_trans: float  # T'd [s]
+    tq_trans: float  # T'q [s]
+    td_sub: float  # T"d [s]
+    tq_sub: float  # T"q [s]
     h: float = 3.0
     mva: float = 100.0
     cs: int = 0
@@ -839,17 +884,21 @@ class _ModeloMD03:
 
     def serializar(self) -> str:
         cs_str = f"{self.cs:>4}"  # sempre emite (0 inclusive)
-        r1 = (f"{self.no:>4}  {cs_str}"
-              f"  {self.ld:>7.3f} {self.lq:>7.3f}"
-              f" {self.ld_trans:>7.3f} {self.lq_trans:>7.3f}"
-              f" {self.ld_sub:>7.3f} {self.ll:>7.3f}"
-              f"  {self.td_trans:>7.4f} {self.tq_trans:>7.4f}"
-              f"  {self.td_sub:>7.4f} {self.tq_sub:>7.4f}")
+        r1 = (
+            f"{self.no:>4}  {cs_str}"
+            f"  {self.ld:>7.3f} {self.lq:>7.3f}"
+            f" {self.ld_trans:>7.3f} {self.lq_trans:>7.3f}"
+            f" {self.ld_sub:>7.3f} {self.ll:>7.3f}"
+            f"  {self.td_trans:>7.4f} {self.tq_trans:>7.4f}"
+            f"  {self.td_sub:>7.4f} {self.tq_sub:>7.4f}"
+        )
         fr_str = f"  {self.fr:.1f}" if self.fr != 60.0 else ""
         c_str = f"  {self.corfreq}" if self.corfreq.upper() == "S" else ""
-        r2 = (f"{self.no:>4}  {self.ra:>6.3f}"
-              f"  {self.h:>7.3f}{self.d:>6.3f}{self.mva:>8.1f}"
-              f"{fr_str}{c_str}")
+        r2 = (
+            f"{self.no:>4}  {self.ra:>6.3f}"
+            f"  {self.h:>7.3f}{self.d:>6.3f}{self.mva:>8.1f}"
+            f"{fr_str}{c_str}"
+        )
         return f"{r1}\n{r2}"
 
 
@@ -918,8 +967,9 @@ class BlocoDMDG(BlocoBase):
         Returns:
             self (encadeável).
         """
-        self._md01.append(_ModeloMD01(no=no, ld=ld, h=h, mva=mva,
-                                       ra=ra, d=d, fr=fr, corfreq=corfreq))
+        self._md01.append(
+            _ModeloMD01(no=no, ld=ld, h=h, mva=mva, ra=ra, d=d, fr=fr, corfreq=corfreq)
+        )
         return self
 
     def adicionar_md02(
@@ -964,11 +1014,26 @@ class BlocoDMDG(BlocoBase):
         Returns:
             self (encadeável).
         """
-        self._md02.append(_ModeloMD02(
-            no=no, ld=ld, lq=lq, ld_trans=ld_trans, ld_sub=ld_sub, ll=ll,
-            td_trans=td_trans, td_sub=td_sub, tq_sub=tq_sub,
-            h=h, mva=mva, cs=cs, ra=ra, d=d, fr=fr, corfreq=corfreq,
-        ))
+        self._md02.append(
+            _ModeloMD02(
+                no=no,
+                ld=ld,
+                lq=lq,
+                ld_trans=ld_trans,
+                ld_sub=ld_sub,
+                ll=ll,
+                td_trans=td_trans,
+                td_sub=td_sub,
+                tq_sub=tq_sub,
+                h=h,
+                mva=mva,
+                cs=cs,
+                ra=ra,
+                d=d,
+                fr=fr,
+                corfreq=corfreq,
+            )
+        )
         return self
 
     def adicionar_md03(
@@ -1011,12 +1076,28 @@ class BlocoDMDG(BlocoBase):
         Returns:
             self (encadeável).
         """
-        self._md03.append(_ModeloMD03(
-            no=no, ld=ld, lq=lq, ld_trans=ld_trans, lq_trans=lq_trans,
-            ld_sub=ld_sub, ll=ll,
-            td_trans=td_trans, tq_trans=tq_trans, td_sub=td_sub, tq_sub=tq_sub,
-            h=h, mva=mva, cs=cs, ra=ra, d=d, fr=fr, corfreq=corfreq,
-        ))
+        self._md03.append(
+            _ModeloMD03(
+                no=no,
+                ld=ld,
+                lq=lq,
+                ld_trans=ld_trans,
+                lq_trans=lq_trans,
+                ld_sub=ld_sub,
+                ll=ll,
+                td_trans=td_trans,
+                tq_trans=tq_trans,
+                td_sub=td_sub,
+                tq_sub=tq_sub,
+                h=h,
+                mva=mva,
+                cs=cs,
+                ra=ra,
+                d=d,
+                fr=fr,
+                corfreq=corfreq,
+            )
+        )
         return self
 
     def serializar(self) -> str:
@@ -1031,7 +1112,7 @@ class BlocoDMDG(BlocoBase):
 
         if self._md02:
             linhas.append("DMDG MD02\n")
-            linhas.append("(No) (CS) (Ld )(Lq )(L'd)(L\"d)(Ll )(T'd) (T\"d)(T\"q)\n")
+            linhas.append('(No) (CS) (Ld )(Lq )(L\'d)(L"d)(Ll )(T\'d) (T"d)(T"q)\n')
             linhas.append("(No) (Ra )( H )( D )(MVA)Fr C\n")
             for m in self._md02:
                 linhas.append(m.serializar() + "\n")
@@ -1052,20 +1133,24 @@ class BlocoDMDG(BlocoBase):
 # FACTS / HVDC – blocos de dados (introduzidos em v0.4.3, etapa 0.4)
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class _CER:
     """Dados de um Compensador Estático de Reativos (CER/SVC) – best-effort."""
+
     no: int
-    nb: int                   # barra de conexão
-    bmin: float = 0.0         # susceptância mínima [pu]
-    bmax: float = 0.0         # susceptância máxima [pu]
-    vref: float = 1.0         # tensão de referência [pu]
-    modelo: int = 1           # número do modelo de controle (DMCS)
-    extras: str = ""          # campos adicionais em formato bruto
+    nb: int  # barra de conexão
+    bmin: float = 0.0  # susceptância mínima [pu]
+    bmax: float = 0.0  # susceptância máxima [pu]
+    vref: float = 1.0  # tensão de referência [pu]
+    modelo: int = 1  # número do modelo de controle (DMCS)
+    extras: str = ""  # campos adicionais em formato bruto
 
     def serializar(self) -> str:
-        return (f"{self.no:>4}  {self.nb:>6}  {self.bmin:>8.4f}  {self.bmax:>8.4f}"
-                f"  {self.vref:>8.4f}  {self.modelo:>4}")
+        return (
+            f"{self.no:>4}  {self.nb:>6}  {self.bmin:>8.4f}  {self.bmax:>8.4f}"
+            f"  {self.vref:>8.4f}  {self.modelo:>4}"
+        )
 
 
 @dataclass
@@ -1076,16 +1161,25 @@ class BlocoSVC(BlocoBase):
     manual (cap. 25), mas layout de colunas não verificado verbatim.
     Use `linha_bruta()` se precisar de precisão de colunas.
     """
+
     keyword: str = field(default="DCER", init=False, repr=False)
     _equipamentos: list = field(default_factory=list)
 
     def tem_dados(self) -> bool:
         return bool(self._equipamentos)
 
-    def adicionar(self, no: int, nb: int, bmin: float = 0.0, bmax: float = 0.0,
-                  vref: float = 1.0, modelo: int = 1) -> "BlocoSVC":
-        self._equipamentos.append(_CER(no=no, nb=nb, bmin=bmin, bmax=bmax,
-                                        vref=vref, modelo=modelo))
+    def adicionar(
+        self,
+        no: int,
+        nb: int,
+        bmin: float = 0.0,
+        bmax: float = 0.0,
+        vref: float = 1.0,
+        modelo: int = 1,
+    ) -> "BlocoSVC":
+        self._equipamentos.append(
+            _CER(no=no, nb=nb, bmin=bmin, bmax=bmax, vref=vref, modelo=modelo)
+        )
         return self
 
     def serializar(self) -> str:
@@ -1099,6 +1193,7 @@ class BlocoSVC(BlocoBase):
 @dataclass
 class _TCSC:
     """Dados de Compensador Série Controlado (TCSC) – best-effort."""
+
     no: int
     de: int
     para: int
@@ -1108,24 +1203,35 @@ class _TCSC:
     modelo: int = 1
 
     def serializar(self) -> str:
-        return (f"{self.no:>4}  {self.de:>6}  {self.para:>6}  {self.circ:>2}"
-                f"  {self.xcmin:>8.4f}  {self.xcmax:>8.4f}  {self.modelo:>4}")
+        return (
+            f"{self.no:>4}  {self.de:>6}  {self.para:>6}  {self.circ:>2}"
+            f"  {self.xcmin:>8.4f}  {self.xcmax:>8.4f}  {self.modelo:>4}"
+        )
 
 
 @dataclass
 class BlocoTCSC(BlocoBase):
     """Dados de Compensadores Série Controláveis (DCSC) – best-effort."""
+
     keyword: str = field(default="DCSC", init=False, repr=False)
     _equipamentos: list = field(default_factory=list)
 
     def tem_dados(self) -> bool:
         return bool(self._equipamentos)
 
-    def adicionar(self, no: int, de: int, para: int, circ: int = 1,
-                  xcmin: float = 0.0, xcmax: float = 0.0,
-                  modelo: int = 1) -> "BlocoTCSC":
-        self._equipamentos.append(_TCSC(no=no, de=de, para=para, circ=circ,
-                                         xcmin=xcmin, xcmax=xcmax, modelo=modelo))
+    def adicionar(
+        self,
+        no: int,
+        de: int,
+        para: int,
+        circ: int = 1,
+        xcmin: float = 0.0,
+        xcmax: float = 0.0,
+        modelo: int = 1,
+    ) -> "BlocoTCSC":
+        self._equipamentos.append(
+            _TCSC(no=no, de=de, para=para, circ=circ, xcmin=xcmin, xcmax=xcmax, modelo=modelo)
+        )
         return self
 
     def serializar(self) -> str:
@@ -1139,6 +1245,7 @@ class BlocoTCSC(BlocoBase):
 @dataclass
 class _STATCOM:
     """Dados de equipamento FACTS VSI (STATCOM/SSSC/UPFC) – best-effort."""
+
     no: int
     nb: int
     tipo_vsi: str = "STATCOM"  # STATCOM, SSSC, UPFC
@@ -1148,26 +1255,38 @@ class _STATCOM:
     modelo: int = 1
 
     def serializar(self) -> str:
-        return (f"{self.no:>4}  {self.nb:>6}  {self.tipo_vsi:<8}"
-                f"  {self.qmin:>8.4f}  {self.qmax:>8.4f}  {self.vref:>8.4f}"
-                f"  {self.modelo:>4}")
+        return (
+            f"{self.no:>4}  {self.nb:>6}  {self.tipo_vsi:<8}"
+            f"  {self.qmin:>8.4f}  {self.qmax:>8.4f}  {self.vref:>8.4f}"
+            f"  {self.modelo:>4}"
+        )
 
 
 @dataclass
 class BlocoSTATCOM(BlocoBase):
     """Dados de equipamentos FACTS VSI (DVSI) – best-effort."""
+
     keyword: str = field(default="DVSI", init=False, repr=False)
     _equipamentos: list = field(default_factory=list)
 
     def tem_dados(self) -> bool:
         return bool(self._equipamentos)
 
-    def adicionar(self, no: int, nb: int, tipo_vsi: str = "STATCOM",
-                  qmin: float = 0.0, qmax: float = 0.0, vref: float = 1.0,
-                  modelo: int = 1) -> "BlocoSTATCOM":
-        self._equipamentos.append(_STATCOM(no=no, nb=nb, tipo_vsi=tipo_vsi,
-                                            qmin=qmin, qmax=qmax, vref=vref,
-                                            modelo=modelo))
+    def adicionar(
+        self,
+        no: int,
+        nb: int,
+        tipo_vsi: str = "STATCOM",
+        qmin: float = 0.0,
+        qmax: float = 0.0,
+        vref: float = 1.0,
+        modelo: int = 1,
+    ) -> "BlocoSTATCOM":
+        self._equipamentos.append(
+            _STATCOM(
+                no=no, nb=nb, tipo_vsi=tipo_vsi, qmin=qmin, qmax=qmax, vref=vref, modelo=modelo
+            )
+        )
         return self
 
     def serializar(self) -> str:
@@ -1181,20 +1300,23 @@ class BlocoSTATCOM(BlocoBase):
 @dataclass
 class _HVDC:
     """Dados básicos de um conversor de elo HVDC LCC – best-effort."""
+
     no: int
-    nb_ret: int               # barra do retificador
-    nb_inv: int               # barra do inversor
-    pcc: float = 0.0          # potência nominal [MW]
-    vcc: float = 0.0          # tensão nominal CC [kV]
-    icc: float = 0.0          # corrente nominal CC [kA]
-    alfa_min: float = 5.0     # ângulo mínimo de disparo [graus]
-    alfa_max: float = 90.0    # ângulo máximo [graus]
-    gama_min: float = 15.0    # ângulo mínimo de extinção [graus]
+    nb_ret: int  # barra do retificador
+    nb_inv: int  # barra do inversor
+    pcc: float = 0.0  # potência nominal [MW]
+    vcc: float = 0.0  # tensão nominal CC [kV]
+    icc: float = 0.0  # corrente nominal CC [kA]
+    alfa_min: float = 5.0  # ângulo mínimo de disparo [graus]
+    alfa_max: float = 90.0  # ângulo máximo [graus]
+    gama_min: float = 15.0  # ângulo mínimo de extinção [graus]
 
     def serializar(self) -> str:
-        return (f"{self.no:>4}  {self.nb_ret:>6}  {self.nb_inv:>6}"
-                f"  {self.pcc:>10.2f}  {self.vcc:>10.2f}  {self.icc:>8.4f}"
-                f"  {self.alfa_min:>6.1f}  {self.alfa_max:>6.1f}  {self.gama_min:>6.1f}")
+        return (
+            f"{self.no:>4}  {self.nb_ret:>6}  {self.nb_inv:>6}"
+            f"  {self.pcc:>10.2f}  {self.vcc:>10.2f}  {self.icc:>8.4f}"
+            f"  {self.alfa_min:>6.1f}  {self.alfa_max:>6.1f}  {self.gama_min:>6.1f}"
+        )
 
 
 @dataclass
@@ -1204,20 +1326,38 @@ class BlocoHVDC(BlocoBase):
     Confiança: best-effort — layout de campos confirma estrutura geral do
     manual (cap. 24), mas colunas exatas não verificadas verbatim.
     """
+
     keyword: str = field(default="DCNV", init=False, repr=False)
     _conversores: list = field(default_factory=list)
 
     def tem_dados(self) -> bool:
         return bool(self._conversores)
 
-    def adicionar(self, no: int, nb_ret: int, nb_inv: int,
-                  pcc: float = 0.0, vcc: float = 0.0, icc: float = 0.0,
-                  alfa_min: float = 5.0, alfa_max: float = 90.0,
-                  gama_min: float = 15.0) -> "BlocoHVDC":
-        self._conversores.append(_HVDC(no=no, nb_ret=nb_ret, nb_inv=nb_inv,
-                                        pcc=pcc, vcc=vcc, icc=icc,
-                                        alfa_min=alfa_min, alfa_max=alfa_max,
-                                        gama_min=gama_min))
+    def adicionar(
+        self,
+        no: int,
+        nb_ret: int,
+        nb_inv: int,
+        pcc: float = 0.0,
+        vcc: float = 0.0,
+        icc: float = 0.0,
+        alfa_min: float = 5.0,
+        alfa_max: float = 90.0,
+        gama_min: float = 15.0,
+    ) -> "BlocoHVDC":
+        self._conversores.append(
+            _HVDC(
+                no=no,
+                nb_ret=nb_ret,
+                nb_inv=nb_inv,
+                pcc=pcc,
+                vcc=vcc,
+                icc=icc,
+                alfa_min=alfa_min,
+                alfa_max=alfa_max,
+                gama_min=gama_min,
+            )
+        )
         return self
 
     def serializar(self) -> str:

@@ -57,7 +57,7 @@ def _verificar_latin1(texto: str, origem: str) -> None:
         n_linha = texto.count("\n", 0, e.start) + 1
         ini = texto.rfind("\n", 0, e.start) + 1
         fim = texto.find("\n", e.start)
-        linha = texto[ini:fim if fim != -1 else len(texto)]
+        linha = texto[ini : fim if fim != -1 else len(texto)]
         raise ValueError(
             f"{origem}: o caractere {char!r} (U+{ord(char):04X}) não é "
             f"representável em latin-1, a codificação exigida pelo ANATEM. "
@@ -98,6 +98,7 @@ class CasoAnatem:
 
         # BlocoDCDU é importado aqui para evitar importação circular no topo
         from .cdu import BlocoDCDU as _BlocoDCDU
+
         self.dcdu = _BlocoDCDU()
 
     @property
@@ -112,18 +113,28 @@ class CasoAnatem:
     # API de alto nível – eventos compostos
     # ------------------------------------------------------------------
 
-    def curto_barra(self, barra: int, t_apl: float, t_rem: float,
-                     r_falta: float = 0.0, x_falta: float = 0.0) -> "CasoAnatem":
+    def curto_barra(
+        self, barra: int, t_apl: float, t_rem: float, r_falta: float = 0.0, x_falta: float = 0.0
+    ) -> "CasoAnatem":
         """Aplica e remove curto-circuito em barra CA (APCB + RMCB)."""
         self.devt.curto_barra(barra=barra, tini=t_apl, tipo="APCB", r=r_falta, x=x_falta)
         self.devt.curto_barra(barra=barra, tini=t_rem, tipo="RMCB")
         return self
 
-    def curto_circuito(self, de: int, para: int, circ: int, t_apl: float, t_rem: float,
-                        r_falta: float = 0.0, x_falta: float = 0.0) -> "CasoAnatem":
+    def curto_circuito(
+        self,
+        de: int,
+        para: int,
+        circ: int,
+        t_apl: float,
+        t_rem: float,
+        r_falta: float = 0.0,
+        x_falta: float = 0.0,
+    ) -> "CasoAnatem":
         """Aplica e remove curto-circuito em circuito CA (APCC + RMCC)."""
-        self.devt.curto_circuito(de=de, para=para, circ=circ, tini=t_apl,
-                                  tipo="APCC", r=r_falta, x=x_falta)
+        self.devt.curto_circuito(
+            de=de, para=para, circ=circ, tini=t_apl, tipo="APCC", r=r_falta, x=x_falta
+        )
         self.devt.curto_circuito(de=de, para=para, circ=circ, tini=t_rem, tipo="RMCC")
         return self
 
@@ -150,11 +161,20 @@ class CasoAnatem:
         Veja :class:`~pyanatem.blocos.BlocoDMAQ` para descrição dos parâmetros.
         """
         self.dmaq.adicionar_maquina(
-            barra=barra, grupo=grupo, p=p, q=q, und=und,
-            mg=mg, mt=mt, mt_cdu=mt_cdu,
-            mv=mv, mv_cdu=mv_cdu,
-            me=me, me_cdu=me_cdu,
-            xvd=xvd, nbc=nbc,
+            barra=barra,
+            grupo=grupo,
+            p=p,
+            q=q,
+            und=und,
+            mg=mg,
+            mt=mt,
+            mt_cdu=mt_cdu,
+            mv=mv,
+            mv_cdu=mv_cdu,
+            me=me,
+            me_cdu=me_cdu,
+            xvd=xvd,
+            nbc=nbc,
         )
         return self
 
@@ -163,8 +183,9 @@ class CasoAnatem:
         self.devt.abertura_linha(de=de, para=para, tini=t_aber, circ=circ)
         return self
 
-    def abrir_linha_e_fechar(self, de: int, para: int, t_aber: float, t_fech: float,
-                              circ: int = 1) -> "CasoAnatem":
+    def abrir_linha_e_fechar(
+        self, de: int, para: int, t_aber: float, t_fech: float, circ: int = 1
+    ) -> "CasoAnatem":
         """Abre e religa circuito CA (ABLN + FCLN)."""
         self.devt.abertura_linha(de=de, para=para, tini=t_aber, circ=circ)
         self.devt.fechamento_linha(de=de, para=para, tini=t_fech, circ=circ)
@@ -259,6 +280,7 @@ class CasoAnatem:
     def ler(cls, caminho: Union[str, Path]) -> "CasoAnatem":
         """Lê um arquivo STB existente e retorna um CasoAnatem populado."""
         from .parser.stb import ParserSTB
+
         return ParserSTB.ler(caminho)
 
     def copiar(self) -> "CasoAnatem":
@@ -390,6 +412,7 @@ class CasoAnatem:
             Lista de inconsistências. Vazia = tudo OK.
         """
         from .anarede import validar_contra_sav
+
         return validar_contra_sav(self, path_sav)
 
     def __repr__(self) -> str:

@@ -4,21 +4,26 @@ tests/test_pyanatem.py – Suite de testes para o pyanatem.
 
 import sys, tempfile
 from pathlib import Path
+
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from pyanatem import CasoAnatem, EnsaioAnatem, LeitorPLT, LeitorRelatorio
 from pyanatem.blocos import BlocoDEVT, BlocoDPLT, BlocoDARQ, BlocoDSIM
 
-
 # ===========================================================================
 # BLOCOS – serialização básica (sessão 2)
 # ===========================================================================
 
+
 def test_darq_todos_subtipos():
     d = BlocoDARQ()
-    d.sav = "rede.sav"; d.rela = "saida.rela"; d.log = "log.log"
-    d.plt = "plot.plt"; d.plt_cdu = "cdu.plt"
-    d.adicionar_cdu("ctrl.cdu"); d.adicionar_blt("bib.blt")
+    d.sav = "rede.sav"
+    d.rela = "saida.rela"
+    d.log = "log.log"
+    d.plt = "plot.plt"
+    d.plt_cdu = "cdu.plt"
+    d.adicionar_cdu("ctrl.cdu")
+    d.adicionar_blt("bib.blt")
     t = d.serializar()
     assert "SIST" in t and "rede.sav" in t
     assert "RELA" in t and "saida.rela" in t
@@ -45,7 +50,8 @@ def test_dsim_linha_posicional():
 
 def test_dsim_opcoes():
     d = BlocoDSIM(tfim=10.0, delt=0.01)
-    d.npas = 2; d.mxit = 50
+    d.npas = 2
+    d.mxit = 50
     t = d.serializar()
     assert "NPAS  2" in t and "MXIT  50" in t
 
@@ -85,22 +91,50 @@ def test_devt_shunt_e_step():
 
 def test_dplt_barras_maquinas_circuitos_cargas():
     d = BlocoDPLT()
-    d.tensao_barra(5); d.angulo_barra(5); d.frequencia_barra(5)
-    d.angulo_maquina(5, 1); d.velocidade_maquina(5, 1)
-    d.potencia_ativa(5, 1); d.potencia_reativa(5, 1)
-    d.corrente_campo(5, 1); d.tensao_excitacao(5, 1)
-    d.tensao_terminal(5, 1); d.potencia_eletrica(5, 1); d.potencia_mecanica(5, 1)
-    d.fluxo_ativo(10, 20, 1); d.fluxo_reativo(10, 20, 1); d.corrente_circuito(10, 20, 1)
-    d.potencia_carga(3); d.reativo_carga(3)
+    d.tensao_barra(5)
+    d.angulo_barra(5)
+    d.frequencia_barra(5)
+    d.angulo_maquina(5, 1)
+    d.velocidade_maquina(5, 1)
+    d.potencia_ativa(5, 1)
+    d.potencia_reativa(5, 1)
+    d.corrente_campo(5, 1)
+    d.tensao_excitacao(5, 1)
+    d.tensao_terminal(5, 1)
+    d.potencia_eletrica(5, 1)
+    d.potencia_mecanica(5, 1)
+    d.fluxo_ativo(10, 20, 1)
+    d.fluxo_reativo(10, 20, 1)
+    d.corrente_circuito(10, 20, 1)
+    d.potencia_carga(3)
+    d.reativo_carga(3)
     t = d.serializar()
-    for cod in ["VBAR", "TBAR", "FREQ", "DELT", "OMEG", "PGER", "QGER", "ICAM",
-                "EEXC", "VTER", "PELM", "PMEC", "FLXP", "FLXQ", "FLXC", "PCAG", "QCAG"]:
+    for cod in [
+        "VBAR",
+        "TBAR",
+        "FREQ",
+        "DELT",
+        "OMEG",
+        "PGER",
+        "QGER",
+        "ICAM",
+        "EEXC",
+        "VTER",
+        "PELM",
+        "PMEC",
+        "FLXP",
+        "FLXQ",
+        "FLXC",
+        "PCAG",
+        "QCAG",
+    ]:
         assert cod in t, f"Faltando {cod}"
 
 
 # ===========================================================================
 # BLOCOS – novidades sessão 3: OLTC / FACTS / HVDC / CDU
 # ===========================================================================
+
 
 def test_dplt_oltc():
     d = BlocoDPLT()
@@ -110,29 +144,36 @@ def test_dplt_oltc():
 
 def test_dplt_facts_svc():
     d = BlocoDPLT()
-    d.reativo_svc(5); d.tensao_svc(5); d.susceptancia_svc(5)
+    d.reativo_svc(5)
+    d.tensao_svc(5)
+    d.susceptancia_svc(5)
     t = d.serializar()
     assert "QSVC" in t and "VSVC" in t and "BSVC" in t
 
 
 def test_dplt_facts_tcsc():
     d = BlocoDPLT()
-    d.reatancia_tcsc(10, 20, 1); d.potencia_tcsc(10, 20, 1)
+    d.reatancia_tcsc(10, 20, 1)
+    d.potencia_tcsc(10, 20, 1)
     t = d.serializar()
     assert "XTCS" in t and "PTCS" in t
 
 
 def test_dplt_facts_statcom():
     d = BlocoDPLT()
-    d.reativo_statcom(3); d.tensao_statcom(3)
+    d.reativo_statcom(3)
+    d.tensao_statcom(3)
     t = d.serializar()
     assert "QSTA" in t and "VSTA" in t
 
 
 def test_dplt_hvdc():
     d = BlocoDPLT()
-    d.tensao_cc(1); d.corrente_cc(1); d.potencia_cc(1)
-    d.angulo_disparo(1); d.angulo_extincao(1)
+    d.tensao_cc(1)
+    d.corrente_cc(1)
+    d.potencia_cc(1)
+    d.angulo_disparo(1)
+    d.angulo_extincao(1)
     t = d.serializar()
     for cod in ["VCCD", "ICCD", "PCCD", "ALFA", "GAMA"]:
         assert cod in t
@@ -148,6 +189,7 @@ def test_dplt_saida_cdu():
 # ===========================================================================
 # BLOCOS – novidade sessão 3: DARQ múltiplos arquivos
 # ===========================================================================
+
 
 def test_darq_multiplos_cdu():
     d = BlocoDARQ()
@@ -181,9 +223,11 @@ def test_darq_cdu_setter_direto_mais_adicionar():
 # CasoAnatem – API de alto nível
 # ===========================================================================
 
+
 def test_deck_estrutura():
     caso = CasoAnatem()
-    caso.darq.sav = "rede.sav"; caso.dsim.tfim = 5.0
+    caso.darq.sav = "rede.sav"
+    caso.dsim.tfim = 5.0
     deck = caso.deck()
     for bloco in ["DARQ", "DEVT", "DPLT", "DSIM", "EXSI", "FIM"]:
         assert bloco in deck
@@ -231,6 +275,7 @@ def test_copiar_independente():
 # validar() – sessão 2 + expansões sessão 3
 # ===========================================================================
 
+
 def test_validar_sem_sav():
     caso = CasoAnatem()
     assert any("SAV" in e for e in caso.validar())
@@ -238,7 +283,9 @@ def test_validar_sem_sav():
 
 def test_validar_tfim_invalido():
     caso = CasoAnatem()
-    caso.darq.sav = "x.sav"; caso.dsim.tini = 5.0; caso.dsim.tfim = 3.0
+    caso.darq.sav = "x.sav"
+    caso.dsim.tini = 5.0
+    caso.dsim.tfim = 3.0
     assert any("tfim" in e for e in caso.validar())
 
 
@@ -262,7 +309,7 @@ def test_validar_poucos_passos():
     caso = CasoAnatem()
     caso.darq.sav = "x.sav"
     caso.dsim.tini = 0.0
-    caso.dsim.tfim = 0.05   # só 5 passos com delt=0.01
+    caso.dsim.tfim = 0.05  # só 5 passos com delt=0.01
     caso.dsim.delt = 0.01
     erros = caso.validar()
     assert any("passos de integração" in e for e in erros)
@@ -294,9 +341,11 @@ def test_validar_evento_depois_de_tfim():
 # Exportar / Ler (roundtrip)
 # ===========================================================================
 
+
 def test_exportar_cria_arquivo():
     caso = CasoAnatem()
-    caso.darq.sav = "x.sav"; caso.dsim.tfim = 3.0
+    caso.darq.sav = "x.sav"
+    caso.dsim.tfim = 3.0
     with tempfile.TemporaryDirectory() as tmp:
         out = Path(tmp) / "teste.stb"
         caso.exportar(out)
@@ -389,17 +438,20 @@ FIM
 # EnsaioAnatem
 # ===========================================================================
 
+
 def test_ensaio_novo_caso_isolado():
     ensaio = EnsaioAnatem.novo()
     ensaio._template.darq.sav = "base.sav"
-    c1 = ensaio.novo_caso("a"); c2 = ensaio.novo_caso("b")
+    c1 = ensaio.novo_caso("a")
+    c2 = ensaio.novo_caso("b")
     c1.darq.sav = "alterado.sav"
     assert c2.darq.sav == "base.sav"
 
 
 def test_ensaio_gerar_variacoes():
     ensaio = EnsaioAnatem.novo()
-    ensaio._template.darq.sav = "base.sav"; ensaio._template.dsim.tfim = 5.0
+    ensaio._template.darq.sav = "base.sav"
+    ensaio._template.dsim.tfim = 5.0
 
     def mod(caso, i):
         caso.dsim.tfim = 5.0 + i
@@ -427,6 +479,7 @@ def test_ensaio_sem_exe_levanta_erro():
 # ===========================================================================
 # Pós-processamento (sessão 3): LeitorPLT / LeitorRelatorio
 # ===========================================================================
+
 
 def test_leitor_plt_texto_simples():
     conteudo = """\
@@ -536,8 +589,8 @@ def test_leitor_relatorio_indeterminado():
 
 if __name__ == "__main__":
     import traceback
-    testes = [(k, v) for k, v in list(globals().items())
-              if k.startswith("test_") and callable(v)]
+
+    testes = [(k, v) for k, v in list(globals().items()) if k.startswith("test_") and callable(v)]
     ok = fail = 0
     for nome, fn in testes:
         try:
@@ -565,9 +618,9 @@ def test_dmdg_md01_serializa_campos_basicos():
     t = b.serializar()
     assert "DMDG MD01" in t
     assert "20" in t
-    assert "20.000" in t    # ld
-    assert "999.000" in t   # h
-    assert "9999.0" in t    # mva
+    assert "20.000" in t  # ld
+    assert "999.000" in t  # h
+    assert "9999.0" in t  # mva
     assert "999999" in t
 
 
@@ -596,10 +649,17 @@ def test_dmdg_md02_duas_reguas():
     b = BlocoDMDG()
     b.adicionar_md02(
         no=14,
-        ld=170.0, lq=100.0, ld_trans=37.0,
-        ld_sub=22.0, ll=15.4,
-        td_trans=9.00, td_sub=0.060, tq_sub=0.200,
-        ra=1.6, h=300.0, mva=100.0,
+        ld=170.0,
+        lq=100.0,
+        ld_trans=37.0,
+        ld_sub=22.0,
+        ll=15.4,
+        td_trans=9.00,
+        td_sub=0.060,
+        tq_sub=0.200,
+        ra=1.6,
+        h=300.0,
+        mva=100.0,
     )
     t = b.serializar()
     assert "DMDG MD02" in t
@@ -609,8 +669,8 @@ def test_dmdg_md02_duas_reguas():
     assert "100.000" in t
     assert "37.000" in t
     # valores da régua 2
-    assert "300.000" in t   # h
-    assert "100.0" in t     # mva
+    assert "300.000" in t  # h
+    assert "100.0" in t  # mva
     # duas linhas com "14" (régua 1 e régua 2)
     linhas_com_14 = [l for l in t.splitlines() if l.strip().startswith("14")]
     assert len(linhas_com_14) == 2
@@ -621,17 +681,23 @@ def test_dmdg_md03_campos_extras():
     b = BlocoDMDG()
     b.adicionar_md03(
         no=50,
-        ld=180.0, lq=170.0,
-        ld_trans=28.0, lq_trans=45.0,
-        ld_sub=20.0, ll=14.0,
-        td_trans=8.0, tq_trans=1.5,
-        td_sub=0.04, tq_sub=0.07,
-        h=4.5, mva=500.0,
+        ld=180.0,
+        lq=170.0,
+        ld_trans=28.0,
+        lq_trans=45.0,
+        ld_sub=20.0,
+        ll=14.0,
+        td_trans=8.0,
+        tq_trans=1.5,
+        td_sub=0.04,
+        tq_sub=0.07,
+        h=4.5,
+        mva=500.0,
     )
     t = b.serializar()
     assert "DMDG MD03" in t
-    assert "45.000" in t    # lq_trans
-    assert "1.5000" in t    # tq_trans
+    assert "45.000" in t  # lq_trans
+    assert "1.5000" in t  # tq_trans
 
 
 def test_dmdg_mistura_md01_md02():
@@ -640,9 +706,16 @@ def test_dmdg_mistura_md01_md02():
     b.adicionar_md01(no=10, ld=20.0, h=5.0, mva=100.0)
     b.adicionar_md02(
         no=20,
-        ld=150.0, lq=90.0, ld_trans=30.0, ld_sub=20.0, ll=12.0,
-        td_trans=7.0, td_sub=0.05, tq_sub=0.15,
-        h=4.0, mva=200.0,
+        ld=150.0,
+        lq=90.0,
+        ld_trans=30.0,
+        ld_sub=20.0,
+        ll=12.0,
+        td_trans=7.0,
+        td_sub=0.05,
+        tq_sub=0.15,
+        h=4.0,
+        mva=200.0,
     )
     t = b.serializar()
     assert "DMDG MD01" in t
@@ -667,11 +740,17 @@ def test_dmdg_tem_dados_preenchido():
 def test_dmdg_encadeamento():
     """Métodos adicionar_mdXX retornam self para encadeamento fluente."""
     b = BlocoDMDG()
-    result = b.adicionar_md01(no=1, ld=20.0, h=5.0, mva=100.0) \
-              .adicionar_md02(
-                  no=2, ld=150.0, lq=90.0, ld_trans=30.0, ld_sub=20.0, ll=12.0,
-                  td_trans=7.0, td_sub=0.05, tq_sub=0.15,
-              )
+    result = b.adicionar_md01(no=1, ld=20.0, h=5.0, mva=100.0).adicionar_md02(
+        no=2,
+        ld=150.0,
+        lq=90.0,
+        ld_trans=30.0,
+        ld_sub=20.0,
+        ll=12.0,
+        td_trans=7.0,
+        td_sub=0.05,
+        tq_sub=0.15,
+    )
     assert result is b
 
 
@@ -721,10 +800,17 @@ def test_dmdg_roundtrip_md02(tmp_path):
     caso.dsim.tfim = 5.0
     caso.dmdg.adicionar_md02(
         no=14,
-        ld=170.0, lq=100.0, ld_trans=37.0,
-        ld_sub=22.0, ll=15.4,
-        td_trans=9.00, td_sub=0.060, tq_sub=0.200,
-        ra=1.6, h=300.0, mva=100.0,
+        ld=170.0,
+        lq=100.0,
+        ld_trans=37.0,
+        ld_sub=22.0,
+        ll=15.4,
+        td_trans=9.00,
+        td_sub=0.060,
+        tq_sub=0.200,
+        ra=1.6,
+        h=300.0,
+        mva=100.0,
     )
 
     stb = tmp_path / "caso.stb"
@@ -748,12 +834,18 @@ def test_dmdg_roundtrip_md03(tmp_path):
     caso.dsim.tfim = 5.0
     caso.dmdg.adicionar_md03(
         no=50,
-        ld=180.0, lq=170.0,
-        ld_trans=28.0, lq_trans=45.0,
-        ld_sub=20.0, ll=14.0,
-        td_trans=8.0, tq_trans=1.5,
-        td_sub=0.04, tq_sub=0.07,
-        h=4.5, mva=500.0,
+        ld=180.0,
+        lq=170.0,
+        ld_trans=28.0,
+        lq_trans=45.0,
+        ld_sub=20.0,
+        ll=14.0,
+        td_trans=8.0,
+        tq_trans=1.5,
+        td_sub=0.04,
+        tq_sub=0.07,
+        h=4.5,
+        mva=500.0,
     )
 
     stb = tmp_path / "caso.stb"
@@ -774,6 +866,7 @@ def test_dmdg_roundtrip_md03(tmp_path):
 
 from pyanatem.blocos import BlocoDMAQ
 
+
 def test_dmaq_adicionar_maquina_simples():
     """DMAQ: associação básica sem AVR nem gov."""
     d = BlocoDMAQ()
@@ -784,22 +877,25 @@ def test_dmaq_adicionar_maquina_simples():
     assert "751" in t
     assert "999999" in t
 
+
 def test_dmaq_adicionar_maquina_avr_cdu():
     """DMAQ: Mt com flag CDU (u) serializa corretamente."""
     d = BlocoDMAQ()
-    d.adicionar_maquina(barra=3500, grupo=10, p=60, q=60, und=3,
-                        mg=753, mt=144, mt_cdu=True, mv=126)
+    d.adicionar_maquina(
+        barra=3500, grupo=10, p=60, q=60, und=3, mg=753, mt=144, mt_cdu=True, mv=126
+    )
     t = d.serializar()
     assert "144u" in t or "144U" in t or "144" in t
     assert "3500" in t
 
+
 def test_dmaq_adicionar_maquina_com_pss():
     """DMAQ: Me (estabilizador) preenchido."""
     d = BlocoDMAQ()
-    d.adicionar_maquina(barra=3500, grupo=20, p=40, q=40, und=2,
-                        mg=753, mt=81, mv=126, me=39)
+    d.adicionar_maquina(barra=3500, grupo=20, p=40, q=40, und=2, mg=753, mt=81, mv=126, me=39)
     t = d.serializar()
     assert "39" in t
+
 
 def test_dmaq_multiplas_maquinas_mesma_barra():
     """DMAQ: múltiplas linhas para a mesma barra."""
@@ -809,9 +905,11 @@ def test_dmaq_multiplas_maquinas_mesma_barra():
     t = d.serializar()
     assert t.count("3500") == 2
 
+
 def test_dmaq_api_alto_nivel(tmp_path):
     """CasoAnatem.adicionar_maquina() atalho funciona."""
     from pyanatem import CasoAnatem
+
     caso = CasoAnatem()
     caso.darq.sav = "rede.sav"
     caso.adicionar_maquina(barra=100, grupo=1, mg=5)
@@ -819,16 +917,19 @@ def test_dmaq_api_alto_nivel(tmp_path):
     assert "DMAQ" in d
     assert "100" in d
 
+
 def test_dmaq_roundtrip(tmp_path):
     """Roundtrip DMAQ: escrito e relido preserva dados."""
     from pyanatem import CasoAnatem
+
     caso = CasoAnatem()
     caso.darq.sav = "rede.sav"
     caso.darq.plt = "saida.plt"
     caso.dsim.tfim = 5.0
     caso.adicionar_maquina(barra=1432, grupo=10, und=1, mg=751)
-    caso.adicionar_maquina(barra=3500, grupo=10, p=60, q=60, und=3,
-                           mg=753, mt=144, mt_cdu=True, mv=126)
+    caso.adicionar_maquina(
+        barra=3500, grupo=10, p=60, q=60, und=3, mg=753, mt=144, mt_cdu=True, mv=126
+    )
 
     stb = tmp_path / "caso.stb"
     caso.exportar(stb)
@@ -860,6 +961,7 @@ def test_dmaq_roundtrip(tmp_path):
 def _roundtrip_dmaq(tmp_path, **kwargs):
     """Auxiliar: monta caso mínimo com uma associação, exporta, relê e retorna a associação."""
     from pyanatem import CasoAnatem
+
     caso = CasoAnatem()
     caso.darq.sav = "rede.sav"
     caso.darq.plt = "saida.plt"
@@ -938,11 +1040,20 @@ def test_dmaq_posicional_5f_todos_os_campos(tmp_path):
     """v0.5.3-5f: Todos os campos presentes."""
     a = _roundtrip_dmaq(
         tmp_path,
-        barra=3500, grupo=10, p=60, q=60, und=3,
-        mg=753, mt=78, mt_cdu=False,
-        mv=126, mv_cdu=False,
-        me=39, me_cdu=False,
-        xvd=0.05, nbc=0,
+        barra=3500,
+        grupo=10,
+        p=60,
+        q=60,
+        und=3,
+        mg=753,
+        mt=78,
+        mt_cdu=False,
+        mv=126,
+        mv_cdu=False,
+        me=39,
+        me_cdu=False,
+        xvd=0.05,
+        nbc=0,
     )
     assert a.barra == 3500
     assert a.grupo == 10
@@ -964,10 +1075,18 @@ def test_dmaq_posicional_5f_todos_cdu(tmp_path):
     """v0.5.3-5f (variante CDU): Todos os modelos via CDU."""
     a = _roundtrip_dmaq(
         tmp_path,
-        barra=3500, grupo=10, p=60, q=60, und=3,
-        mg=753, mt=144, mt_cdu=True,
-        mv=126, mv_cdu=True,
-        me=39, me_cdu=True,
+        barra=3500,
+        grupo=10,
+        p=60,
+        q=60,
+        und=3,
+        mg=753,
+        mt=144,
+        mt_cdu=True,
+        mv=126,
+        mv_cdu=True,
+        me=39,
+        me_cdu=True,
     )
     assert a.mt == 144 and a.mt_cdu is True
     assert a.mv == 126 and a.mv_cdu is True
@@ -977,6 +1096,7 @@ def test_dmaq_posicional_5f_todos_cdu(tmp_path):
 def test_dmaq_posicional_5g_lista_mista(tmp_path):
     """v0.5.3-5g: Lista mista com múltiplas associações em combinações variadas."""
     from pyanatem import CasoAnatem
+
     caso = CasoAnatem()
     caso.darq.sav = "rede.sav"
     caso.darq.plt = "saida.plt"
@@ -987,8 +1107,9 @@ def test_dmaq_posicional_5g_lista_mista(tmp_path):
     # Linha 2: bug original — Mg sem P,Q,Und
     caso.dmaq.adicionar_maquina(barra=200, grupo=2, mg=50)
     # Linha 3: completa com CDU
-    caso.dmaq.adicionar_maquina(barra=300, grupo=3, p=100, q=100, und=2,
-                                mg=51, mt=144, mt_cdu=True, mv=126, mv_cdu=False)
+    caso.dmaq.adicionar_maquina(
+        barra=300, grupo=3, p=100, q=100, und=2, mg=51, mt=144, mt_cdu=True, mv=126, mv_cdu=False
+    )
     # Linha 4: P,Q,Und,Mg mas sem Mt
     caso.dmaq.adicionar_maquina(barra=400, grupo=4, p=50, q=50, und=1, mg=52)
 
@@ -1025,6 +1146,7 @@ def test_dmaq_posicional_5h_espacos_em_branco_na_posicao(tmp_path):
     """
     from pyanatem import CasoAnatem
     from pyanatem.blocos import BlocoDMAQ
+
     caso = CasoAnatem()
     caso.darq.sav = "rede.sav"
     caso.darq.plt = "saida.plt"
@@ -1052,22 +1174,22 @@ def test_dmaq_posicional_5h_espacos_em_branco_na_posicao(tmp_path):
     # Nb (cols 0-5) deve conter 3500; Gr (6-9) deve conter 10
     # P (10-13), Q (14-17), Und (18-21) devem ser brancos
     # Mg (22-27) deve conter 753
-    nb_str  = linha_dados[0:6].strip()
-    gr_str  = linha_dados[6:10].strip()
-    p_str   = linha_dados[10:14].strip()
-    q_str   = linha_dados[14:18].strip()
+    nb_str = linha_dados[0:6].strip()
+    gr_str = linha_dados[6:10].strip()
+    p_str = linha_dados[10:14].strip()
+    q_str = linha_dados[14:18].strip()
     und_str = linha_dados[18:22].strip()
-    mg_str  = linha_dados[22:28].strip()
-    mt_str  = linha_dados[28:34].strip()
+    mg_str = linha_dados[22:28].strip()
+    mt_str = linha_dados[28:34].strip()
     cdu_str = linha_dados[34:35] if len(linha_dados) > 34 else " "
 
     assert nb_str == "3500", f"Nb incorreto: {repr(nb_str)}"
-    assert gr_str == "10",   f"Gr incorreto: {repr(gr_str)}"
-    assert p_str  == "",     f"P deveria estar em branco: {repr(p_str)}"
-    assert q_str  == "",     f"Q deveria estar em branco: {repr(q_str)}"
-    assert und_str == "",    f"Und deveria estar em branco: {repr(und_str)}"
-    assert mg_str == "753",  f"Mg incorreto: {repr(mg_str)}"
-    assert mt_str == "144",  f"Mt incorreto: {repr(mt_str)}"
+    assert gr_str == "10", f"Gr incorreto: {repr(gr_str)}"
+    assert p_str == "", f"P deveria estar em branco: {repr(p_str)}"
+    assert q_str == "", f"Q deveria estar em branco: {repr(q_str)}"
+    assert und_str == "", f"Und deveria estar em branco: {repr(und_str)}"
+    assert mg_str == "753", f"Mg incorreto: {repr(mg_str)}"
+    assert mt_str == "144", f"Mt incorreto: {repr(mt_str)}"
     assert cdu_str.lower() == "u", f"Flag CDU deveria ser 'u': {repr(cdu_str)}"
 
 
@@ -1077,6 +1199,7 @@ def test_dmaq_posicional_5h_espacos_em_branco_na_posicao(tmp_path):
 
 from pyanatem import BlocoSVC, BlocoTCSC, BlocoSTATCOM, BlocoHVDC
 
+
 def test_svc_serializa():
     b = BlocoSVC()
     b.adicionar(no=1, nb=100, bmin=-0.5, bmax=0.5, vref=1.0, modelo=1)
@@ -1085,12 +1208,14 @@ def test_svc_serializa():
     assert "100" in t
     assert "999999" in t
 
+
 def test_tcsc_serializa():
     b = BlocoTCSC()
     b.adicionar(no=1, de=100, para=200, circ=1, xcmin=0.0, xcmax=0.3)
     t = b.serializar()
     assert "DCSC" in t
     assert "100" in t and "200" in t
+
 
 def test_statcom_serializa():
     b = BlocoSTATCOM()
@@ -1100,6 +1225,7 @@ def test_statcom_serializa():
     assert "STATCOM" in t
     assert "50" in t
 
+
 def test_hvdc_serializa():
     b = BlocoHVDC()
     b.adicionar(no=1, nb_ret=10, nb_inv=20, pcc=900.0, vcc=600.0)
@@ -1108,12 +1234,14 @@ def test_hvdc_serializa():
     assert "900" in t
     assert "600" in t
 
+
 def test_facts_encadeamento():
     """Métodos adicionar retornam self para encadeamento."""
     b = BlocoSVC()
     result = b.adicionar(no=1, nb=100).adicionar(no=2, nb=200)
     assert result is b
     assert len(b._equipamentos) == 2
+
 
 def test_facts_tem_dados():
     b = BlocoSVC()
@@ -1128,6 +1256,7 @@ def test_facts_tem_dados():
 
 from pyanatem import BlocoCDU, ParametroCDU, ValorInicialCDU, ControladorCDU, BlocoDCDU
 
+
 def test_cdu_parametro_defpar():
     p = ParametroCDU(nome="#Vref", valor=1.0, comentario="Ref de tensão [pu]")
     t = p.serializar()
@@ -1135,12 +1264,14 @@ def test_cdu_parametro_defpar():
     assert "#Vref" in t
     assert "1" in t
 
+
 def test_cdu_defval_simples():
     d = ValorInicialCDU(vdef="Vref", d1=1.0)
     t = d.serializar()
     assert "DEFVAL" in t
     assert "Vref" in t
     assert "1" in t
+
 
 def test_cdu_bloco_ganho():
     b = BlocoCDU(nb=10, tipo="GANHO", vent="Vent", vsai="Vsai", p1=2.0)
@@ -1150,20 +1281,33 @@ def test_cdu_bloco_ganho():
     assert "Vsai" in t
     assert "2" in t
 
+
 def test_cdu_bloco_ledlag():
-    b = BlocoCDU(nb=20, tipo="LEDLAG", vent="E", vsai="Y",
-                 p1=200.0, p2=0.0, p3=1.0, p4=0.05,
-                 vmin="Emin", vmax="Emax")
+    b = BlocoCDU(
+        nb=20,
+        tipo="LEDLAG",
+        vent="E",
+        vsai="Y",
+        p1=200.0,
+        p2=0.0,
+        p3=1.0,
+        p4=0.05,
+        vmin="Emin",
+        vmax="Emax",
+    )
     t = b.serializar()
     assert "LEDLAG" in t
     assert "200" in t
     assert "Emin" in t
 
+
 def test_cdu_bloco_wshout():
-    b = BlocoCDU(nb=30, tipo="WSHOUT", vent="W", vsai="Ypss",
-                 p1=5.0, p2=2.0, p3=2.0, vmin="Lmn", vmax="Lmx")
+    b = BlocoCDU(
+        nb=30, tipo="WSHOUT", vent="W", vsai="Ypss", p1=5.0, p2=2.0, p3=2.0, vmin="Lmn", vmax="Lmx"
+    )
     t = b.serializar()
     assert "WSHOUT" in t
+
 
 def test_cdu_controlador_avr_simples():
     """Constrói AVR com WSHOUT + LEDLAG + limites."""
@@ -1172,13 +1316,22 @@ def test_cdu_controlador_avr_simples():
     ctrl.bloco(10, "IMPORT", stip="VOLT", vsai="Vt")
     b_soma = ctrl.bloco(20, "SOMA", vent="Vref", vsai="Erro")
     b_soma.adicionar_entrada("Vt", polaridade="-")
-    ctrl.bloco(30, "LEDLAG", vent="Erro", vsai="Efd",
-               p1=200.0, p2=0.0, p3=1.0, p4=0.05,
-               vmin="Emin", vmax="Emax")
+    ctrl.bloco(
+        30,
+        "LEDLAG",
+        vent="Erro",
+        vsai="Efd",
+        p1=200.0,
+        p2=0.0,
+        p3=1.0,
+        p4=0.05,
+        vmin="Emin",
+        vmax="Emax",
+    )
     ctrl.bloco(40, "EXPORT", stip="EFD", vent="Efd")
-    ctrl.defval("Vref",  1.0)
+    ctrl.defval("Vref", 1.0)
     ctrl.defval("Emin", -5.0)
-    ctrl.defval("Emax",  5.0)
+    ctrl.defval("Emax", 5.0)
 
     t = ctrl.serializar()
     assert "100" in t
@@ -1187,6 +1340,7 @@ def test_cdu_controlador_avr_simples():
     assert "LEDLAG" in t
     assert "FIMCDU" in t
     assert "DEFVAL" in t
+
 
 def test_cdu_bloco_dcdu_completo():
     """BlocoDCDU com dois controladores serializa corretamente."""
@@ -1198,10 +1352,9 @@ def test_cdu_bloco_dcdu_completo():
     avr.defval("Lim", 5.0)
 
     pss = dcdu.novo_controlador(ncdu=200, nome="PSS")
-    pss.bloco(10, "WSHOUT", vent="W", vsai="Ypss",
-              p1=5.0, p2=2.0, p3=2.0, vmin="Lmn", vmax="Lmx")
+    pss.bloco(10, "WSHOUT", vent="W", vsai="Ypss", p1=5.0, p2=2.0, p3=2.0, vmin="Lmn", vmax="Lmx")
     pss.defval("Lmn", -0.1)
-    pss.defval("Lmx",  0.1)
+    pss.defval("Lmx", 0.1)
 
     t = dcdu.serializar()
     assert "DCDU" in t
@@ -1210,15 +1363,18 @@ def test_cdu_bloco_dcdu_completo():
     assert t.count("FIMCDU") == 2
     assert "999999" in t
 
+
 def test_cdu_tem_dados():
     d = BlocoDCDU()
     assert not d.tem_dados()
     d.novo_controlador(ncdu=1, nome="X")
     assert d.tem_dados()
 
+
 def test_cdu_roundtrip_basico(tmp_path):
     """BlocoDCDU: serialização e re-parse preserva ncdu e número de blocos."""
     from pyanatem.cdu import parsear_dcdu
+
     dcdu = BlocoDCDU()
     ctrl = dcdu.novo_controlador(ncdu=42, nome="TESTE")
     ctrl.bloco(10, "GANHO", vent="Vent", vsai="Vsai", p1=1.5)
@@ -1233,22 +1389,26 @@ def test_cdu_roundtrip_basico(tmp_path):
     assert dcdu2._controladores[0].nome == "TESTE"
     assert len(dcdu2._controladores[0]._blocos) == 1
 
+
 def test_cdu_bloco_init_flag():
     b = BlocoCDU(nb=5, tipo="GANHO", vent="X", vsai="Y", p1=1.0, init_flag=True)
     t = b.serializar()
     assert "*" in t
 
+
 def test_cdu_bloco_import_export():
     """Blocos de interface serializam com stip."""
     b_imp = BlocoCDU(nb=1, tipo="IMPORT", stip="VOLT", vsai="Vt")
-    b_exp = BlocoCDU(nb=2, tipo="EXPORT", stip="EFD",  vent="Efd")
+    b_exp = BlocoCDU(nb=2, tipo="EXPORT", stip="EFD", vent="Efd")
     assert "IMPORT" in b_imp.serializar()
     assert "VOLT" in b_imp.serializar()
     assert "EXPORT" in b_exp.serializar()
     assert "EFD" in b_exp.serializar()
 
+
 def test_cdu_defvdf():
     from pyanatem.cdu import ValorDefaultCDU
+
     d = ValorDefaultCDU(vdef="Lim", valor=1.0)
     t = d.serializar()
     assert "DEFVDF" in t
@@ -1258,6 +1418,7 @@ def test_cdu_defvdf():
 # ===========================================================================
 # v0.4.6 (etapa 0.4) – Análise de contingências automatizada
 # ===========================================================================
+
 
 def test_contingencias_de_contingencias():
     """de_contingencias() gera o número correto de casos."""
@@ -1271,14 +1432,21 @@ def test_contingencias_de_contingencias():
         {"nome": "C1", "tipo": "curto_barra", "barra": 10, "t_apl": 1.0, "t_rem": 1.1},
         {"nome": "C2", "tipo": "curto_barra", "barra": 20, "t_apl": 1.0, "t_rem": 1.1},
         {"nome": "C3", "tipo": "abertura_linha", "de": 10, "para": 20, "t_aber": 0.5},
-        {"nome": "C4", "tipo": "abertura_linha", "de": 10, "para": 30,
-         "t_aber": 0.5, "t_fech": 1.0},
+        {
+            "nome": "C4",
+            "tipo": "abertura_linha",
+            "de": 10,
+            "para": 30,
+            "t_aber": 0.5,
+            "t_fech": 1.0,
+        },
         {"nome": "C5", "tipo": "step", "barra": 5, "unidade": 1, "t_ini": 2.0, "delta": 0.05},
     ]
     ensaio = EnsaioAnatem.de_contingencias(base, conts)
     assert len(ensaio.casos()) == 5
     assert "C1" in ensaio.casos()
     assert "C5" in ensaio.casos()
+
 
 def test_contingencias_nomes_arquivo(tmp_path):
     """Arquivos STB exportados têm os nomes corretos."""
@@ -1297,6 +1465,7 @@ def test_contingencias_nomes_arquivo(tmp_path):
     nomes = {p.stem for p in paths}
     assert "CONT_A" in nomes
     assert "CONT_B" in nomes
+
 
 def test_contingencias_isoladas():
     """Cada caso é independente (modificar um não afeta outro)."""
@@ -1318,14 +1487,21 @@ def test_contingencias_isoladas():
     assert 10 in ev_a and 10 not in ev_b
     assert 20 in ev_b and 20 not in ev_a
 
+
 def test_relatorio_consolidado():
     """relatorio_consolidado() produz tabela legível."""
     from pyanatem import EnsaioAnatem
 
     ensaio = EnsaioAnatem.novo()
     resultados = [
-        {"arquivo": "/tmp/C1.stb", "convergiu": True,  "erros": [], "avisos": [], "passou": True},
-        {"arquivo": "/tmp/C2.stb", "convergiu": False, "erros": ["ERRO X"], "avisos": [], "passou": False},
+        {"arquivo": "/tmp/C1.stb", "convergiu": True, "erros": [], "avisos": [], "passou": True},
+        {
+            "arquivo": "/tmp/C2.stb",
+            "convergiu": False,
+            "erros": ["ERRO X"],
+            "avisos": [],
+            "passou": False,
+        },
     ]
     rel = ensaio.relatorio_consolidado(resultados)
     assert "C1" in rel
@@ -1339,6 +1515,7 @@ def test_relatorio_consolidado():
 # ===========================================================================
 
 from pyanatem import LeitorSAV, ResultadoSAV
+
 
 def test_leitor_sav_barras_minimo():
     """LeitorSAV lê barras de um .sav sintético mínimo."""
@@ -1354,6 +1531,7 @@ DBAR
     assert 2 in r.barras
     assert r.barras[1].nome == "BARRA_A"
 
+
 def test_leitor_sav_circuitos():
     """LeitorSAV lê circuitos de DLIN."""
     sav_texto = """\
@@ -1367,6 +1545,7 @@ DLIN
     chaves = r.chaves_circuitos()
     assert (1, 2, 1) in chaves
     assert (1, 3, 1) in chaves
+
 
 def test_leitor_sav_barras_e_circuitos():
     """LeitorSAV parseia tanto DBAR quanto DLIN no mesmo arquivo."""
@@ -1384,6 +1563,7 @@ DLIN
     assert 20 in r.barras
     assert (10, 20, 1) in r.chaves_circuitos()
 
+
 def test_validar_contra_sav_ok(tmp_path):
     """validar_contra_sav: caso consistente retorna lista vazia."""
     from pyanatem import CasoAnatem
@@ -1398,6 +1578,7 @@ def test_validar_contra_sav_ok(tmp_path):
 
     erros = caso.validar_contra_sav(sav_path)
     assert erros == []
+
 
 def test_validar_contra_sav_barra_inexistente(tmp_path):
     """validar_contra_sav: detecta barra inexistente em evento."""
@@ -1414,6 +1595,7 @@ def test_validar_contra_sav_barra_inexistente(tmp_path):
     erros = caso.validar_contra_sav(sav_path)
     assert any("999" in e for e in erros)
 
+
 def test_validar_contra_sav_circuito_inexistente(tmp_path):
     """validar_contra_sav: detecta circuito inexistente em evento DEVT."""
     from pyanatem import CasoAnatem
@@ -1422,7 +1604,7 @@ def test_validar_contra_sav_circuito_inexistente(tmp_path):
     sav_path.write_text(
         "DBAR\n10 A GD 1 1 138. 0 0 0 0\n20 B GD 1 1 138. 0 0 0 0\n99999\n"
         "DLIN\n10 20 1  0 0 0.01 0.05 0.0\n99999\n",
-        encoding="latin-1"
+        encoding="latin-1",
     )
 
     caso = CasoAnatem()
@@ -1434,13 +1616,14 @@ def test_validar_contra_sav_circuito_inexistente(tmp_path):
     erros = caso.validar_contra_sav(sav_path)
     assert any("99" in e for e in erros)
 
+
 def test_leitor_sav_arquivo_real(tmp_path):
     """Parsing de .sav sintético salvo em disco funciona via LeitorSAV.ler()."""
     sav_path = tmp_path / "mini.sav"
     sav_path.write_text(
         "DBAR\n1 A GD 1 1 138. 0 0 100 0\n2 B GD 1 1 138. 0 0 50 0\n99999\n"
         "DLIN\n1 2 1 0 0 0.01 0.05 0.0\n99999\n",
-        encoding="latin-1"
+        encoding="latin-1",
     )
     r = LeitorSAV.ler(sav_path)
     assert 1 in r.barras
@@ -1448,10 +1631,10 @@ def test_leitor_sav_arquivo_real(tmp_path):
     assert (1, 2, 1) in r.chaves_circuitos()
 
 
-
 # ===========================================================================
 # v0.6.4 — Testes de integração FACTS, HVDC e CDU no CasoAnatem
 # ===========================================================================
+
 
 def test_caso_tem_atributos_facts_hvdc():
     """CasoAnatem expõe svc, tcsc, statcom, hvdc e dcdu após __init__."""
@@ -1589,6 +1772,7 @@ def test_salvar_cdu_cria_diretorio(tmp_path):
 # v0.7.1 — Validação cruzada DMAQ ↔ DMDG em validar()
 # ===========================================================================
 
+
 def test_validar_dmaq_mg_ausente_no_dmdg():
     """validar() detecta mg referenciando modelo inexistente no DMDG."""
     from pyanatem import CasoAnatem
@@ -1659,9 +1843,13 @@ def test_validar_dmaq_mv_me_ausentes_no_dmdg():
     caso.dsim.tfim = 10.0
     caso.dmdg.adicionar_md01(no=10, ld=20.0, h=5.0, mva=100.0)
     caso.adicionar_maquina(
-        barra=100, grupo=1, mg=10,
-        mv=77, mv_cdu=False,  # mv=77 não no DMDG
-        me=88, me_cdu=False,  # me=88 não no DMDG
+        barra=100,
+        grupo=1,
+        mg=10,
+        mv=77,
+        mv_cdu=False,  # mv=77 não no DMDG
+        me=88,
+        me_cdu=False,  # me=88 não no DMDG
     )
 
     erros = caso.validar()
@@ -1702,6 +1890,7 @@ def test_validar_dmaq_multiplas_maquinas_erros_individuais():
 # v0.7.2 / v0.7.3 — Caminho correto do relatório em executar_contingencias
 # ===========================================================================
 
+
 def test_executar_contingencias_usa_darq_rela(tmp_path):
     """executar_contingencias usa caso.darq.rela quando definido."""
     import subprocess
@@ -1723,8 +1912,7 @@ def test_executar_contingencias_usa_darq_rela(tmp_path):
     # Cria o arquivo de relatório no caminho esperado (mesmo dir, nome do darq.rela)
     rela_esperado = tmp_path / "resultado_especial.rela"
     rela_esperado.write_text(
-        "ANATEM - Relatorio\nEXECUCAO CONCLUIDA COM SUCESSO.\n",
-        encoding="latin-1"
+        "ANATEM - Relatorio\nEXECUCAO CONCLUIDA COM SUCESSO.\n", encoding="latin-1"
     )
 
     proc_mock = MagicMock(spec=subprocess.CompletedProcess)
@@ -1758,8 +1946,7 @@ def test_executar_contingencias_fallback_sem_darq_rela(tmp_path):
     # Cria o arquivo de relatório como fallback: mesmo nome do .stb, extensão .rela
     rela_fallback = tmp_path / "caso.rela"
     rela_fallback.write_text(
-        "ANATEM - Relatorio\nEXECUCAO CONCLUIDA COM SUCESSO.\n",
-        encoding="latin-1"
+        "ANATEM - Relatorio\nEXECUCAO CONCLUIDA COM SUCESSO.\n", encoding="latin-1"
     )
 
     proc_mock = MagicMock(spec=subprocess.CompletedProcess)
@@ -1825,6 +2012,7 @@ def _roundtrip_dcdu(dcdu):
 # v0.8.1 – Operadores com múltiplas entradas (3 ou mais)
 # ---------------------------------------------------------------------------
 
+
 def test_cdu_soma_tres_entradas_roundtrip():
     """SOMA com 3 entradas (vent + 2 extras): serialização, parsing e roundtrip."""
     dcdu = BlocoDCDU()
@@ -1840,9 +2028,9 @@ def test_cdu_soma_tres_entradas_roundtrip():
     b2 = _roundtrip_dcdu(dcdu)._controladores[0]._blocos[0]
     assert b2.tipo == "SOMA"
     assert b2.vent == "A"
-    assert len(b2.linhas_extras) == 2          # 2 entradas extras preservadas
-    assert "-C" in b2.linhas_extras[1]         # polaridade preservada
-    assert b == b2                             # equivalência estrutural completa
+    assert len(b2.linhas_extras) == 2  # 2 entradas extras preservadas
+    assert "-C" in b2.linhas_extras[1]  # polaridade preservada
+    assert b == b2  # equivalência estrutural completa
 
 
 def test_cdu_soma_quatro_entradas_roundtrip():
@@ -1892,6 +2080,7 @@ def test_cdu_divsao_tres_entradas_roundtrip():
 # v0.8.2 – INTRES com as três entradas simultâneas (Sinal, RESET, VINIC)
 # ---------------------------------------------------------------------------
 
+
 def test_cdu_intres_tres_entradas_roundtrip():
     """INTRES com Sinal, RESET e VINIC presentes ao mesmo tempo."""
     dcdu = BlocoDCDU()
@@ -1907,7 +2096,7 @@ def test_cdu_intres_tres_entradas_roundtrip():
     b2 = _roundtrip_dcdu(dcdu)._controladores[0]._blocos[0]
     assert b2.tipo == "INTRES"
     assert b2.vent == "Sinal"
-    assert len(b2.linhas_extras) == 2               # RESET + VINIC
+    assert len(b2.linhas_extras) == 2  # RESET + VINIC
     assert "RESET" in b2.linhas_extras[0]
     assert "VINIC" in b2.linhas_extras[1]
     assert b == b2
@@ -1916,6 +2105,7 @@ def test_cdu_intres_tres_entradas_roundtrip():
 # ---------------------------------------------------------------------------
 # v0.8.3 – Roundtrip de controlador completo via parsear_dcdu()
 # ---------------------------------------------------------------------------
+
 
 def test_cdu_controlador_completo_roundtrip():
     """Controlador AVR completo com vários blocos interconectados sobrevive a
@@ -1926,13 +2116,23 @@ def test_cdu_controlador_completo_roundtrip():
     ctrl.defpar("#Ta", 0.05)
     soma = ctrl.bloco(10, "SOMA", vent="Vref", vsai="Err")
     soma.adicionar_entrada("Vt", polaridade="-")
-    ctrl.bloco(20, "LEDLAG", vent="Err", vsai="Vla",
-               p1=200.0, p2=0.0, p3=1.0, p4=0.05, vmin="Emin", vmax="Emax")
+    ctrl.bloco(
+        20,
+        "LEDLAG",
+        vent="Err",
+        vsai="Vla",
+        p1=200.0,
+        p2=0.0,
+        p3=1.0,
+        p4=0.05,
+        vmin="Emin",
+        vmax="Emax",
+    )
     ctrl.bloco(30, "GANHO", vent="Vla", vsai="Vfd", p1=1.0)
     mult = ctrl.bloco(40, "MULTPL", vent="Vfd", vsai="Vfdc")
     mult.adicionar_entrada("Kfd")
     ctrl.defval("Emin", -5.0)
-    ctrl.defval("Emax",  5.0)
+    ctrl.defval("Emax", 5.0)
 
     dcdu2 = _roundtrip_dcdu(dcdu)
     assert len(dcdu2._controladores) == 1
@@ -1947,9 +2147,9 @@ def test_cdu_controlador_completo_roundtrip():
 
     # cadeia de interconexão preservada
     b = ctrl2._blocos
-    assert b[0].vsai == b[1].vent          # SOMA  -> LEDLAG
-    assert b[1].vsai == b[2].vent          # LEDLAG -> GANHO
-    assert b[2].vsai == b[3].vent          # GANHO  -> MULTPL
+    assert b[0].vsai == b[1].vent  # SOMA  -> LEDLAG
+    assert b[1].vsai == b[2].vent  # LEDLAG -> GANHO
+    assert b[2].vsai == b[3].vent  # GANHO  -> MULTPL
 
     # parâmetros do LEDLAG e limites preservados
     assert b[1].p1 == 200.0 and b[1].p4 == 0.05
@@ -1963,6 +2163,7 @@ def test_cdu_controlador_completo_roundtrip():
 # v0.8.4 – init_flag, DEFVDF e variáveis cruzadas
 # ---------------------------------------------------------------------------
 
+
 def test_cdu_init_flag_sobrevive_roundtrip():
     """Bloco com init_flag=True mantém a flag após serializar -> parsear_dcdu."""
     dcdu = BlocoDCDU()
@@ -1971,8 +2172,8 @@ def test_cdu_init_flag_sobrevive_roundtrip():
     ctrl.bloco(20, "GANHO", vent="B", vsai="C", p1=1.0, init_flag=False)
 
     ctrl2 = _roundtrip_dcdu(dcdu)._controladores[0]
-    assert ctrl2._blocos[0].init_flag is True     # flag preservada
-    assert ctrl2._blocos[1].init_flag is False    # ausência de flag preservada
+    assert ctrl2._blocos[0].init_flag is True  # flag preservada
+    assert ctrl2._blocos[1].init_flag is False  # ausência de flag preservada
     assert ctrl == ctrl2
 
 
@@ -1982,7 +2183,7 @@ def test_cdu_defvdf_variavel_de_estado_roundtrip():
     dcdu = BlocoDCDU()
     ctrl = dcdu.novo_controlador(ncdu=2, nome="ESTADO")
     ctrl.bloco(10, "ORD1", vent="In", vsai="Xs", p1=1.0, p2=0.5)
-    ctrl.defvdf("Xs", 0.0)                         # default da variável de estado Xs
+    ctrl.defvdf("Xs", 0.0)  # default da variável de estado Xs
 
     texto = dcdu.serializar()
     assert "DEFVDF" in texto and "Xs" in texto
@@ -2002,13 +2203,12 @@ def test_cdu_variaveis_cruzadas_roundtrip():
     dcdu = BlocoDCDU()
     ctrl = dcdu.novo_controlador(ncdu=3, nome="CRUZADO")
     ctrl.bloco(10, "GANHO", vent="Vfb", vsai="Ymid", p1=2.0)
-    ctrl.bloco(20, "LEDLAG", vent="Ymid", vsai="Vfb",
-               p1=1.0, p2=0.0, p3=1.0, p4=0.1)
+    ctrl.bloco(20, "LEDLAG", vent="Ymid", vsai="Vfb", p1=1.0, p2=0.0, p3=1.0, p4=0.1)
 
     ctrl2 = _roundtrip_dcdu(dcdu)._controladores[0]
     b = ctrl2._blocos
-    assert b[0].vsai == b[1].vent      # bloco 10 alimenta bloco 20
-    assert b[1].vsai == b[0].vent      # bloco 20 realimenta bloco 10
+    assert b[0].vsai == b[1].vent  # bloco 10 alimenta bloco 20
+    assert b[1].vsai == b[0].vent  # bloco 20 realimenta bloco 10
     assert ctrl == ctrl2
 
 
@@ -2025,23 +2225,33 @@ import pytest
 def test_cdu_nome_variavel_invalido_em_bloco_levanta():
     ctrl = ControladorCDU(ncdu=1, nome="V")
     with pytest.raises(ValueError):
-        ctrl.bloco(10, "GANHO", vent="1A", vsai="B", p1=1.0)   # vent começa com dígito
+        ctrl.bloco(10, "GANHO", vent="1A", vsai="B", p1=1.0)  # vent começa com dígito
     with pytest.raises(ValueError):
-        ctrl.bloco(10, "GANHO", vent="A", vsai="_B", p1=1.0)   # vsai começa com '_'
+        ctrl.bloco(10, "GANHO", vent="A", vsai="_B", p1=1.0)  # vsai começa com '_'
 
 
 def test_cdu_nome_variavel_invalido_em_limites_levanta():
     ctrl = ControladorCDU(ncdu=1, nome="V")
     with pytest.raises(ValueError):
-        ctrl.bloco(10, "LEDLAG", vent="A", vsai="B",
-                   p1=1.0, p2=0.0, p3=1.0, p4=0.1, vmin="9min", vmax="Lmx")
+        ctrl.bloco(
+            10,
+            "LEDLAG",
+            vent="A",
+            vsai="B",
+            p1=1.0,
+            p2=0.0,
+            p3=1.0,
+            p4=0.1,
+            vmin="9min",
+            vmax="Lmx",
+        )
 
 
 def test_cdu_nome_variavel_invalido_em_entrada_levanta():
     ctrl = ControladorCDU(ncdu=1, nome="V")
     b = ctrl.bloco(10, "SOMA", vent="A", vsai="S")
     with pytest.raises(ValueError):
-        b.adicionar_entrada("2B")                              # entrada começa com dígito
+        b.adicionar_entrada("2B")  # entrada começa com dígito
 
 
 def test_cdu_nome_variavel_invalido_em_defval_defvdf_levanta():
@@ -2049,24 +2259,34 @@ def test_cdu_nome_variavel_invalido_em_defval_defvdf_levanta():
     with pytest.raises(ValueError):
         ctrl.defval("0x", 1.0)
     with pytest.raises(ValueError):
-        ctrl.defvdf("#x", 0.0)                                 # variável não pode começar com '#'
+        ctrl.defvdf("#x", 0.0)  # variável não pode começar com '#'
 
 
 def test_cdu_nome_parametro_invalido_levanta():
     ctrl = ControladorCDU(ncdu=1, nome="V")
     with pytest.raises(ValueError):
-        ctrl.defpar("Ka", 200.0)        # falta o '#'
+        ctrl.defpar("Ka", 200.0)  # falta o '#'
     with pytest.raises(ValueError):
-        ctrl.defpar("#1", 200.0)        # '#' seguido de dígito
+        ctrl.defpar("#1", 200.0)  # '#' seguido de dígito
     with pytest.raises(ValueError):
-        ctrl.defpar("", 200.0)          # vazio
+        ctrl.defpar("", 200.0)  # vazio
 
 
 def test_cdu_nomes_validos_nao_levantam():
     ctrl = ControladorCDU(ncdu=1, nome="V")
     ctrl.defpar("#Ka", 200.0)
-    b = ctrl.bloco(10, "LEDLAG", vent="Vref", vsai="Err",
-                   p1=1.0, p2=0.0, p3=1.0, p4=0.1, vmin="Emin", vmax="Emax")
+    b = ctrl.bloco(
+        10,
+        "LEDLAG",
+        vent="Vref",
+        vsai="Err",
+        p1=1.0,
+        p2=0.0,
+        p3=1.0,
+        p4=0.1,
+        vmin="Emin",
+        vmax="Emax",
+    )
     b.adicionar_entrada("Vt", polaridade="-")
     ctrl.defval("Emin", -5.0)
     ctrl.defvdf("Xs", 0.0)
@@ -2077,9 +2297,11 @@ def test_cdu_nomes_validos_nao_levantam():
 def test_cdu_parser_permanece_leniente():
     """O parser não deve aplicar a validação de nomes (arquivos existentes)."""
     from pyanatem.cdu import BlocoDCDU, parsear_dcdu
+
     ctrl = ControladorCDU(ncdu=1, nome="V")
     ctrl.bloco(10, "GANHO", vent="A", vsai="B", p1=1.0)
-    dcdu = BlocoDCDU(); dcdu.adicionar(ctrl)
+    dcdu = BlocoDCDU()
+    dcdu.adicionar(ctrl)
     # parsear de volta não levanta, mesmo que o texto tivesse nomes atípicos
     dcdu2, _ = parsear_dcdu(dcdu.serializar().splitlines(), 0)
     assert len(dcdu2._controladores) == 1
@@ -2088,6 +2310,7 @@ def test_cdu_parser_permanece_leniente():
 # ---------------------------------------------------------------------------
 # v0.12.1 – Parsing posicional para IMPORT/EXPORT (vent/vsai vazio)
 # ---------------------------------------------------------------------------
+
 
 def test_cdu_import_vent_vazio_roundtrip():
     """IMPORT com vent=vazio, vsai preenchido faz roundtrip (v0.12.1)."""
@@ -2100,9 +2323,9 @@ def test_cdu_import_vent_vazio_roundtrip():
     b = ctrl2._blocos[0]
     assert b.tipo == "IMPORT"
     assert b.stip == "VOLT"
-    assert b.vent == ""        # v0.12.1: vent preservado como vazio
-    assert b.vsai == "Vt"       # vsai correto
-    assert ctrl == ctrl2        # equivalência estrutural
+    assert b.vent == ""  # v0.12.1: vent preservado como vazio
+    assert b.vsai == "Vt"  # vsai correto
+    assert ctrl == ctrl2  # equivalência estrutural
 
 
 def test_cdu_export_vsai_vazio_roundtrip():
@@ -2116,17 +2339,17 @@ def test_cdu_export_vsai_vazio_roundtrip():
     b = ctrl2._blocos[0]
     assert b.tipo == "EXPORT"
     assert b.stip == "EFD"
-    assert b.vent == "Efd"      # vent correto
-    assert b.vsai == ""         # v0.12.1: vsai preservado como vazio
-    assert ctrl == ctrl2        # equivalência estrutural
+    assert b.vent == "Efd"  # vent correto
+    assert b.vsai == ""  # v0.12.1: vsai preservado como vazio
+    assert ctrl == ctrl2  # equivalência estrutural
 
 
 def test_cdu_import_export_combinados_roundtrip():
     """IMPORT e EXPORT no mesmo controlador, preservando vent/vsai vazios."""
     dcdu = BlocoDCDU()
     ctrl = dcdu.novo_controlador(ncdu=1, nome="IMPORT_EXPORT")
-    ctrl.bloco(10, "IMPORT", stip="VOLT", vsai="Vt")   # vent vazio
-    ctrl.bloco(20, "EXPORT", stip="EFD", vent="Efd")   # vsai vazio
+    ctrl.bloco(10, "IMPORT", stip="VOLT", vsai="Vt")  # vent vazio
+    ctrl.bloco(20, "EXPORT", stip="EFD", vent="Efd")  # vsai vazio
     ctrl.bloco(30, "GANHO", vent="Vt", vsai="Vref_calc", p1=1.0)
 
     ctrl2 = _roundtrip_dcdu(dcdu)._controladores[0]
@@ -2140,13 +2363,13 @@ def test_cdu_import_export_combinados_roundtrip():
 # v0.12.2 – Desambiguação parâmetros vs. limites
 # ---------------------------------------------------------------------------
 
+
 def test_cdu_wshout_3params_com_limites_roundtrip():
     """WSHOUT com 3 parâmetros + vmin/vmax faz roundtrip (v0.12.2)."""
     dcdu = BlocoDCDU()
     ctrl = dcdu.novo_controlador(ncdu=1, nome="WSHOUT_TEST")
     # WSHOUT: 3 parâmetros (p1, p2, p3), depois vmin/vmax (nomes de variáveis)
-    ctrl.bloco(10, "WSHOUT", vent="X", vsai="Y", p1=1.0, p2=2.0, p3=3.0,
-               vmin="Xmin", vmax="Xmax")
+    ctrl.bloco(10, "WSHOUT", vent="X", vsai="Y", p1=1.0, p2=2.0, p3=3.0, vmin="Xmin", vmax="Xmax")
 
     ctrl2 = _roundtrip_dcdu(dcdu)._controladores[0]
     b = ctrl2._blocos[0]
@@ -2163,8 +2386,9 @@ def test_cdu_intres_com_limites_roundtrip():
     ctrl = dcdu.novo_controlador(ncdu=1, nome="INTRES_TEST")
     # INTRES: 4 parâmetros por default (como blocos normais)
     # Com vmin/vmax como limites
-    ctrl.bloco(20, "INTRES", vent="A", vsai="B", p1=1.0, p2=2.0, p3=3.0, p4=4.0,
-               vmin="Amin", vmax="Amax")
+    ctrl.bloco(
+        20, "INTRES", vent="A", vsai="B", p1=1.0, p2=2.0, p3=3.0, p4=4.0, vmin="Amin", vmax="Amax"
+    )
 
     ctrl2 = _roundtrip_dcdu(dcdu)._controladores[0]
     b = ctrl2._blocos[0]
@@ -2179,8 +2403,18 @@ def test_cdu_bloco_normal_4params_sem_mudanca_roundtrip():
     dcdu = BlocoDCDU()
     ctrl = dcdu.novo_controlador(ncdu=1, nome="NORMAL_TEST")
     # LEDLAG: 4 parâmetros fixos
-    ctrl.bloco(30, "LEDLAG", vent="In", vsai="Out", p1=1.0, p2=2.0, p3=3.0, p4=4.0,
-               vmin="Emin", vmax="Emax")
+    ctrl.bloco(
+        30,
+        "LEDLAG",
+        vent="In",
+        vsai="Out",
+        p1=1.0,
+        p2=2.0,
+        p3=3.0,
+        p4=4.0,
+        vmin="Emin",
+        vmax="Emax",
+    )
 
     ctrl2 = _roundtrip_dcdu(dcdu)._controladores[0]
     b = ctrl2._blocos[0]
@@ -2194,6 +2428,7 @@ def test_cdu_bloco_normal_4params_sem_mudanca_roundtrip():
 # v0.12.3 – Colisão nome variável com stip
 # ---------------------------------------------------------------------------
 
+
 def test_cdu_variavel_volt_nao_confundida_com_stip_roundtrip():
     """Variável chamada 'Volt' não é confundida com stip=VOLT (v0.12.3)."""
     dcdu = BlocoDCDU()
@@ -2205,8 +2440,8 @@ def test_cdu_variavel_volt_nao_confundida_com_stip_roundtrip():
     ctrl2 = _roundtrip_dcdu(dcdu)._controladores[0]
     b = ctrl2._blocos[0]
     assert b.tipo == "LEDLAG"
-    assert b.vent == "Volt"     # v0.12.3: "Volt" é vent, não stip
-    assert b.stip == ""         # stip vazio
+    assert b.vent == "Volt"  # v0.12.3: "Volt" é vent, não stip
+    assert b.stip == ""  # stip vazio
     assert b.vsai == "Out"
     assert ctrl == ctrl2
 
@@ -2221,8 +2456,8 @@ def test_cdu_variavel_efd_nao_confundida_com_stip_roundtrip():
     ctrl2 = _roundtrip_dcdu(dcdu)._controladores[0]
     b = ctrl2._blocos[0]
     assert b.tipo == "GANHO"
-    assert b.vent == "Efd"      # v0.12.3: "Efd" é vent, não stip
-    assert b.stip == ""         # stip vazio
+    assert b.vent == "Efd"  # v0.12.3: "Efd" é vent, não stip
+    assert b.stip == ""  # stip vazio
     assert b.vsai == "Efd_ref"
     assert ctrl == ctrl2
 
@@ -2237,8 +2472,8 @@ def test_cdu_bloco_import_com_stip_volt_roundtrip():
     ctrl2 = _roundtrip_dcdu(dcdu)._controladores[0]
     b = ctrl2._blocos[0]
     assert b.tipo == "IMPORT"
-    assert b.stip == "VOLT"     # stip corretamente detectado
-    assert b.vent == ""         # vent vazio (IMPORT)
+    assert b.stip == "VOLT"  # stip corretamente detectado
+    assert b.vent == ""  # vent vazio (IMPORT)
     assert b.vsai == "Vterminal"
     assert ctrl == ctrl2
 
@@ -2248,6 +2483,7 @@ def test_cdu_bloco_import_com_stip_volt_roundtrip():
 # Referências: blocos_CDU_completo.md (Cap. 29) e
 # 02_controladores_def_usuario.md (subtipos PELE/QELE/PTER/... §29.3)
 # ---------------------------------------------------------------------------
+
 
 def test_cdu_export_stip_fora_do_conjunto_roundtrip():
     """EXPORT com stip fora do antigo conjunto de palavras-chave (ex: PELE).
@@ -2340,8 +2576,7 @@ def test_cdu_compar_gt_roundtrip():
     """
     dcdu = BlocoDCDU()
     ctrl = dcdu.novo_controlador(ncdu=1, nome="CDU_GT")
-    ctrl.bloco(10, "COMPAR", stip=".GT.", vent="Vent1", vsai="Vsai") \
-        .adicionar_entrada("Vent2")
+    ctrl.bloco(10, "COMPAR", stip=".GT.", vent="Vent1", vsai="Vsai").adicionar_entrada("Vent2")
 
     ctrl2 = _roundtrip_dcdu(dcdu)._controladores[0]
     b = ctrl2._blocos[0]
@@ -2357,8 +2592,7 @@ def test_cdu_logic_nand_roundtrip():
     """LOGIC subtipo .NAND. (§29.3): subtipo fora do antigo conjunto de palavras."""
     dcdu = BlocoDCDU()
     ctrl = dcdu.novo_controlador(ncdu=1, nome="CDU_NAND")
-    ctrl.bloco(10, "LOGIC", stip=".NAND.", vent="Vent1", vsai="Vsai") \
-        .adicionar_entrada("Vent2")
+    ctrl.bloco(10, "LOGIC", stip=".NAND.", vent="Vent1", vsai="Vsai").adicionar_entrada("Vent2")
 
     ctrl2 = _roundtrip_dcdu(dcdu)._controladores[0]
     b = ctrl2._blocos[0]
@@ -2373,6 +2607,7 @@ def test_cdu_logic_nand_roundtrip():
 # v0.12 – Testes de Integração (todas as 3 metas juntas)
 # ---------------------------------------------------------------------------
 
+
 def test_cdu_integracao_v0_12_todas_metas():
     """Integração v0.12: IMPORT/EXPORT + <4 params + colisão nome (v0.12.1+2+3)."""
     dcdu = BlocoDCDU()
@@ -2382,8 +2617,17 @@ def test_cdu_integracao_v0_12_todas_metas():
     ctrl.bloco(10, "IMPORT", stip="VOLT", vsai="Vt")
 
     # v0.12.2: WSHOUT com 3 parâmetros + vmin/vmax
-    ctrl.bloco(20, "WSHOUT", vent="Vt", vsai="Vout_limited",
-               p1=1.0, p2=2.0, p3=3.0, vmin="Vmin", vmax="Vmax")
+    ctrl.bloco(
+        20,
+        "WSHOUT",
+        vent="Vt",
+        vsai="Vout_limited",
+        p1=1.0,
+        p2=2.0,
+        p3=3.0,
+        vmin="Vmin",
+        vmax="Vmax",
+    )
 
     # v0.12.3: Bloco com variável "Volt" (não confundida com stip)
     ctrl.bloco(30, "LEDLAG", vent="Volt", vsai="Volt_ref", p1=10.0, p2=0.1, p3=1.0, p4=0.05)
@@ -2423,6 +2667,7 @@ def test_cdu_integracao_v0_12_todas_metas():
 # ---------------------------------------------------------------------------
 # v0.14 – Robustez I/O (codificação latin-1)
 # ---------------------------------------------------------------------------
+
 
 def test_caso_exportar_com_encoding_latin1():
     """Caso exportado em latin-1 pode ser lido de volta (roundtrip I/O)."""
@@ -2609,6 +2854,7 @@ FIM
 
         # Parser lê com latin-1 (sem erro)
         from pyanatem.parser.stb import ParserSTB
+
         caso = ParserSTB.ler(arquivo)
 
         # Validar que foi parseado (título deve estar presente)

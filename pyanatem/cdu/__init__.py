@@ -23,7 +23,6 @@ import re
 from dataclasses import dataclass, field
 from typing import List, Optional, Union
 
-
 # ---------------------------------------------------------------------------
 # Validação de nomes (v0.11.3)
 #   - Nomes de variáveis CDU começam com letra.
@@ -59,21 +58,27 @@ def _validar_nome_par(nome: str, contexto: str) -> None:
 # ---------------------------------------------------------------------------
 
 # Tipos aritméticos
-TIPOS_ARITMETICOS = frozenset({
-    "SOMA", "MULTPL", "DIVSAO", "GANHO", "FRACAO",
-})
+TIPOS_ARITMETICOS = frozenset(
+    {
+        "SOMA",
+        "MULTPL",
+        "DIVSAO",
+        "GANHO",
+        "FRACAO",
+    }
+)
 
 # v0.12.2: Mapa de número de parâmetros por tipo de bloco
 # Usado para desambiguar parâmetros vs. limites (vmin/vmax)
 # Default: 4 parâmetros (se bloco não está no mapa)
 TIPOS_PARAMETROS = {
-    "WSHOUT": 3,      # WSHOUT tem apenas 3 parâmetros + vmin/vmax
-    "WSHOU2": 3,      # Variante de WSHOUT
-    "SOMA": 0,        # Entradas vêm em linhas extras
-    "MULTPL": 0,      # Entradas vêm em linhas extras
-    "DIVSAO": 0,      # Entradas vêm em linhas extras
-    "POLS": 2,        # POLS tem configuração especial
-    "RELINV": 3,      # Curva de tempo inverso: tipo + 3 parâmetros
+    "WSHOUT": 3,  # WSHOUT tem apenas 3 parâmetros + vmin/vmax
+    "WSHOU2": 3,  # Variante de WSHOUT
+    "SOMA": 0,  # Entradas vêm em linhas extras
+    "MULTPL": 0,  # Entradas vêm em linhas extras
+    "DIVSAO": 0,  # Entradas vêm em linhas extras
+    "POLS": 2,  # POLS tem configuração especial
+    "RELINV": 3,  # Curva de tempo inverso: tipo + 3 parâmetros
 }
 
 # O campo stip é determinado pelo TIPO do bloco, conforme o manual (Cap. 29) —
@@ -81,9 +86,17 @@ TIPOS_PARAMETROS = {
 # Blocos de interface (IMPORT/EXPORT/INPUT/OUTPUT/SERIET), LOGIC e COMPAR têm
 # stip obrigatório na coluna imediatamente após o tipo; nos demais tipos o
 # token após o tipo é vent/vsai (variáveis podem se chamar Volt, Efd, etc.).
-TIPOS_COM_STIP = frozenset({
-    "IMPORT", "EXPORT", "INPUT", "OUTPUT", "SERIET", "LOGIC", "COMPAR",
-})
+TIPOS_COM_STIP = frozenset(
+    {
+        "IMPORT",
+        "EXPORT",
+        "INPUT",
+        "OUTPUT",
+        "SERIET",
+        "LOGIC",
+        "COMPAR",
+    }
+)
 
 # Blocos de interface de importação: só têm variável de saída (vent vazio)
 TIPOS_STIP_SO_VSAI = frozenset({"IMPORT", "INPUT", "SERIET"})
@@ -98,55 +111,104 @@ TIPOS_STIP_SO_VENT = frozenset({"EXPORT", "OUTPUT"})
 STIP_RELINV = frozenset({"IEC", "IEEE"})
 
 # Tipos dinâmicos e limitadores dinâmicos
-TIPOS_DINAMICOS = frozenset({
-    "ORD1", "LEDLAG", "WSHOUT", "PROINT", "LAGNL",
-    "INTRES", "LDLAG2", "PROIN2", "WSHOU2",
-    "POLS", "DERIVA", "LIMITA", "RATELM",
-    # aliases/variantes mencionados no manual
-    "PROIT2", "INTGR", "DERIV",
-})
+TIPOS_DINAMICOS = frozenset(
+    {
+        "ORD1",
+        "LEDLAG",
+        "WSHOUT",
+        "PROINT",
+        "LAGNL",
+        "INTRES",
+        "LDLAG2",
+        "PROIN2",
+        "WSHOU2",
+        "POLS",
+        "DERIVA",
+        "LIMITA",
+        "RATELM",
+        # aliases/variantes mencionados no manual
+        "PROIT2",
+        "INTGR",
+        "DERIV",
+    }
+)
 
 # Lógicos e comparadores
-TIPOS_LOGICOS = frozenset({
-    "LOGIC", "COMPAR", "MONEST",
-    "DISMIN", "DISMAX", "DLAYON", "DLAYOF",
-})
+TIPOS_LOGICOS = frozenset(
+    {
+        "LOGIC",
+        "COMPAR",
+        "MONEST",
+        "DISMIN",
+        "DISMAX",
+        "DLAYON",
+        "DLAYOF",
+    }
+)
 
 # Seletores
-TIPOS_SELETORES = frozenset({
-    "MAXSEL", "MINSEL", "SWITCH",
-})
+TIPOS_SELETORES = frozenset(
+    {
+        "MAXSEL",
+        "MINSEL",
+        "SWITCH",
+    }
+)
 
 # Atraso e não-lineares
-TIPOS_NAO_LINEARES = frozenset({
-    "ATRASO", "NLIMR", "NLIMP", "BORDAI", "LOOKUP",
-})
+TIPOS_NAO_LINEARES = frozenset(
+    {
+        "ATRASO",
+        "NLIMR",
+        "NLIMP",
+        "BORDAI",
+        "LOOKUP",
+    }
+)
 
 # Curvas de tempo inverso
-TIPOS_RELINV = frozenset({
-    "RELINV",
-})
+TIPOS_RELINV = frozenset(
+    {
+        "RELINV",
+    }
+)
 
 # Interface com a rede
-TIPOS_INTERFACE = frozenset({
-    "IMPORT", "EXPORT", "INPUT", "OUTPUT", "SERIET",
-})
+TIPOS_INTERFACE = frozenset(
+    {
+        "IMPORT",
+        "EXPORT",
+        "INPUT",
+        "OUTPUT",
+        "SERIET",
+    }
+)
 
 # Terminadores e constantes
-TIPOS_TERMINADORES = frozenset({
-    "CONST", "PASO", "SAIDA",
-})
+TIPOS_TERMINADORES = frozenset(
+    {
+        "CONST",
+        "PASO",
+        "SAIDA",
+    }
+)
 
 TODOS_TIPOS = (
-    TIPOS_ARITMETICOS | TIPOS_DINAMICOS | TIPOS_LOGICOS |
-    TIPOS_SELETORES | TIPOS_NAO_LINEARES | TIPOS_RELINV |
-    TIPOS_INTERFACE | TIPOS_TERMINADORES
+    TIPOS_ARITMETICOS
+    | TIPOS_DINAMICOS
+    | TIPOS_LOGICOS
+    | TIPOS_SELETORES
+    | TIPOS_NAO_LINEARES
+    | TIPOS_RELINV
+    | TIPOS_INTERFACE
+    | TIPOS_TERMINADORES
 )
 
 
 # ---------------------------------------------------------------------------
 # BlocoCDU – linha (ou grupo de linhas) de bloco
 # ---------------------------------------------------------------------------
+
 
 @dataclass
 class BlocoCDU:
@@ -245,6 +307,7 @@ class BlocoCDU:
 # ParametroCDU – DEFPAR
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class ParametroCDU:
     """Define um parâmetro CDU via DEFPAR.
@@ -254,6 +317,7 @@ class ParametroCDU:
         valor:      valor numérico ou string do parâmetro.
         comentario: descrição opcional (aparece na linha seguinte).
     """
+
     nome: str
     valor: Union[float, str]
     comentario: str = ""
@@ -270,6 +334,7 @@ class ParametroCDU:
 # ValorInicialCDU – DEFVAL
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class ValorInicialCDU:
     """Define valor inicial de uma variável via DEFVAL.
@@ -281,6 +346,7 @@ class ValorInicialCDU:
         silent:    True → campo 'o' preenchido (excluir do P2D2 NULL).
         d2:        valor default quando a localização remota não existe.
     """
+
     vdef: str
     d1: Union[float, str]
     stip: str = ""
@@ -307,9 +373,11 @@ class ValorInicialCDU:
 # ValorDefaultCDU – DEFVDF
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class ValorDefaultCDU:
     """Define valor default de uma variável via DEFVDF."""
+
     vdef: str
     valor: Union[float, str]
 
@@ -322,6 +390,7 @@ class ValorDefaultCDU:
 # ControladorCDU – um controlador completo (ncdu + nome + conteúdo)
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class ControladorCDU:
     """Container de um controlador CDU.
@@ -332,6 +401,7 @@ class ControladorCDU:
         ncdu: número de identificação do CDU.
         nome: nome alfanumérico (ex: 'AVR_USINA_01').
     """
+
     ncdu: int
     nome: str = ""
     _parametros: List[ParametroCDU] = field(default_factory=list)
@@ -343,42 +413,64 @@ class ControladorCDU:
     # API fluente
     # ------------------------------------------------------------------
 
-    def defpar(self, nome: str, valor: Union[float, str],
-               comentario: str = "") -> "ControladorCDU":
+    def defpar(self, nome: str, valor: Union[float, str], comentario: str = "") -> "ControladorCDU":
         """Adiciona parâmetro DEFPAR."""
         _validar_nome_par(nome, "defpar(nome)")
         self._parametros.append(ParametroCDU(nome=nome, valor=valor, comentario=comentario))
         return self
 
-    def bloco(self, nb: int, tipo: str, vent: str = "", vsai: str = "",
-              p1: Optional[Union[str, float]] = None, p2: Optional[Union[str, float]] = None,
-              p3: Optional[Union[str, float]] = None, p4: Optional[Union[str, float]] = None,
-              vmin: str = "", vmax: str = "",
-              stip: str = "", init_flag: bool = False,
-              silent_flag: bool = False,
-              polaridade: str = "") -> BlocoCDU:
+    def bloco(
+        self,
+        nb: int,
+        tipo: str,
+        vent: str = "",
+        vsai: str = "",
+        p1: Optional[Union[str, float]] = None,
+        p2: Optional[Union[str, float]] = None,
+        p3: Optional[Union[str, float]] = None,
+        p4: Optional[Union[str, float]] = None,
+        vmin: str = "",
+        vmax: str = "",
+        stip: str = "",
+        init_flag: bool = False,
+        silent_flag: bool = False,
+        polaridade: str = "",
+    ) -> BlocoCDU:
         """Adiciona e retorna um BlocoCDU (permite encadeamento de entradas extras)."""
         _validar_nome_var(vent, "bloco(vent)")
         _validar_nome_var(vsai, "bloco(vsai)")
         _validar_nome_var(vmin, "bloco(vmin)")
         _validar_nome_var(vmax, "bloco(vmax)")
         b = BlocoCDU(
-            nb=nb, tipo=tipo.upper(), vent=vent, vsai=vsai,
-            p1=p1, p2=p2, p3=p3, p4=p4,
-            vmin=vmin, vmax=vmax,
-            stip=stip, init_flag=init_flag,
-            silent_flag=silent_flag, polaridade=polaridade,
+            nb=nb,
+            tipo=tipo.upper(),
+            vent=vent,
+            vsai=vsai,
+            p1=p1,
+            p2=p2,
+            p3=p3,
+            p4=p4,
+            vmin=vmin,
+            vmax=vmax,
+            stip=stip,
+            init_flag=init_flag,
+            silent_flag=silent_flag,
+            polaridade=polaridade,
         )
         self._blocos.append(b)
         return b
 
-    def defval(self, vdef: str, d1: Union[float, str],
-               stip: str = "", silent: bool = False,
-               d2: Optional[Union[float, str]] = None) -> "ControladorCDU":
+    def defval(
+        self,
+        vdef: str,
+        d1: Union[float, str],
+        stip: str = "",
+        silent: bool = False,
+        d2: Optional[Union[float, str]] = None,
+    ) -> "ControladorCDU":
         """Adiciona DEFVAL."""
         _validar_nome_var(vdef, "defval(vdef)")
-        self._defvals.append(ValorInicialCDU(vdef=vdef, d1=d1, stip=stip,
-                                              silent=silent, d2=d2))
+        self._defvals.append(ValorInicialCDU(vdef=vdef, d1=d1, stip=stip, silent=silent, d2=d2))
         return self
 
     def defvdf(self, vdef: str, valor: Union[float, str]) -> "ControladorCDU":
@@ -391,7 +483,9 @@ class ControladorCDU:
         linhas: List[str] = []
         # identificação
         linhas.append(f"{self.ncdu} {self.nome}".strip())
-        linhas.append("(nb)i(tipo)o(stip)s(vent)    (vsai)   ( p1 )( p2 )( p3 )( p4 ) (vmin) (vmax)")
+        linhas.append(
+            "(nb)i(tipo)o(stip)s(vent)    (vsai)   ( p1 )( p2 )( p3 )( p4 ) (vmin) (vmax)"
+        )
         for p in self._parametros:
             linhas.append(p.serializar())
         for b in self._blocos:
@@ -404,13 +498,16 @@ class ControladorCDU:
         return "\n".join(linhas)
 
     def __repr__(self) -> str:
-        return (f"ControladorCDU(ncdu={self.ncdu}, nome={self.nome!r}, "
-                f"blocos={len(self._blocos)}, defvals={len(self._defvals)})")
+        return (
+            f"ControladorCDU(ncdu={self.ncdu}, nome={self.nome!r}, "
+            f"blocos={len(self._blocos)}, defvals={len(self._defvals)})"
+        )
 
 
 # ---------------------------------------------------------------------------
 # BlocoDCDU – bloco DCDU completo (múltiplos controladores)
 # ---------------------------------------------------------------------------
+
 
 @dataclass
 class BlocoDCDU:
@@ -473,6 +570,7 @@ class BlocoDCDU:
 # Parser básico de blocos CDU (leitura de DCDU ... 999999)
 # ---------------------------------------------------------------------------
 
+
 def _safe_float_cdu(s: str) -> float:
     try:
         return float(s)
@@ -530,8 +628,7 @@ def parsear_dcdu(linhas: List[str], inicio: int) -> tuple:
     return dcdu, i
 
 
-def _parsear_controlador(linhas: List[str], inicio: int,
-                          ctrl: ControladorCDU) -> int:
+def _parsear_controlador(linhas: List[str], inicio: int, ctrl: ControladorCDU) -> int:
     i = inicio
     while i < len(linhas):
         linha = linhas[i].rstrip()
@@ -567,8 +664,18 @@ def _parsear_controlador(linhas: List[str], inicio: int,
                 candidate = partes[idx].upper()
                 # se não é vdef (vdef segue, é nome de variável)
                 # heurística: stip vai de VAR, CDU, VOLT, etc.
-                if candidate in ("VAR", "CDU", "VOLT", "STGER", "STBAR", "EFD",
-                                  "VTR", "WMAQ", "PMEC", "PGER"):
+                if candidate in (
+                    "VAR",
+                    "CDU",
+                    "VOLT",
+                    "STGER",
+                    "STBAR",
+                    "EFD",
+                    "VTR",
+                    "WMAQ",
+                    "PMEC",
+                    "PGER",
+                ):
                     stip = partes[idx]
                     idx += 1
             vdef = partes[idx] if idx < len(partes) else ""
@@ -689,11 +796,20 @@ def _parsear_controlador(linhas: List[str], inicio: int,
         vmax = partes[idx] if idx < len(partes) else ""
 
         b = BlocoCDU(
-            nb=nb, tipo=tipo, vent=vent, vsai=vsai,
-            p1=p1, p2=p2, p3=p3, p4=p4,
-            vmin=vmin, vmax=vmax,
-            stip=stip, init_flag=init_flag,
-            silent_flag=silent_flag, polaridade=polaridade,
+            nb=nb,
+            tipo=tipo,
+            vent=vent,
+            vsai=vsai,
+            p1=p1,
+            p2=p2,
+            p3=p3,
+            p4=p4,
+            vmin=vmin,
+            vmax=vmax,
+            stip=stip,
+            init_flag=init_flag,
+            silent_flag=silent_flag,
+            polaridade=polaridade,
         )
         ctrl._blocos.append(b)
         i += 1

@@ -32,6 +32,7 @@ if TYPE_CHECKING:
 # Leitura de .plt
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class ResultadoPLT:
     """Dados de plotagem lidos de um arquivo .plt em formato texto.
@@ -41,6 +42,7 @@ class ResultadoPLT:
         tempo:     lista de instantes de tempo [s].
         dados:     dict variável → lista de valores (mesmo tamanho de `tempo`).
     """
+
     variaveis: List[str] = field(default_factory=list)
     tempo: List[float] = field(default_factory=list)
     dados: Dict[str, List[float]] = field(default_factory=dict)
@@ -158,6 +160,7 @@ class LeitorPLT:
 # Leitura de .rela / .log
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class ResultadoExecucao:
     """Resumo extraído de um arquivo .rela ou .log do ANATEM.
@@ -168,6 +171,7 @@ class ResultadoExecucao:
         avisos:        linhas contendo indicação de aviso.
         linhas_brutas: todo o conteúdo do arquivo, linha a linha.
     """
+
     convergiu: Optional[bool] = None
     erros: List[str] = field(default_factory=list)
     avisos: List[str] = field(default_factory=list)
@@ -221,5 +225,6 @@ class LeitorRelatorio:
         else:
             convergiu = None
 
-        return ResultadoExecucao(convergiu=convergiu, erros=erros, avisos=avisos,
-                                  linhas_brutas=linhas)
+        return ResultadoExecucao(
+            convergiu=convergiu, erros=erros, avisos=avisos, linhas_brutas=linhas
+        )

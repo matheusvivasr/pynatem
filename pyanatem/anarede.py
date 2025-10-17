@@ -34,12 +34,14 @@ if TYPE_CHECKING:
 # Estruturas de dados
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class BarraSAV:
     """Dados mínimos de uma barra CA do arquivo .sav."""
+
     numero: int
     nome: str = ""
-    tensao_base: float = 0.0   # kV
+    tensao_base: float = 0.0  # kV
 
     def __hash__(self) -> int:
         return hash(self.numero)
@@ -51,6 +53,7 @@ class BarraSAV:
 @dataclass
 class CircuitoSAV:
     """Dados mínimos de um circuito CA do arquivo .sav."""
+
     de: int
     para: int
     circuito: int = 1
@@ -74,6 +77,7 @@ class ResultadoSAV:
         circuitos: lista de CircuitoSAV.
         erros:     linhas que não puderam ser interpretadas.
     """
+
     barras: Dict[int, BarraSAV] = field(default_factory=dict)
     circuitos: List[CircuitoSAV] = field(default_factory=list)
     erros: List[str] = field(default_factory=list)
@@ -89,6 +93,7 @@ class ResultadoSAV:
 # ---------------------------------------------------------------------------
 # LeitorSAV
 # ---------------------------------------------------------------------------
+
 
 class LeitorSAV:
     """Leitor básico de arquivos .sav do ANAREDE.
@@ -107,10 +112,7 @@ class LeitorSAV:
     """
 
     # Padrão para linha de barra: começa com inteiro, segue nome e campos
-    _RE_DBAR = re.compile(
-        r"^\s*(\d+)\s+([\w\-\.]+)?\s*(\d+)?\s*(\d+)?\s*([\d\.]+)?",
-        re.ASCII
-    )
+    _RE_DBAR = re.compile(r"^\s*(\d+)\s+([\w\-\.]+)?\s*(\d+)?\s*(\d+)?\s*([\d\.]+)?", re.ASCII)
     # Padrão simples para circuito: três inteiros no início
     _RE_DLIN = re.compile(r"^\s*(\d+)\s+(\d+)\s+(\d+)", re.ASCII)
 
@@ -160,8 +162,18 @@ class LeitorSAV:
             if kw == "DLIN":
                 modo = "DLIN"
                 continue
-            if kw in ("DGBT", "DGLT", "DCTE", "DOPC", "TITU", "DGER",
-                       "DCAR", "DGBT", "DPMU", "DCSC"):
+            if kw in (
+                "DGBT",
+                "DGLT",
+                "DCTE",
+                "DOPC",
+                "TITU",
+                "DGER",
+                "DCAR",
+                "DGBT",
+                "DPMU",
+                "DCSC",
+            ):
                 modo = None
                 continue
 
@@ -224,6 +236,7 @@ class LeitorSAV:
 # ---------------------------------------------------------------------------
 # Validação cruzada STB ↔ SAV
 # ---------------------------------------------------------------------------
+
 
 def validar_contra_sav(caso: "CasoAnatem", path_sav: Union[str, Path]) -> List[str]:
     """Cruza barras/circuitos referenciados no STB com os presentes no SAV.
