@@ -49,6 +49,31 @@ O pyanatem representa um arquivo `.stb` como um grafo de blocos serializáveis (
 - [Uso rápido](#uso-rápido)
 - [Arquitetura](#arquitetura)
 - [Confiabilidade dos códigos](#confiabilidade-dos-códigos)
+- [📖 Documentação Teórica](#documentação-teórica)
+
+---
+
+## 📖 Documentação Teórica
+
+**Para entender os conceitos fundamentais**, consulte:
+
+- **[TEORIA.md](TEORIA.md)** — Guia teórico completo:
+  - Simulação de estabilidade transitória
+  - Estrutura de arquivo `.stb`
+  - Eventos e perturbações
+  - Modelos dinâmicos de máquinas (MD01, MD02, MD03)
+  - Controladores Definidos pelo Usuário (CDU)
+  - FACTS e HVDC
+  - Pipeline de simulação
+  - Validação e pós-processamento
+  - Exemplo prático completo
+
+**Para aprender na prática**, veja:
+
+- **[examples/](examples/)** — 7 scripts runnable de básico a avançado
+- **[docs/tutorial.md](docs/tutorial.md)** — Tutorial estruturado em 6 partes
+
+---
 
 ---
 
