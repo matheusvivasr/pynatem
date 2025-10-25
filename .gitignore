@@ -20,3 +20,4 @@ markdown_*/
 !/README.md
 **/.claude/**
 *.zip
+/temp*
