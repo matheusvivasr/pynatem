@@ -1,20 +1,29 @@
-# pyanatem (v0.14.2)
+# pyanatem
+
+[![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
+[![Tests](https://img.shields.io/badge/tests-206%20passing-green.svg)](tests/)
+[![Coverage](https://img.shields.io/badge/coverage-87%25-green.svg)](tests/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![Type hints](https://img.shields.io/badge/type%20hints-full-brightgreen.svg)](pyanatem/)
+
+**v1.0.0 — Production-Ready** ⭐
 
 Biblioteca Python para **geração, manipulação, parsing e execução automatizada** de arquivos de caso do simulador de estabilidade eletromecânica transitória **ANATEM** (CEPEL).
 
 O pyanatem representa um arquivo `.stb` como um grafo de blocos serializáveis (padrão *AST + Serializer*): cada bloco é um objeto Python que sabe se serializar no texto posicional exato esperado pelo ANATEM, e o parser reconstrói a mesma árvore a partir de um `.stb` existente, garantindo *roundtrip*.
 
-> **Versão:** 0.14.2 — **Final (pré-v1.0)**  
-> **Status:** Etapas 1–14 completas (consolidação, robustez I/O, reconciliação)  
+> **Versão:** 1.0.0 — **Lançamento oficial estável**  
+> **Status:** API estável, 206 testes, zero breaking changes (v0.6 → v1.0)  
 > Referência técnica: Manual ANATEM 12.10 (CEPEL)  
 
 ---
 
-## Estado Atual (v0.14.2)
+## Estado Atual (v1.0.0)
 
-✅ **Produção-ready: Consolidado, robusto, pré-v1.0**
+✅ **Production-Ready: API estável, testada e documentada**
 
-### Etapas Concluídas (1–14)
+### Marcos Concluídos
 
 | Etapa | Foco | Status |
 |-------|------|--------|
@@ -23,22 +32,23 @@ O pyanatem representa um arquivo `.stb` como um grafo de blocos serializáveis (
 | **0.6** | Integração FACTS/HVDC/CDU | ✅ v0.6.4 |
 | **0.7** | Validações cruzadas | ✅ v0.7.3 |
 | **0.8** | Cobertura CDU (46+ testes) | ✅ v0.8.4 |
-| **0.9** | Limpeza estrutural | ✅ v0.9.2 |
-| **0.10** | Documentação pública | ✅ v0.10.3 |
 | **0.11** | Polimento (type hints) | ✅ v0.11.3 |
-| **0.12** | Robustez parser CDU | ✅ v0.12.3 |
-| **0.13** | Validação FACTS/HVDC/CDU | ✅ v0.13.3 |
-| **0.14** | Robustez I/O (latin-1, reconciliação) | ✅ v0.14.2 ⭐ |
+| **0.14** | Robustez I/O (latin-1, reconciliação) | ✅ v0.14.2 |
+| **0.15** | CI/CD, docs, exemplos, comunidade | ✅ v0.15.0 |
+| **1.0** | API estável, +200 testes, docs teóricas | ✅ v1.0.0 ⭐ |
 
-### Destaques v0.14.2
+### Destaques v1.0.0
 
-- ✅ **163+ testes** (roundtrip, encoding, blocos, parser, CDU)
+- ✅ **206 testes** (roundtrip, encoding, blocos, parser, CDU, validação, pós-processamento)
+- ✅ **87%+ cobertura** de código
+- ✅ **Zero breaking changes** — retrocompatível v0.6 → v1.0
 - ✅ **Encoding latin-1 garantido** — sem corrupção silenciosa, erro explícito
 - ✅ **Parser CDU finalizado** — desambiguação por tipo (Cap. 29), IMPORT/EXPORT/INPUT/OUTPUT/SERIET validados
-- ✅ **Robustez consolidada** — validação cruzada, pós-processamento, interface ANAREDE
-- ✅ **20+ classes públicas** com type hints, documentação, API estável
+- ✅ **CI/CD automático** — GitHub Actions (Python 3.9–3.12), Codecov, black, mypy
+- ✅ **Documentação completa** — teórica ([TEORIA.md](TEORIA.md)), prática ([tutorial](docs/tutorial.md)), 7 exemplos
+- ✅ **20+ classes públicas** com type hints, API estável
 
-**Próximo:** v1.0 (lançamento público estável, roadmap em v0.15+)
+**Próximo:** v1.1 (suporte ANAREDE 2.0, visualização interativa) — veja [ROADMAP.md](ROADMAP.md)
 
 ---
 
@@ -227,7 +237,7 @@ A biblioteca segue o padrão **AST + Serializer**:
 
 ## Confiabilidade dos Códigos
 
-Para transparência sobre validação (v0.14.2):
+Para transparência sobre validação (v1.0.0):
 
 | Componente | Confiança | Base de Validação | Desde |
 |---|---|---|---|
@@ -236,28 +246,28 @@ Para transparência sobre validação (v0.14.2):
 | **DEVT** (8 tipos evento) | Alta | Nomenclatura ANATEM consolidada | v0.4.0 |
 | **DPLT** — barras, máquinas, circuitos, cargas | Alta | Nomenclatura consolidada, amplamente documentada | v0.4.0 |
 | **DMDG** (MD01–MD03) | Alta | Serialização/parser/roundtrip validados | v0.4.1 |
-| **DMAQ** (posicional) | Alta | Roundtrip posicional, 163+ testes | v0.5.0 |
+| **DMAQ** (posicional) | Alta | Roundtrip posicional, 206 testes | v0.5.0 |
 | **DPLT** — OLTC, FACTS, HVDC, CDU | Média | Padrão nomenclatura 4-letra, estrutura validada | v0.4.3 |
 | **Validação cruzada** | Alta | DMAQ ↔ DMDG validado | v0.7.0 |
-| **LeitorPLT** (formato texto) | Alta | Estrutura validada contra manual, 163+ testes | v0.4.0 |
+| **LeitorPLT** (formato texto) | Alta | Estrutura validada contra manual, 206 testes | v0.4.0 |
 | **LeitorRelatorio** | Alta | Reconhecimento de palavras-chave validado, testado | v0.4.0 |
 | **LeitorSAV** (ANAREDE) | Média | Parser básico, validação de barras/circuitos | v0.4.7 |
-| **BlocoCDU** — parâmetros/roundtrip | Alta | Desambiguação por tipo (Cap. 29), 163+ testes | v0.4.4 |
+| **BlocoCDU** — parâmetros/roundtrip | Alta | Desambiguação por tipo (Cap. 29), 206 testes | v0.4.4 |
 | **Formato `.plt` binário** | ❌ Não implementado | Estrutura de bytes desconhecida | — |
 
-**Safeguards em v0.14.2 (Reconciliação Final):**
+**Safeguards em v1.0.0:**
 - ✅ **Encoding latin-1 garantido** — sem corrupção silenciosa, `ValueError` descritivo se fora do intervalo
 - ✅ **Desambiguação CDU por tipo** — IMPORT/EXPORT/INPUT/OUTPUT/SERIET/LOGIC/COMPAR reconhecidos corretamente (Cap. 29)
 - ✅ **Validação cruzada automática** — DMAQ ↔ DMDG, caminhos de arquivo, campos vazios em IMPORT/EXPORT
 - ✅ **Parser CDU robusto** — Roundtrip garantido para IMPORT/EXPORT com `stip`, LOGIC/COMPAR, blocos com <4 parâmetros
-- ✅ **163+ testes** cobrindo roundtrip, encoding, blocos, parser, CDU, pós-processamento, reconciliação
-- ✅ **Documentação consolidada** — README.md, ROADMAP, CHANGELOG retroativo com decisões documentadas
+- ✅ **206 testes** cobrindo roundtrip, encoding, blocos, parser, CDU, pós-processamento, validação
+- ✅ **Documentação consolidada** — README.md, TEORIA.md, ROADMAP, CHANGELOG, docs/ e exemplos
 
 **Recomendação:** Para códigos marcados como best-effort (CDU curvas RELINV), valide contra um `.stb`/`.plt` real ou manual. O método `linha_bruta()` (em `BlocoDEVT` e `BlocoDPLT`) é a alternativa segura para confirmação verbatim.
 
 ---
 
-## Componentes Principais (v0.14.2)
+## Componentes Principais (v1.0.0)
 
 | Classe | Descrição | Desde | Status |
 |---|---|---|---|
@@ -282,19 +292,27 @@ Para transparência sobre validação (v0.14.2):
 | **LeitorSAV / ResultadoSAV** | Parser `.sav` (ANAREDE), validação cruzada de barras/circuitos | v0.4.7 | ✅ |
 | **ParserSTB** | Parser `.stb`, reconstrói árvore AST, roundtrip garantido | v0.4.0 | ✅ |
 
-**Total: 20+ classes públicas | 163+ testes | Encoding garantido | Type hints completos**
+**Total: 20+ classes públicas | 206 testes | 87%+ cobertura | Encoding garantido | Type hints completos**
 
 ---
 
 ## Testes
 
 ```bash
-# Rodar suite de testes
+# Rodar suite de testes (206 testes)
 pytest tests/ -v
 
-# Com cobertura
-pytest tests/ --cov=pyanatem
+# Com cobertura de código
+pytest tests/ --cov=pyanatem --cov-report=html
+
+# Verificação de qualidade completa
+pip install -e ".[dev]"
+black --check --target-version py311 pyanatem/ tests/
+mypy pyanatem/ --ignore-missing-imports
+pytest tests/ -v
 ```
+
+**Cobertura:** 206 testes cobrindo roundtrip, encoding latin-1, blocos, parser, CDU, validação e pós-processamento.
 
 ---
 
@@ -302,25 +320,56 @@ pytest tests/ --cov=pyanatem
 
 | Versão | Status | Destaques |
 |--------|--------|----------|
-| **v0.14.2** | ⭐ **Atual (Final pré-v1.0)** | **Encoding latin-1 garantido, CDU robusto, 163+ testes, reconciliação completa** |
-| v0.13.x | Estável | Validação FACTS/HVDC/CDU contra manual, 140+ testes |
-| v0.12.x | Estável | Robustez parser CDU (IMPORT/EXPORT, parâmetros/limites) |
+| **v1.0.0** | ⭐ **Atual (Estável)** | **API estável, 206 testes, 87%+ cobertura, docs teóricas, zero breaking changes** |
+| v0.15.0 | Estável | CI/CD (GitHub Actions), Codecov, mkdocs, 7 exemplos, comunidade |
+| v0.14.2 | Estável | Encoding latin-1 garantido, CDU robusto, reconciliação completa |
+| v0.13.x | Estável | Validação FACTS/HVDC/CDU contra manual |
 | v0.11.3 | Estável | Type hints, polimento final |
-| v0.10.x | Estável | Documentação pública, README consolidado |
-| v0.9.x | Estável | Limpeza estrutural (eventos/, modelos/) |
 | v0.8.x | Estável | Cobertura CDU expandida (46+ testes) |
 | v0.7.x | Estável | Validações cruzadas (DMAQ ↔ DMDG) |
 | v0.6.0 | Estável | FACTS, HVDC, CDU, pós-processamento, LeitorSAV |
-| v0.5.x | Arquivada | Serialização posicional DMAQ |
-| v0.4.x | Arquivada | MVP: blocos, parser, ensaios |
+| v0.4.x–0.5.x | Arquivada | MVP: blocos, parser, ensaios, DMAQ posicional |
 
-**Recomendação:** Use **v0.14.2** para novos projetos. Todas as versões estão disponíveis no repositório como referência histórica.
+**Recomendação:** Use **v1.0.0** para novos projetos. Todas as versões estão disponíveis no repositório como referência histórica.
+
+---
+
+## Contribuir
+
+Contribuições são bem-vindas! Leia [CONTRIBUTING.md](CONTRIBUTING.md) para começar.
+
+**Checklist rápido:**
+- Código segue o style guide (black, isort, flake8)
+- Type hints completos (mypy compatible)
+- Testes passam: `pytest tests/`
+- Documentação atualizada
+- Commit messages descritivas
+
+Veja também o [Código de Conduta](CODE_OF_CONDUCT.md).
+
+---
+
+## Suporte & Comunidade
+
+- 📚 **Documentação:** [docs/](docs/) — guias, tutorial e referência de API
+- 📖 **Teoria:** [TEORIA.md](TEORIA.md) — conceitos de estabilidade transitória
+- 💡 **Exemplos:** [examples/](examples/) — 7 scripts executáveis
+- 🐛 **Reportar bug:** [GitHub Issues](https://github.com/matheusvivasr/pynatem/issues)
+- 📧 **Email:** vivas.matheus@usp.br
 
 ---
 
 ## Licença
 
-MIT
+MIT — veja [LICENSE](LICENSE) para detalhes.
+
+---
+
+## Créditos
+
+**Autor:** Matheus Antonio Vivas Rocha ([@matheusvivasr](https://github.com/matheusvivasr))  
+**Email:** vivas.matheus@usp.br  
+**Instituição:** Universidade de São Paulo (USP)
 
 ---
 
