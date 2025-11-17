@@ -12,6 +12,9 @@ Suporte:
             objetos estruturados no parser ainda
     DMAQ  – linhas preservadas como texto bruto
     DMDG  – MD01, MD02 e MD03 totalmente estruturados (Sessão 4)
+    DCER  – associação CER/SVC (§46.18): Nb Gr Mc[u] [Me[u]] (v1.1.1)
+    DCSC  – associação CSC/TCSC (§46.22): De Pa Nc Mc[u] [Me[u]] (v1.1.1)
+    DVSI  – conversores FACTS VSI (§46.64): 15 campos em colunas fixas (v1.1.1)
     DOPC  – opções FREQ e BASE extraídas; demais preservadas
     TITU  – título extraído
 
@@ -49,6 +52,18 @@ def _safe_int(s: str, default: int = 0) -> int:
         return int(s)
     except (ValueError, TypeError):
         return default
+
+
+def _sep_flag_u(token: str) -> Tuple[int, bool]:
+    """Separa ``<numero>[U]`` em (numero, usuario).
+
+    A letra ``U``/``u`` colada ao número marca modelo definido pelo usuário
+    (CDU). Ex.: ``"94U"`` → ``(94, True)``; ``"800"`` → ``(800, False)``.
+    """
+    token = token.strip()
+    if token and token[-1] in ("U", "u"):
+        return int(token[:-1]), True
+    return int(token), False
 
 
 # subtipos DARQ singulares (não incluem DCDU/DBLT, tratados à parte)
@@ -115,6 +130,12 @@ class ParserSTB:
                 i = ParserSTB._ler_titu(linhas, i + 1, caso)
             elif kw == "DCDU":
                 i = ParserSTB._ler_dcdu(linhas, i, caso)
+            elif kw == "DCER":
+                i = ParserSTB._ler_dcer(linhas, i + 1, caso)
+            elif kw == "DCSC":
+                i = ParserSTB._ler_dcsc(linhas, i + 1, caso)
+            elif kw == "DVSI":
+                i = ParserSTB._ler_dvsi(linhas, i + 1, caso)
             else:
                 i = ParserSTB._pular_bloco(linhas, i + 1)
 
@@ -216,7 +237,9 @@ class ParserSTB:
                 tini = _safe_float(partes[2]) if len(partes) > 2 else 0.0
                 r = _safe_float(partes[3]) if len(partes) > 3 else 0.0
                 x = _safe_float(partes[4]) if len(partes) > 4 else 0.0
-                caso.devt._eventos.append(_Evento(codigo=cod, nb1=nb1, tini=tini, p1=r, p2=x))
+                caso.devt._eventos.append(
+                    _Evento(codigo=cod, nb1=nb1, tini=tini, p1=r, p2=x)
+                )
 
             elif cod in _DEVT_COM_CIRCUITO:
                 nb1 = _safe_int(partes[1]) if len(partes) > 1 else 0
@@ -226,7 +249,9 @@ class ParserSTB:
                 p1 = _safe_float(partes[5]) if len(partes) > 5 else 0.0
                 p2 = _safe_float(partes[6]) if len(partes) > 6 else 0.0
                 caso.devt._eventos.append(
-                    _Evento(codigo=cod, nb1=nb1, nb2=nb2, nc=nc, tini=tini, p1=p1, p2=p2)
+                    _Evento(
+                        codigo=cod, nb1=nb1, nb2=nb2, nc=nc, tini=tini, p1=p1, p2=p2
+                    )
                 )
 
             elif cod in _DEVT_MAQUINA:
@@ -234,7 +259,9 @@ class ParserSTB:
                 nb2 = _safe_int(partes[2]) if len(partes) > 2 else 1
                 tini = _safe_float(partes[3]) if len(partes) > 3 else 0.0
                 p1 = _safe_float(partes[4]) if len(partes) > 4 else 0.0
-                caso.devt._eventos.append(_Evento(codigo=cod, nb1=nb1, nb2=nb2, tini=tini, p1=p1))
+                caso.devt._eventos.append(
+                    _Evento(codigo=cod, nb1=nb1, nb2=nb2, tini=tini, p1=p1)
+                )
 
             else:
                 caso.devt._linhas_brutas.append(linha)
@@ -365,7 +392,9 @@ class ParserSTB:
                 )
             except (ValueError, IndexError):
                 # Fallback: preserva como texto bruto para não perder dados
-                caso.dmaq.associacoes.append(_AssocMaquina(barra=0, grupo=0, texto_bruto=linha))
+                caso.dmaq.associacoes.append(
+                    _AssocMaquina(barra=0, grupo=0, texto_bruto=linha)
+                )
             i += 1
         return i
 
@@ -564,6 +593,130 @@ class ParserSTB:
         else:
             # variante desconhecida — pula o bloco
             return ParserSTB._pular_bloco(linhas, i)
+
+    @staticmethod
+    def _ler_dcer(linhas, inicio, caso) -> int:
+        """Lê o bloco DCER (§46.18) — associação de CER/SVC a modelos.
+
+        Formato livre: ``Nb Gr Mc[u] [Me[u]]`` (Listagem 46.16).
+        """
+        i = inicio
+        while i < len(linhas):
+            linha = _strip_comment(linhas[i])
+            if _e_terminador(linha) or _e_fim(linha):
+                return i + 1
+            stripped = linha.strip()
+            if not stripped:
+                i += 1
+                continue
+            partes = stripped.split()
+            try:
+                nb = int(partes[0])
+                gr = int(partes[1])
+                mc, mc_u = _sep_flag_u(partes[2])
+                me, me_u = (None, True)
+                if len(partes) > 3:
+                    me, me_u = _sep_flag_u(partes[3])
+                caso.svc.adicionar(
+                    nb=nb, gr=gr, mc=mc, me=me, mc_usuario=mc_u, me_usuario=me_u
+                )
+            except (ValueError, IndexError):
+                pass  # linha malformada: ignora sem abortar o bloco
+            i += 1
+        return i
+
+    @staticmethod
+    def _ler_dcsc(linhas, inicio, caso) -> int:
+        """Lê o bloco DCSC (§46.22) — associação de CSC/TCSC a modelos.
+
+        Formato livre: ``De Pa Nc Mc[u] [Me[u]]`` (Listagem 46.20).
+        """
+        i = inicio
+        while i < len(linhas):
+            linha = _strip_comment(linhas[i])
+            if _e_terminador(linha) or _e_fim(linha):
+                return i + 1
+            stripped = linha.strip()
+            if not stripped:
+                i += 1
+                continue
+            partes = stripped.split()
+            try:
+                de = int(partes[0])
+                pa = int(partes[1])
+                nc = int(partes[2])
+                mc, mc_u = _sep_flag_u(partes[3])
+                me, me_u = (None, True)
+                if len(partes) > 4:
+                    me, me_u = _sep_flag_u(partes[4])
+                caso.tcsc.adicionar(
+                    de=de, pa=pa, mc=mc, nc=nc, me=me, mc_usuario=mc_u, me_usuario=me_u
+                )
+            except (ValueError, IndexError):
+                pass
+            i += 1
+        return i
+
+    @staticmethod
+    def _ler_dvsi(linhas, inicio, caso) -> int:
+        """Lê o bloco DVSI (§46.64) — dados de conversores FACTS VSI.
+
+        Parser de COLUNAS FIXAS: os campos Pa/Rv/Vpt são opcionais e um
+        branco não pode deslocar os seguintes. Os offsets espelham
+        ``_ConversorVSI.serializar()`` / ``_VSI_COLS`` em ``blocos.py``.
+        """
+
+        def _si(s: str, a: int, b: int):
+            tok = s[a:b].strip() if len(s) > a else ""
+            return int(tok) if tok else None
+
+        def _sf(s: str, a: int, b: int):
+            tok = s[a:b].strip() if len(s) > a else ""
+            return float(tok) if tok else None
+
+        def _ss(s: str, a: int, b: int, default: str = "P"):
+            tok = s[a:b].strip() if len(s) > a else ""
+            return tok if tok else default
+
+        i = inicio
+        while i < len(linhas):
+            linha = linhas[i]
+            if _e_terminador(linha) or _e_fim(linha):
+                return i + 1
+            stripped = linha.strip()
+            if not stripped or stripped.startswith("("):
+                i += 1
+                continue
+            try:
+                nv = _si(linha, 0, 5)
+                de = _si(linha, 5, 11)
+                if nv is None or de is None:
+                    raise ValueError("Nv ou De ausente")
+                caso.statcom.adicionar(
+                    nv=nv,
+                    de=de,
+                    np=_si(linha, 21, 25) or 1,
+                    cnvk=_sf(linha, 25, 39) or 0.0,
+                    vb=_sf(linha, 41, 51) or 0.0,
+                    xv=_sf(linha, 61, 71) or 0.0,
+                    vst=_sf(linha, 81, 91) or 0.0,
+                    st=_sf(linha, 91, 101) or 0.0,
+                    ne=_si(linha, 109, 115) or 0,
+                    pa=_si(linha, 11, 17),
+                    nx=_si(linha, 17, 21) or 1,
+                    m=_ss(linha, 39, 41, "P"),
+                    rv=_sf(linha, 51, 61),
+                    vpt=_sf(linha, 71, 81),
+                    tap=(
+                        _sf(linha, 101, 109)
+                        if _sf(linha, 101, 109) is not None
+                        else 1.0
+                    ),
+                )
+            except (ValueError, IndexError):
+                pass
+            i += 1
+        return i
 
     @staticmethod
     def _ler_dcdu(linhas, inicio, caso) -> int:

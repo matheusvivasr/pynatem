@@ -321,7 +321,9 @@ def test_validar_eventos_sobrepostos():
     caso.darq.sav = "x.sav"
     caso.dsim.tfim = 10.0
     caso.devt.curto_barra(barra=5, tini=1.0, tipo="APCB")
-    caso.devt.abertura_shunt(barra=5, tini=1.0)  # mesmo nb1, mesmo tini, código diferente
+    caso.devt.abertura_shunt(
+        barra=5, tini=1.0
+    )  # mesmo nb1, mesmo tini, código diferente
     erros = caso.validar()
     assert any("sobrepost" in e or "mesmo instante" in e for e in erros)
 
@@ -590,7 +592,11 @@ def test_leitor_relatorio_indeterminado():
 if __name__ == "__main__":
     import traceback
 
-    testes = [(k, v) for k, v in list(globals().items()) if k.startswith("test_") and callable(v)]
+    testes = [
+        (k, v)
+        for k, v in list(globals().items())
+        if k.startswith("test_") and callable(v)
+    ]
     ok = fail = 0
     for nome, fn in testes:
         try:
@@ -892,7 +898,9 @@ def test_dmaq_adicionar_maquina_avr_cdu():
 def test_dmaq_adicionar_maquina_com_pss():
     """DMAQ: Me (estabilizador) preenchido."""
     d = BlocoDMAQ()
-    d.adicionar_maquina(barra=3500, grupo=20, p=40, q=40, und=2, mg=753, mt=81, mv=126, me=39)
+    d.adicionar_maquina(
+        barra=3500, grupo=20, p=40, q=40, und=2, mg=753, mt=81, mv=126, me=39
+    )
     t = d.serializar()
     assert "39" in t
 
@@ -1108,7 +1116,16 @@ def test_dmaq_posicional_5g_lista_mista(tmp_path):
     caso.dmaq.adicionar_maquina(barra=200, grupo=2, mg=50)
     # Linha 3: completa com CDU
     caso.dmaq.adicionar_maquina(
-        barra=300, grupo=3, p=100, q=100, und=2, mg=51, mt=144, mt_cdu=True, mv=126, mv_cdu=False
+        barra=300,
+        grupo=3,
+        p=100,
+        q=100,
+        und=2,
+        mg=51,
+        mt=144,
+        mt_cdu=True,
+        mv=126,
+        mv_cdu=False,
     )
     # Linha 4: P,Q,Und,Mg mas sem Mt
     caso.dmaq.adicionar_maquina(barra=400, grupo=4, p=50, q=50, und=1, mg=52)
@@ -1201,29 +1218,36 @@ from pyanatem import BlocoSVC, BlocoTCSC, BlocoSTATCOM, BlocoHVDC
 
 
 def test_svc_serializa():
+    # DCER §46.18 — associação de CER/SVC (Listagem 46.16)
     b = BlocoSVC()
-    b.adicionar(no=1, nb=100, bmin=-0.5, bmax=0.5, vref=1.0, modelo=1)
+    b.adicionar(nb=500, gr=10, mc=800, me=94)
     t = b.serializar()
     assert "DCER" in t
-    assert "100" in t
+    assert "500" in t and "800" in t
+    assert "94U" in t  # estabilizador é sempre definido pelo usuário
     assert "999999" in t
 
 
 def test_tcsc_serializa():
+    # DCSC §46.22 — associação de CSC/TCSC (Listagem 46.20)
     b = BlocoTCSC()
-    b.adicionar(no=1, de=100, para=200, circ=1, xcmin=0.0, xcmax=0.3)
+    b.adicionar(de=500, pa=501, mc=800, nc=1, me=94)
     t = b.serializar()
     assert "DCSC" in t
-    assert "100" in t and "200" in t
+    assert "500" in t and "501" in t and "800" in t
+    assert "94U" in t
 
 
 def test_statcom_serializa():
+    # DVSI §46.64 — conversor FACTS VSI (Listagem 46.61)
     b = BlocoSTATCOM()
-    b.adicionar(no=1, nb=50, tipo_vsi="STATCOM", qmin=-0.2, qmax=0.2)
+    b.adicionar(
+        nv=21, de=2, np=8, cnvk=0.779696801, vb=138.0, xv=10.0, vst=30.0, st=80.0, ne=11
+    )
     t = b.serializar()
     assert "DVSI" in t
-    assert "STATCOM" in t
-    assert "50" in t
+    assert "21" in t
+    assert "0.779696801" in t
 
 
 def test_hvdc_serializa():
@@ -1238,7 +1262,7 @@ def test_hvdc_serializa():
 def test_facts_encadeamento():
     """Métodos adicionar retornam self para encadeamento."""
     b = BlocoSVC()
-    result = b.adicionar(no=1, nb=100).adicionar(no=2, nb=200)
+    result = b.adicionar(nb=100, gr=1, mc=800).adicionar(nb=200, gr=1, mc=801)
     assert result is b
     assert len(b._equipamentos) == 2
 
@@ -1246,7 +1270,7 @@ def test_facts_encadeamento():
 def test_facts_tem_dados():
     b = BlocoSVC()
     assert not b.tem_dados()
-    b.adicionar(no=1, nb=100)
+    b.adicionar(nb=100, gr=1, mc=800)
     assert b.tem_dados()
 
 
@@ -1303,7 +1327,15 @@ def test_cdu_bloco_ledlag():
 
 def test_cdu_bloco_wshout():
     b = BlocoCDU(
-        nb=30, tipo="WSHOUT", vent="W", vsai="Ypss", p1=5.0, p2=2.0, p3=2.0, vmin="Lmn", vmax="Lmx"
+        nb=30,
+        tipo="WSHOUT",
+        vent="W",
+        vsai="Ypss",
+        p1=5.0,
+        p2=2.0,
+        p3=2.0,
+        vmin="Lmn",
+        vmax="Lmx",
     )
     t = b.serializar()
     assert "WSHOUT" in t
@@ -1352,7 +1384,17 @@ def test_cdu_bloco_dcdu_completo():
     avr.defval("Lim", 5.0)
 
     pss = dcdu.novo_controlador(ncdu=200, nome="PSS")
-    pss.bloco(10, "WSHOUT", vent="W", vsai="Ypss", p1=5.0, p2=2.0, p3=2.0, vmin="Lmn", vmax="Lmx")
+    pss.bloco(
+        10,
+        "WSHOUT",
+        vent="W",
+        vsai="Ypss",
+        p1=5.0,
+        p2=2.0,
+        p3=2.0,
+        vmin="Lmn",
+        vmax="Lmx",
+    )
     pss.defval("Lmn", -0.1)
     pss.defval("Lmx", 0.1)
 
@@ -1440,7 +1482,14 @@ def test_contingencias_de_contingencias():
             "t_aber": 0.5,
             "t_fech": 1.0,
         },
-        {"nome": "C5", "tipo": "step", "barra": 5, "unidade": 1, "t_ini": 2.0, "delta": 0.05},
+        {
+            "nome": "C5",
+            "tipo": "step",
+            "barra": 5,
+            "unidade": 1,
+            "t_ini": 2.0,
+            "delta": 0.05,
+        },
     ]
     ensaio = EnsaioAnatem.de_contingencias(base, conts)
     assert len(ensaio.casos()) == 5
@@ -1457,8 +1506,20 @@ def test_contingencias_nomes_arquivo(tmp_path):
     base.dsim.tfim = 10.0
 
     conts = [
-        {"nome": "CONT_A", "tipo": "curto_barra", "barra": 5, "t_apl": 1.0, "t_rem": 1.1},
-        {"nome": "CONT_B", "tipo": "curto_barra", "barra": 6, "t_apl": 1.0, "t_rem": 1.1},
+        {
+            "nome": "CONT_A",
+            "tipo": "curto_barra",
+            "barra": 5,
+            "t_apl": 1.0,
+            "t_rem": 1.1,
+        },
+        {
+            "nome": "CONT_B",
+            "tipo": "curto_barra",
+            "barra": 6,
+            "t_apl": 1.0,
+            "t_rem": 1.1,
+        },
     ]
     ensaio = EnsaioAnatem.de_contingencias(base, conts)
     paths = ensaio.exportar_todos(diretorio=tmp_path)
@@ -1494,7 +1555,13 @@ def test_relatorio_consolidado():
 
     ensaio = EnsaioAnatem.novo()
     resultados = [
-        {"arquivo": "/tmp/C1.stb", "convergiu": True, "erros": [], "avisos": [], "passou": True},
+        {
+            "arquivo": "/tmp/C1.stb",
+            "convergiu": True,
+            "erros": [],
+            "avisos": [],
+            "passou": True,
+        },
         {
             "arquivo": "/tmp/C2.stb",
             "convergiu": False,
@@ -1569,7 +1636,9 @@ def test_validar_contra_sav_ok(tmp_path):
     from pyanatem import CasoAnatem
 
     sav_path = tmp_path / "rede.sav"
-    sav_path.write_text("DBAR\n5 BUS5 GD 1 1 138. 0 0 100 0\n99999\n", encoding="latin-1")
+    sav_path.write_text(
+        "DBAR\n5 BUS5 GD 1 1 138. 0 0 100 0\n99999\n", encoding="latin-1"
+    )
 
     caso = CasoAnatem()
     caso.darq.sav = str(sav_path)
@@ -1585,7 +1654,9 @@ def test_validar_contra_sav_barra_inexistente(tmp_path):
     from pyanatem import CasoAnatem
 
     sav_path = tmp_path / "rede.sav"
-    sav_path.write_text("DBAR\n5 BUS5 GD 1 1 138. 0 0 100 0\n99999\n", encoding="latin-1")
+    sav_path.write_text(
+        "DBAR\n5 BUS5 GD 1 1 138. 0 0 100 0\n99999\n", encoding="latin-1"
+    )
 
     caso = CasoAnatem()
     caso.darq.sav = str(sav_path)
@@ -1656,7 +1727,7 @@ def test_svc_populado_aparece_no_deck():
 
     caso = CasoAnatem()
     caso.darq.sav = "rede.sav"
-    caso.svc.adicionar(no=1, nb=100, bmin=-0.5, bmax=0.5, vref=1.0)
+    caso.svc.adicionar(nb=100, gr=1, mc=800)
     stb = caso.deck()
     assert "DCER" in stb
 
@@ -1667,7 +1738,7 @@ def test_tcsc_populado_aparece_no_deck():
 
     caso = CasoAnatem()
     caso.darq.sav = "rede.sav"
-    caso.tcsc.adicionar(no=1, de=10, para=20, circ=1, xcmin=-0.1, xcmax=0.1)
+    caso.tcsc.adicionar(de=10, pa=20, mc=800, nc=1)
     stb = caso.deck()
     assert "DCSC" in stb
 
@@ -1678,7 +1749,17 @@ def test_statcom_populado_aparece_no_deck():
 
     caso = CasoAnatem()
     caso.darq.sav = "rede.sav"
-    caso.statcom.adicionar(no=1, nb=200, tipo_vsi="STATCOM", qmin=-0.3, qmax=0.3)
+    caso.statcom.adicionar(
+        nv=1,
+        de=200,
+        np=1,
+        cnvk=0.612372436,
+        vb=138.0,
+        xv=10.0,
+        vst=13.8,
+        st=80.0,
+        ne=12,
+    )
     stb = caso.deck()
     assert "DVSI" in stb
 
@@ -1714,7 +1795,7 @@ def test_facts_ordem_no_deck():
 
     caso = CasoAnatem()
     caso.darq.sav = "rede.sav"
-    caso.svc.adicionar(no=1, nb=100, bmin=-0.5, bmax=0.5, vref=1.0)
+    caso.svc.adicionar(nb=100, gr=1, mc=800)
     caso.devt.curto_barra(barra=5, tini=1.0, tipo="APCB")
     stb = caso.deck()
 
@@ -1724,6 +1805,147 @@ def test_facts_ordem_no_deck():
     assert idx_dcer != -1
     assert idx_devt != -1
     assert idx_dcer < idx_devt
+
+
+# ===========================================================================
+# v1.1.1 – FACTS (DCER/DCSC/DVSI) validados contra o manual §46 + roundtrip
+# ===========================================================================
+
+
+def test_dcer_exemplo_manual(tmp_path):
+    """Valores da Listagem 46.16: DCER ``500 10 800 94U``."""
+    from pyanatem import CasoAnatem
+
+    stb = (
+        "DARQ\nSIST rede.sav\n999999\n"
+        "DCER\n( Nb) Gr ( Mc )u( Me )u\n500 10 800 94U\n999999\nFIM\n"
+    )
+    p = tmp_path / "dcer_manual.stb"
+    p.write_text(stb, encoding="latin-1")
+    caso = CasoAnatem.ler(p)
+    e = caso.svc._equipamentos[0]
+    assert (e.nb, e.gr, e.mc, e.me) == (500, 10, 800, 94)
+    assert e.mc_usuario is False  # 800 sem 'U' → modelo predefinido (DMCE)
+    assert e.me_usuario is True  # 94U → estabilizador do usuário
+
+
+def test_dcsc_exemplo_manual(tmp_path):
+    """Valores da Listagem 46.20: DCSC ``500 501 01 800 94U``."""
+    from pyanatem import CasoAnatem
+
+    stb = (
+        "DARQ\nSIST rede.sav\n999999\n"
+        "DCSC\n( De) ( Pa) Nc ( Mc )u ( Me )u\n500 501 01 800 94U\n999999\nFIM\n"
+    )
+    p = tmp_path / "dcsc_manual.stb"
+    p.write_text(stb, encoding="latin-1")
+    caso = CasoAnatem.ler(p)
+    e = caso.tcsc._equipamentos[0]
+    assert (e.de, e.pa, e.nc, e.mc, e.me) == (500, 501, 1, 800, 94)
+    assert e.mc_usuario is False and e.me_usuario is True
+
+
+def test_roundtrip_dcer(tmp_path):
+    """DCER: serializa → exporta → lê, preservando campos e flags U."""
+    from pyanatem import CasoAnatem
+
+    caso = CasoAnatem()
+    caso.darq.sav = "rede.sav"
+    caso.svc.adicionar(nb=500, gr=10, mc=800, me=94)  # com estabilizador
+    caso.svc.adicionar(
+        nb=600, gr=1, mc=94, mc_usuario=True
+    )  # modelo do usuário, sem estab.
+    p = tmp_path / "dcer.stb"
+    caso.exportar(p)
+
+    lido = CasoAnatem.ler(p)
+    assert len(lido.svc._equipamentos) == 2
+    e0, e1 = lido.svc._equipamentos
+    assert (e0.nb, e0.gr, e0.mc, e0.me) == (500, 10, 800, 94)
+    assert e0.mc_usuario is False and e0.me_usuario is True
+    assert (e1.nb, e1.gr, e1.mc, e1.me) == (600, 1, 94, None)
+    assert e1.mc_usuario is True
+
+
+def test_roundtrip_dcsc(tmp_path):
+    """DCSC: circuito default vs. explícito; com e sem estabilizador."""
+    from pyanatem import CasoAnatem
+
+    caso = CasoAnatem()
+    caso.darq.sav = "rede.sav"
+    caso.tcsc.adicionar(de=500, pa=501, mc=800, nc=1, me=94)
+    caso.tcsc.adicionar(de=10, pa=20, mc=801, nc=2)  # circuito 2, sem estab.
+    p = tmp_path / "dcsc.stb"
+    caso.exportar(p)
+
+    lido = CasoAnatem.ler(p)
+    assert len(lido.tcsc._equipamentos) == 2
+    e0, e1 = lido.tcsc._equipamentos
+    assert (e0.de, e0.pa, e0.nc, e0.mc, e0.me) == (500, 501, 1, 800, 94)
+    assert (e1.de, e1.pa, e1.nc, e1.mc, e1.me) == (10, 20, 2, 801, None)
+
+
+def test_roundtrip_dvsi_shunt(tmp_path):
+    """DVSI shunt (STATCOM): Pa em branco; Rv/Vpt em branco (valores Lst. 46.61)."""
+    from pyanatem import CasoAnatem
+
+    caso = CasoAnatem()
+    caso.darq.sav = "rede.sav"
+    caso.statcom.adicionar(
+        nv=21,
+        de=2,
+        nx=1,
+        np=8,
+        cnvk=0.779696801,
+        vb=138.0,
+        xv=10.0,
+        vst=30.0,
+        st=80.0,
+        tap=1.0,
+        ne=11,
+    )
+    p = tmp_path / "dvsi_shunt.stb"
+    caso.exportar(p)
+
+    lido = CasoAnatem.ler(p)
+    c = lido.statcom._conversores[0]
+    assert (c.nv, c.de, c.pa, c.nx, c.np, c.ne) == (21, 2, None, 1, 8, 11)
+    assert c.cnvk == 0.779696801
+    assert c.vb == 138.0 and c.vst == 30.0 and c.st == 80.0
+    assert c.rv is None and c.vpt is None  # brancos preservados como None
+    assert c.m == "P"
+
+
+def test_roundtrip_dvsi_serie(tmp_path):
+    """DVSI série (SSSC): Pa presente, Rv em branco (valores Lst. 46.61)."""
+    from pyanatem import CasoAnatem
+
+    caso = CasoAnatem()
+    caso.darq.sav = "rede.sav"
+    caso.statcom.adicionar(
+        nv=22,
+        de=3,
+        pa=4,
+        nx=1,
+        np=1,
+        cnvk=0.612372436,
+        vb=138.0,
+        xv=10.0,
+        vpt=138.0,
+        vst=13.8,
+        st=80.0,
+        tap=1.0,
+        ne=12,
+    )
+    p = tmp_path / "dvsi_serie.stb"
+    caso.exportar(p)
+
+    lido = CasoAnatem.ler(p)
+    c = lido.statcom._conversores[0]
+    assert (c.nv, c.de, c.pa, c.np, c.ne) == (22, 3, 4, 1, 12)
+    assert c.cnvk == 0.612372436
+    assert c.vb == 138.0 and c.vpt == 138.0 and c.vst == 13.8
+    assert c.rv is None  # Rv deixado em branco (recomendação do manual)
 
 
 def test_salvar_cdu_cria_arquivo(tmp_path):
@@ -2369,7 +2591,17 @@ def test_cdu_wshout_3params_com_limites_roundtrip():
     dcdu = BlocoDCDU()
     ctrl = dcdu.novo_controlador(ncdu=1, nome="WSHOUT_TEST")
     # WSHOUT: 3 parâmetros (p1, p2, p3), depois vmin/vmax (nomes de variáveis)
-    ctrl.bloco(10, "WSHOUT", vent="X", vsai="Y", p1=1.0, p2=2.0, p3=3.0, vmin="Xmin", vmax="Xmax")
+    ctrl.bloco(
+        10,
+        "WSHOUT",
+        vent="X",
+        vsai="Y",
+        p1=1.0,
+        p2=2.0,
+        p3=3.0,
+        vmin="Xmin",
+        vmax="Xmax",
+    )
 
     ctrl2 = _roundtrip_dcdu(dcdu)._controladores[0]
     b = ctrl2._blocos[0]
@@ -2387,7 +2619,16 @@ def test_cdu_intres_com_limites_roundtrip():
     # INTRES: 4 parâmetros por default (como blocos normais)
     # Com vmin/vmax como limites
     ctrl.bloco(
-        20, "INTRES", vent="A", vsai="B", p1=1.0, p2=2.0, p3=3.0, p4=4.0, vmin="Amin", vmax="Amax"
+        20,
+        "INTRES",
+        vent="A",
+        vsai="B",
+        p1=1.0,
+        p2=2.0,
+        p3=3.0,
+        p4=4.0,
+        vmin="Amin",
+        vmax="Amax",
     )
 
     ctrl2 = _roundtrip_dcdu(dcdu)._controladores[0]
@@ -2576,7 +2817,9 @@ def test_cdu_compar_gt_roundtrip():
     """
     dcdu = BlocoDCDU()
     ctrl = dcdu.novo_controlador(ncdu=1, nome="CDU_GT")
-    ctrl.bloco(10, "COMPAR", stip=".GT.", vent="Vent1", vsai="Vsai").adicionar_entrada("Vent2")
+    ctrl.bloco(10, "COMPAR", stip=".GT.", vent="Vent1", vsai="Vsai").adicionar_entrada(
+        "Vent2"
+    )
 
     ctrl2 = _roundtrip_dcdu(dcdu)._controladores[0]
     b = ctrl2._blocos[0]
@@ -2592,7 +2835,9 @@ def test_cdu_logic_nand_roundtrip():
     """LOGIC subtipo .NAND. (§29.3): subtipo fora do antigo conjunto de palavras."""
     dcdu = BlocoDCDU()
     ctrl = dcdu.novo_controlador(ncdu=1, nome="CDU_NAND")
-    ctrl.bloco(10, "LOGIC", stip=".NAND.", vent="Vent1", vsai="Vsai").adicionar_entrada("Vent2")
+    ctrl.bloco(10, "LOGIC", stip=".NAND.", vent="Vent1", vsai="Vsai").adicionar_entrada(
+        "Vent2"
+    )
 
     ctrl2 = _roundtrip_dcdu(dcdu)._controladores[0]
     b = ctrl2._blocos[0]
@@ -2630,7 +2875,9 @@ def test_cdu_integracao_v0_12_todas_metas():
     )
 
     # v0.12.3: Bloco com variável "Volt" (não confundida com stip)
-    ctrl.bloco(30, "LEDLAG", vent="Volt", vsai="Volt_ref", p1=10.0, p2=0.1, p3=1.0, p4=0.05)
+    ctrl.bloco(
+        30, "LEDLAG", vent="Volt", vsai="Volt_ref", p1=10.0, p2=0.1, p3=1.0, p4=0.05
+    )
 
     # v0.12.1: EXPORT com vsai vazio
     ctrl.bloco(40, "EXPORT", stip="EFD", vent="Volt_ref")

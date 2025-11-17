@@ -2,6 +2,35 @@
 
 Todas as mudanças notáveis estão documentadas aqui.
 
+## [1.1.1] — 2026-07-10 — FACTS validados contra o manual
+
+> Primeiro patch da etapa **v1.1 (Confiabilidade Máxima)**. Alinha o número de
+> versão do pacote ao esquema v1 já anunciado no README (o código estava em
+> `0.14.2`; o esquema `0.x` foi encerrado).
+
+### Changed
+
+- **BREAKING** — Blocos FACTS re-modelados para bater com o manual ANATEM §46
+  (antes eram best-effort com campos inventados):
+  - `BlocoSVC` (DCER, §46.18) agora é código de **associação**:
+    `adicionar(nb, gr, mc, me=None, mc_usuario=False, me_usuario=True)`.
+    Removidos `no/nb/bmin/bmax/vref/modelo`.
+  - `BlocoTCSC` (DCSC, §46.22) idem:
+    `adicionar(de, pa, mc, nc=1, me=None, mc_usuario=False, me_usuario=True)`.
+    Removidos `no/de/para/circ/xcmin/xcmax/modelo`.
+  - `BlocoSTATCOM` (DVSI, §46.64) agora modela os **15 campos** reais do
+    conversor VSI: `adicionar(nv, de, np, cnvk, vb, xv, vst, st, ne, pa=None,
+    nx=1, m="P", rv=None, vpt=None, tap=1.0)`. Removidos
+    `no/nb/tipo_vsi/qmin/qmax/vref/modelo`.
+- Confiabilidade DCER/DCSC/DVSI elevada de **Média → Alta** na tabela do README.
+
+### Added
+
+- Parser (`ParserSTB`) agora lê os blocos DCER/DCSC (formato livre) e DVSI
+  (colunas fixas) — antes eram pulados silenciosamente. Roundtrip garantido.
+- 6 testes novos: validação contra Listagens 46.16/46.20/46.61 do manual e
+  roundtrip por bloco (DCER, DCSC, DVSI shunt e série). Total: 212 testes.
+
 ## [0.14.2] — 2026-07-09 ⭐
 
 ### Added

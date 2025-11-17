@@ -14,11 +14,12 @@ NOTA DE CONFIANÇA DOS CÓDIGOS:
   - Barras CA, máquinas síncronas, circuitos CA, cargas: códigos confirmados
     contra a estrutura do manual (VBAR, TBAR, FREQ, DELT, OMEG, PGER, QGER,
     ICAM, EEXC, VTER, PELM, PMEC, FLXP, FLXQ, FLXC, PCAG, QCAG).
-  - OLTC, FACTS (CER/SVC, TCSC, STATCOM) e HVDC: códigos "best-effort",
-    seguindo o padrão de nomenclatura de 4 letras do ANATEM, mas SEM
-    confirmação verbatim do manual (fetch de página específica não
-    disponível). Confira o código exato do seu equipamento antes de uso
-    em produção — use `linha_bruta()` como alternativa segura se preferir.
+  - FACTS (DCER/SVC, DCSC/TCSC, DVSI): campos e ordem validados contra o
+    manual §46.18/§46.22/§46.64 (Listagens 46.16/46.20/46.61), com roundtrip
+    garantido pelo ParserSTB. DCER/DCSC são códigos de ASSOCIAÇÃO de controles.
+  - OLTC e HVDC (DCNV): ainda "best-effort", seguindo o padrão de nomenclatura
+    de 4 letras do ANATEM, sem confirmação verbatim do manual. Confira o código
+    exato antes de uso em produção — use `linha_bruta()` como alternativa.
 """
 
 from __future__ import annotations
@@ -256,7 +257,8 @@ class _Evento:
             )
         else:
             return (
-                f"{cod}  {self.nb1:>5}" f"  {self.tini:>10.4f}  {self.p1:>10.4f}  {self.p2:>10.4f}"
+                f"{cod}  {self.nb1:>5}"
+                f"  {self.tini:>10.4f}  {self.p1:>10.4f}  {self.p2:>10.4f}"
             )
 
 
@@ -278,7 +280,12 @@ class BlocoDEVT(BlocoBase):
         self._linhas_brutas = v
 
     def curto_barra(
-        self, barra: int, tini: float, tipo: str = "APCB", r: float = 0.0, x: float = 0.0
+        self,
+        barra: int,
+        tini: float,
+        tipo: str = "APCB",
+        r: float = 0.0,
+        x: float = 0.0,
     ) -> "BlocoDEVT":
         """Aplica (APCB) ou remove (RMCB) curto-circuito em barra CA."""
         self._eventos.append(_Evento(codigo=tipo, nb1=barra, tini=tini, p1=r, p2=x))
@@ -295,17 +302,27 @@ class BlocoDEVT(BlocoBase):
         x: float = 0.0,
     ) -> "BlocoDEVT":
         """Aplica (APCC) ou remove (RMCC) curto-circuito em circuito CA."""
-        self._eventos.append(_Evento(codigo=tipo, nb1=de, nb2=para, nc=circ, tini=tini, p1=r, p2=x))
+        self._eventos.append(
+            _Evento(codigo=tipo, nb1=de, nb2=para, nc=circ, tini=tini, p1=r, p2=x)
+        )
         return self
 
-    def abertura_linha(self, de: int, para: int, tini: float, circ: int = 1) -> "BlocoDEVT":
+    def abertura_linha(
+        self, de: int, para: int, tini: float, circ: int = 1
+    ) -> "BlocoDEVT":
         """Abre um circuito CA (ABLN)."""
-        self._eventos.append(_Evento(codigo="ABLN", nb1=de, nb2=para, nc=circ, tini=tini))
+        self._eventos.append(
+            _Evento(codigo="ABLN", nb1=de, nb2=para, nc=circ, tini=tini)
+        )
         return self
 
-    def fechamento_linha(self, de: int, para: int, tini: float, circ: int = 1) -> "BlocoDEVT":
+    def fechamento_linha(
+        self, de: int, para: int, tini: float, circ: int = 1
+    ) -> "BlocoDEVT":
         """Fecha um circuito CA (FCLN)."""
-        self._eventos.append(_Evento(codigo="FCLN", nb1=de, nb2=para, nc=circ, tini=tini))
+        self._eventos.append(
+            _Evento(codigo="FCLN", nb1=de, nb2=para, nc=circ, tini=tini)
+        )
         return self
 
     def abertura_shunt(self, barra: int, tini: float) -> "BlocoDEVT":
@@ -322,7 +339,9 @@ class BlocoDEVT(BlocoBase):
         self, barra: int, unidade: int, tini: float, delta: float, tipo: str = "ALTG"
     ) -> "BlocoDEVT":
         """Step em sinal de referência de máquina (ALTG)."""
-        self._eventos.append(_Evento(codigo=tipo, nb1=barra, nb2=unidade, tini=tini, p1=delta))
+        self._eventos.append(
+            _Evento(codigo=tipo, nb1=barra, nb2=unidade, tini=tini, p1=delta)
+        )
         return self
 
     def linha_bruta(self, texto: str) -> "BlocoDEVT":
@@ -735,13 +754,19 @@ class BlocoDMAQ(BlocoBase):
         return self
 
     def adicionar(
-        self, barra: int, unidade: int, modelo: str, params: Optional[List[float]] = None
+        self,
+        barra: int,
+        unidade: int,
+        modelo: str,
+        params: Optional[List[float]] = None,
     ) -> "BlocoDMAQ":
         """API legada (retrocompatibilidade) — preserva texto bruto."""
         base = f"{barra:>6}  {unidade:>4}  {modelo:<8}"
         if params:
             base += "  " + "  ".join(f"{p:>10.4f}" for p in params)
-        self.associacoes.append(_AssocMaquina(barra=barra, grupo=unidade, texto_bruto=base))
+        self.associacoes.append(
+            _AssocMaquina(barra=barra, grupo=unidade, texto_bruto=base)
+        )
         return self
 
     def serializar(self) -> str:
@@ -757,7 +782,9 @@ class BlocoDMAQ(BlocoBase):
         (§46.41). Ver CHANGELOG v0.11.2.
         """
         linhas = [self._cabecalho()]
-        linhas.append("( Nb)  Gr   P   Q  Und    Mg      Mt        Mv        Me     Xvd    Nbc\n")
+        linhas.append(
+            "( Nb)  Gr   P   Q  Und    Mg      Mt        Mv        Me     Xvd    Nbc\n"
+        )
         for a in self.associacoes:
             linhas.append(a.serializar() + "\n")
         linhas.append(self._terminador())
@@ -1120,7 +1147,9 @@ class BlocoDMDG(BlocoBase):
 
         if self._md03:
             linhas.append("DMDG MD03\n")
-            linhas.append("(No) (CS) (Ld )(Lq )(L'd)(L'q)(L\"d)(Ll )(T'd)(T'q)(T\"d)(T\"q)\n")
+            linhas.append(
+                "(No) (CS) (Ld )(Lq )(L'd)(L'q)(L\"d)(Ll )(T'd)(T'q)(T\"d)(T\"q)\n"
+            )
             linhas.append("(No) (Ra )( H )( D )(MVA)Fr C\n")
             for m in self._md03:
                 linhas.append(m.serializar() + "\n")
@@ -1130,36 +1159,55 @@ class BlocoDMDG(BlocoBase):
 
 
 # ---------------------------------------------------------------------------
-# FACTS / HVDC – blocos de dados (introduzidos em v0.4.3, etapa 0.4)
+# FACTS – blocos de associação e de conversores
+#
+# DCER  §46.18 — associação de compensador estático (CER/SVC) a modelos
+# DCSC  §46.22 — associação de compensador série controlável (CSC/TCSC)
+# DVSI  §46.64 — dados de conversores FACTS VSI (STATCOM/SSSC)
+#
+# Campos e ordem validados contra o manual (Listagens 46.16 / 46.20 / 46.61,
+# Caps. 25–27 e 46). DCER/DCSC são códigos de ASSOCIAÇÃO — o equipamento em si
+# (faixa de operação, estatismo, nº de unidades) é definido no ANAREDE; estes
+# códigos apenas ligam o equipamento ao seu modelo dinâmico e ao estabilizador.
 # ---------------------------------------------------------------------------
 
 
-@dataclass
-class _CER:
-    """Dados de um Compensador Estático de Reativos (CER/SVC) – best-effort."""
+def _sep_u(numero: int, usuario: bool) -> str:
+    """Formata ``<numero>[U]`` — a letra U (colada) marca modelo do usuário."""
+    return f"{numero}{'U' if usuario else ''}"
 
-    no: int
-    nb: int  # barra de conexão
-    bmin: float = 0.0  # susceptância mínima [pu]
-    bmax: float = 0.0  # susceptância máxima [pu]
-    vref: float = 1.0  # tensão de referência [pu]
-    modelo: int = 1  # número do modelo de controle (DMCS)
-    extras: str = ""  # campos adicionais em formato bruto
+
+@dataclass
+class _AssocCER:
+    """Associação de um grupo de CER/SVC a seus modelos (código DCER, §46.18).
+
+    Régua do manual (Listagem 46.16):  ``( Nb) Gr ( Mc )u( Me )u``
+    """
+
+    nb: int  # barra CA à qual o grupo de compensadores está conectado
+    gr: int  # nº do grupo de compensadores estáticos
+    mc: int  # nº do modelo de CER (DMCE predefinido ou CDU do usuário)
+    me: Optional[int] = None  # nº do modelo de estabilizador (CDU), opcional
+    mc_usuario: bool = False  # 'U' se Mc foi definido pelo usuário (DCDU/DTDU)
+    me_usuario: bool = True  # estabilizador só pode ser definido por CDU
 
     def serializar(self) -> str:
-        return (
-            f"{self.no:>4}  {self.nb:>6}  {self.bmin:>8.4f}  {self.bmax:>8.4f}"
-            f"  {self.vref:>8.4f}  {self.modelo:>4}"
-        )
+        partes = [
+            f"{self.nb:>5}",
+            f"{self.gr:>4}",
+            f"{_sep_u(self.mc, self.mc_usuario):>7}",
+        ]
+        if self.me is not None:
+            partes.append(f"{_sep_u(self.me, self.me_usuario):>7}")
+        return "".join(partes)
 
 
 @dataclass
 class BlocoSVC(BlocoBase):
-    """Dados de Compensadores Estáticos de Reativos (DCER/SVC).
+    """Associação de Compensadores Estáticos de Reativos a controles (DCER).
 
-    Confiança: best-effort — campos confirmados contra descrição geral do
-    manual (cap. 25), mas layout de colunas não verificado verbatim.
-    Use `linha_bruta()` se precisar de precisão de colunas.
+    Confiança: Alta — campos e ordem validados contra o manual §46.18
+    (Listagem 46.16). Roundtrip garantido (serializa ↔ ``ParserSTB``).
     """
 
     keyword: str = field(default="DCER", init=False, repr=False)
@@ -1170,20 +1218,22 @@ class BlocoSVC(BlocoBase):
 
     def adicionar(
         self,
-        no: int,
         nb: int,
-        bmin: float = 0.0,
-        bmax: float = 0.0,
-        vref: float = 1.0,
-        modelo: int = 1,
+        gr: int,
+        mc: int,
+        me: Optional[int] = None,
+        mc_usuario: bool = False,
+        me_usuario: bool = True,
     ) -> "BlocoSVC":
         self._equipamentos.append(
-            _CER(no=no, nb=nb, bmin=bmin, bmax=bmax, vref=vref, modelo=modelo)
+            _AssocCER(
+                nb=nb, gr=gr, mc=mc, me=me, mc_usuario=mc_usuario, me_usuario=me_usuario
+            )
         )
         return self
 
     def serializar(self) -> str:
-        linhas = [self._cabecalho()]
+        linhas = [self._cabecalho(), "( Nb) Gr ( Mc )u( Me )u\n"]
         for eq in self._equipamentos:
             linhas.append(eq.serializar() + "\n")
         linhas.append(self._terminador())
@@ -1191,27 +1241,39 @@ class BlocoSVC(BlocoBase):
 
 
 @dataclass
-class _TCSC:
-    """Dados de Compensador Série Controlado (TCSC) – best-effort."""
+class _AssocCSC:
+    """Associação de um CSC/TCSC a seus modelos (código DCSC, §46.22).
 
-    no: int
-    de: int
-    para: int
-    circ: int = 1
-    xcmin: float = 0.0
-    xcmax: float = 0.0
-    modelo: int = 1
+    Régua do manual (Listagem 46.20):  ``( De) ( Pa) Nc ( Mc )u ( Me )u``
+    """
+
+    de: int  # barra DE do compensador série
+    pa: int  # barra PARA do compensador série
+    mc: int  # nº do modelo de CSC (DMCS predefinido ou CDU do usuário)
+    nc: int = 1  # nº do circuito paralelo (default = 1)
+    me: Optional[int] = None
+    mc_usuario: bool = False
+    me_usuario: bool = True
 
     def serializar(self) -> str:
-        return (
-            f"{self.no:>4}  {self.de:>6}  {self.para:>6}  {self.circ:>2}"
-            f"  {self.xcmin:>8.4f}  {self.xcmax:>8.4f}  {self.modelo:>4}"
-        )
+        partes = [
+            f"{self.de:>5}",
+            f"{self.pa:>6}",
+            f"{self.nc:>3}",
+            f"{_sep_u(self.mc, self.mc_usuario):>7}",
+        ]
+        if self.me is not None:
+            partes.append(f"{_sep_u(self.me, self.me_usuario):>7}")
+        return "".join(partes)
 
 
 @dataclass
 class BlocoTCSC(BlocoBase):
-    """Dados de Compensadores Série Controláveis (DCSC) – best-effort."""
+    """Associação de Compensadores Série Controláveis a controles (DCSC).
+
+    Confiança: Alta — campos e ordem validados contra o manual §46.22
+    (Listagem 46.20). Roundtrip garantido.
+    """
 
     keyword: str = field(default="DCSC", init=False, repr=False)
     _equipamentos: list = field(default_factory=list)
@@ -1221,78 +1283,198 @@ class BlocoTCSC(BlocoBase):
 
     def adicionar(
         self,
-        no: int,
         de: int,
-        para: int,
-        circ: int = 1,
-        xcmin: float = 0.0,
-        xcmax: float = 0.0,
-        modelo: int = 1,
+        pa: int,
+        mc: int,
+        nc: int = 1,
+        me: Optional[int] = None,
+        mc_usuario: bool = False,
+        me_usuario: bool = True,
     ) -> "BlocoTCSC":
         self._equipamentos.append(
-            _TCSC(no=no, de=de, para=para, circ=circ, xcmin=xcmin, xcmax=xcmax, modelo=modelo)
+            _AssocCSC(
+                de=de,
+                pa=pa,
+                mc=mc,
+                nc=nc,
+                me=me,
+                mc_usuario=mc_usuario,
+                me_usuario=me_usuario,
+            )
         )
         return self
 
     def serializar(self) -> str:
-        linhas = [self._cabecalho()]
+        linhas = [self._cabecalho(), "( De) ( Pa) Nc ( Mc )u ( Me )u\n"]
         for eq in self._equipamentos:
             linhas.append(eq.serializar() + "\n")
         linhas.append(self._terminador())
         return "".join(linhas)
 
 
-@dataclass
-class _STATCOM:
-    """Dados de equipamento FACTS VSI (STATCOM/SSSC/UPFC) – best-effort."""
+# Larguras de coluna do conversor VSI (§46.64). Campos Pa/Rv/Vpt são opcionais,
+# então a linha é serializada em COLUNAS FIXAS — um campo em branco não pode
+# deslocar os seguintes. Estes offsets são espelhados por ``ParserSTB._ler_dvsi``.
+_VSI_COLS = (
+    ("nv", 5),
+    ("de", 6),
+    ("pa", 6),
+    ("nx", 4),
+    ("np", 4),
+    ("cnvk", 14),
+    ("m", 2),
+    ("vb", 10),
+    ("rv", 10),
+    ("xv", 10),
+    ("vpt", 10),
+    ("vst", 10),
+    ("st", 10),
+    ("tap", 8),
+    ("ne", 6),
+)
 
-    no: int
-    nb: int
-    tipo_vsi: str = "STATCOM"  # STATCOM, SSSC, UPFC
-    qmin: float = 0.0
-    qmax: float = 0.0
-    vref: float = 1.0
-    modelo: int = 1
+
+def _num(v: float) -> str:
+    """Formata float de forma compacta e round-trippable (``repr`` do float)."""
+    return repr(float(v))
+
+
+def _col_int(v: Optional[int], w: int) -> str:
+    return " " * w if v is None else f"{v:>{w}d}"
+
+
+def _col_float(v: Optional[float], w: int) -> str:
+    return " " * w if v is None else f"{_num(v):>{w}}"
+
+
+@dataclass
+class _ConversorVSI:
+    """Dados de um conversor FACTS VSI (código DVSI, §46.64).
+
+    Régua do manual (Listagem 46.61)::
+
+        (Nv) ( De) ( Pa) Nx np ( Cnvk )M(Vb ) ( Rv)( Xv)(Vpt)(Vst)(St )(Tap) (Ne)
+
+    Campos ``pa``, ``rv`` e ``vpt`` são opcionais: a conexão *shunt* deixa
+    ``Pa`` em branco e o manual recomenda deixar ``Rv`` em branco.
+    """
+
+    nv: int  # nº de identificação do conversor VSI
+    de: int  # barra terminal (shunt) ou barra DE do compensador série
+    np: int  # nº de pontes conversoras em série no lado CA
+    cnvk: float  # fator de forma Kf da tensão do conversor
+    vb: float  # tensão base CA nas barras terminais [kV]
+    xv: float  # reatância do trafo por ponte [pu]
+    vst: float  # tensão base do enrolamento secundário [kV]
+    st: float  # potência base de uma unidade do trafo conversor [MW]
+    ne: int  # nº do equipamento FACTS VSI (código DEVS) ao qual pertence
+    pa: Optional[int] = None  # barra PARA (série); em branco para shunt
+    nx: int = 1  # grupo (shunt) ou circuito paralelo (série)
+    m: str = "P"  # estratégia de chaveamento: 'P' (PWM) ou 'N' (não-PWM)
+    rv: Optional[float] = None  # resistência do trafo por ponte [pu]
+    vpt: Optional[float] = None  # tensão base do enrolamento primário [kV]
+    tap: float = 1.0  # tap do trafo no lado secundário [pu]
 
     def serializar(self) -> str:
         return (
-            f"{self.no:>4}  {self.nb:>6}  {self.tipo_vsi:<8}"
-            f"  {self.qmin:>8.4f}  {self.qmax:>8.4f}  {self.vref:>8.4f}"
-            f"  {self.modelo:>4}"
+            _col_int(self.nv, 5)
+            + _col_int(self.de, 6)
+            + _col_int(self.pa, 6)
+            + _col_int(self.nx, 4)
+            + _col_int(self.np, 4)
+            + _col_float(self.cnvk, 14)
+            + f"{self.m:>2}"
+            + _col_float(self.vb, 10)
+            + _col_float(self.rv, 10)
+            + _col_float(self.xv, 10)
+            + _col_float(self.vpt, 10)
+            + _col_float(self.vst, 10)
+            + _col_float(self.st, 10)
+            + _col_float(self.tap, 8)
+            + _col_int(self.ne, 6)
         )
 
 
 @dataclass
 class BlocoSTATCOM(BlocoBase):
-    """Dados de equipamentos FACTS VSI (DVSI) – best-effort."""
+    """Dados de conversores FACTS VSI — STATCOM/SSSC (DVSI, §46.64).
+
+    Confiança: Alta — conjunto e ordem dos 15 campos validados contra o
+    manual §46.64 (Listagem 46.61); serialização em colunas fixas com
+    roundtrip garantido pelo parser. As larguras de coluna seguem a
+    régua-guia do manual; a validação byte-a-byte contra um ``.stb`` real
+    do CEPEL fica pendente de amostra.
+    """
 
     keyword: str = field(default="DVSI", init=False, repr=False)
-    _equipamentos: list = field(default_factory=list)
+    _conversores: list = field(default_factory=list)
 
     def tem_dados(self) -> bool:
-        return bool(self._equipamentos)
+        return bool(self._conversores)
 
     def adicionar(
         self,
-        no: int,
-        nb: int,
-        tipo_vsi: str = "STATCOM",
-        qmin: float = 0.0,
-        qmax: float = 0.0,
-        vref: float = 1.0,
-        modelo: int = 1,
+        nv: int,
+        de: int,
+        np: int,
+        cnvk: float,
+        vb: float,
+        xv: float,
+        vst: float,
+        st: float,
+        ne: int,
+        pa: Optional[int] = None,
+        nx: int = 1,
+        m: str = "P",
+        rv: Optional[float] = None,
+        vpt: Optional[float] = None,
+        tap: float = 1.0,
     ) -> "BlocoSTATCOM":
-        self._equipamentos.append(
-            _STATCOM(
-                no=no, nb=nb, tipo_vsi=tipo_vsi, qmin=qmin, qmax=qmax, vref=vref, modelo=modelo
+        self._conversores.append(
+            _ConversorVSI(
+                nv=nv,
+                de=de,
+                np=np,
+                cnvk=cnvk,
+                vb=vb,
+                xv=xv,
+                vst=vst,
+                st=st,
+                ne=ne,
+                pa=pa,
+                nx=nx,
+                m=m,
+                rv=rv,
+                vpt=vpt,
+                tap=tap,
             )
         )
         return self
 
+    def _guia(self) -> str:
+        rotulos = {
+            "nv": "(Nv)",
+            "de": "(De)",
+            "pa": "(Pa)",
+            "nx": "Nx",
+            "np": "np",
+            "cnvk": "(Cnvk)",
+            "m": "M",
+            "vb": "(Vb)",
+            "rv": "(Rv)",
+            "xv": "(Xv)",
+            "vpt": "(Vpt)",
+            "vst": "(Vst)",
+            "st": "(St)",
+            "tap": "(Tap)",
+            "ne": "(Ne)",
+        }
+        return "".join(f"{rotulos[nome]:>{w}}" for nome, w in _VSI_COLS) + "\n"
+
     def serializar(self) -> str:
-        linhas = [self._cabecalho()]
-        for eq in self._equipamentos:
-            linhas.append(eq.serializar() + "\n")
+        linhas = [self._cabecalho(), self._guia()]
+        for c in self._conversores:
+            linhas.append(c.serializar() + "\n")
         linhas.append(self._terminador())
         return "".join(linhas)
 

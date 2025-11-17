@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pyanatem"
-version = "0.14.2"
+version = "1.1.1"
 description = "Biblioteca Python para geração e manipulação de arquivos ANATEM (.stb)"
 readme = "README.md"
 requires-python = ">=3.9"

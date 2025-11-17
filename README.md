@@ -7,21 +7,21 @@
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![Type hints](https://img.shields.io/badge/type%20hints-full-brightgreen.svg)](pyanatem/)
 
-**v1.0.0 — Production-Ready** ⭐
+**v1.1.1 — Estável** ⭐
 
 Biblioteca Python para **geração, manipulação, parsing e execução automatizada** de arquivos de caso do simulador de estabilidade eletromecânica transitória **ANATEM** (CEPEL).
 
 O pyanatem representa um arquivo `.stb` como um grafo de blocos serializáveis (padrão *AST + Serializer*): cada bloco é um objeto Python que sabe se serializar no texto posicional exato esperado pelo ANATEM, e o parser reconstrói a mesma árvore a partir de um `.stb` existente, garantindo *roundtrip*.
 
-> **Versão:** 1.0.0 — **Lançamento oficial estável**  
-> **Status:** API estável, 206 testes, zero breaking changes (v0.6 → v1.0)  
+> **Versão:** 1.1.1 — **Estável** (base v1.0.0)  
+> **Status:** API estável, 212 testes; etapa v1.1 (Confiabilidade Máxima) em andamento  
 > Referência técnica: Manual ANATEM 12.10 (CEPEL)  
 
 ---
 
-## Estado Atual (v1.0.0)
+## Estado Atual (v1.1.1)
 
-✅ **Production-Ready: API estável, testada e documentada**
+✅ **Estável: API testada e documentada; endurecendo a confiabilidade (etapa v1.1)**
 
 ### Marcos Concluídos
 
@@ -36,6 +36,7 @@ O pyanatem representa um arquivo `.stb` como um grafo de blocos serializáveis (
 | **0.14** | Robustez I/O (latin-1, reconciliação) | ✅ v0.14.2 |
 | **0.15** | CI/CD, docs, exemplos, comunidade | ✅ v0.15.0 |
 | **1.0** | API estável, +200 testes, docs teóricas | ✅ v1.0.0 ⭐ |
+| **1.1** | Confiabilidade Máxima (endurecer o existente) | 🔨 v1.1.1 (FACTS validados) |
 
 ### Destaques v1.0.0
 
@@ -48,7 +49,7 @@ O pyanatem representa um arquivo `.stb` como um grafo de blocos serializáveis (
 - ✅ **Documentação completa** — teórica ([TEORIA.md](TEORIA.md)), prática ([tutorial](docs/tutorial.md)), 7 exemplos
 - ✅ **20+ classes públicas** com type hints, API estável
 
-**Próximo:** v1.1 (suporte ANAREDE 2.0, visualização interativa) — veja [ROADMAP.md](ROADMAP.md)
+**Em andamento:** v1.1 — Confiabilidade Máxima (validar FACTS/HVDC/SAV/RELINV contra o manual → Alta). Veja [ROADMAP.md](ROADMAP.md).
 
 ---
 
@@ -247,13 +248,23 @@ Para transparência sobre validação (v1.0.0):
 | **DPLT** — barras, máquinas, circuitos, cargas | Alta | Nomenclatura consolidada, amplamente documentada | v0.4.0 |
 | **DMDG** (MD01–MD03) | Alta | Serialização/parser/roundtrip validados | v0.4.1 |
 | **DMAQ** (posicional) | Alta | Roundtrip posicional, 206 testes | v0.5.0 |
+| **DCER** (associação CER/SVC) | Alta | Campos/ordem §46.18 (Lst. 46.16), roundtrip | v1.1.1 |
+| **DCSC** (associação CSC/TCSC) | Alta | Campos/ordem §46.22 (Lst. 46.20), roundtrip | v1.1.1 |
+| **DVSI** (conversores FACTS VSI) | Alta | 15 campos/ordem §46.64 (Lst. 46.61), colunas fixas + roundtrip¹ | v1.1.1 |
 | **DPLT** — OLTC, FACTS, HVDC, CDU | Média | Padrão nomenclatura 4-letra, estrutura validada | v0.4.3 |
+| **DCNV** (conversores HVDC LCC) | Média | Modelo básico best-effort, sem validação verbatim | v0.4.3 |
 | **Validação cruzada** | Alta | DMAQ ↔ DMDG validado | v0.7.0 |
 | **LeitorPLT** (formato texto) | Alta | Estrutura validada contra manual, 206 testes | v0.4.0 |
 | **LeitorRelatorio** | Alta | Reconhecimento de palavras-chave validado, testado | v0.4.0 |
 | **LeitorSAV** (ANAREDE) | Média | Parser básico, validação de barras/circuitos | v0.4.7 |
 | **BlocoCDU** — parâmetros/roundtrip | Alta | Desambiguação por tipo (Cap. 29), 206 testes | v0.4.4 |
 | **Formato `.plt` binário** | ❌ Não implementado | Estrutura de bytes desconhecida | — |
+
+> ¹ **DVSI:** conjunto e ordem dos 15 campos validados contra o manual §46.64; a
+> serialização usa colunas fixas (necessário porque `Pa`/`Rv`/`Vpt` são opcionais)
+> cujas larguras seguem a régua-guia do manual. O roundtrip é garantido pelo par
+> serializar↔parser; a validação byte-a-byte contra um `.stb` real do CEPEL fica
+> pendente de amostra.
 
 **Safeguards em v1.0.0:**
 - ✅ **Encoding latin-1 garantido** — sem corrupção silenciosa, `ValueError` descritivo se fora do intervalo
@@ -283,7 +294,8 @@ Para transparência sobre validação (v1.0.0):
 | **BlocoDPLT** | Variáveis de plotagem (barras, máquinas, FACTS, HVDC, CDU) | v0.4.0 | ✅ |
 | **BlocoDMDG** | Modelos predefinidos de geradores (MD01–MD03) | v0.4.1 | ✅ |
 | **BlocoDMAQ** | Associação máquina ↔ modelo dinâmico (posicional, completo) | v0.5.0 | ✅ |
-| **BlocoSVC, TCSC, STATCOM, HVDC** | FACTS e elo de corrente contínua | v0.4.3 | ✅ |
+| **BlocoSVC, TCSC, STATCOM** (DCER/DCSC/DVSI) | FACTS — associação de controles (CER/CSC) e conversores VSI; validados §46 + roundtrip | v0.4.3 (Alta em v1.1.1) | ✅ |
+| **BlocoHVDC** (DCNV) | Elo de corrente contínua LCC (modelo básico best-effort) | v0.4.3 | ✅ |
 | **BlocoCDU, ParametroCDU** | Bloco de CDU (tipos aritméticos, dinâmicos, lógicos, interface) | v0.4.4 | ✅ |
 | **ControladorCDU** | Container fluente para construir controladores CDU | v0.4.4 | ✅ |
 | **BlocoDCDU** | Bloco DCDU completo (múltiplos controladores) | v0.4.5 | ✅ |
@@ -320,7 +332,8 @@ pytest tests/ -v
 
 | Versão | Status | Destaques |
 |--------|--------|----------|
-| **v1.0.0** | ⭐ **Atual (Estável)** | **API estável, 206 testes, 87%+ cobertura, docs teóricas, zero breaking changes** |
+| **v1.1.1** | ⭐ **Atual (Estável)** | **FACTS DCER/DCSC/DVSI validados contra o manual §46 (Média→Alta) + roundtrip, 212 testes** |
+| v1.0.0 | Estável | API estável, 206 testes, 87%+ cobertura, docs teóricas |
 | v0.15.0 | Estável | CI/CD (GitHub Actions), Codecov, mkdocs, 7 exemplos, comunidade |
 | v0.14.2 | Estável | Encoding latin-1 garantido, CDU robusto, reconciliação completa |
 | v0.13.x | Estável | Validação FACTS/HVDC/CDU contra manual |
@@ -330,7 +343,7 @@ pytest tests/ -v
 | v0.6.0 | Estável | FACTS, HVDC, CDU, pós-processamento, LeitorSAV |
 | v0.4.x–0.5.x | Arquivada | MVP: blocos, parser, ensaios, DMAQ posicional |
 
-**Recomendação:** Use **v1.0.0** para novos projetos. Todas as versões estão disponíveis no repositório como referência histórica.
+**Recomendação:** Use **v1.1.1** para novos projetos. Todas as versões estão disponíveis no repositório como referência histórica.
 
 ---
 
