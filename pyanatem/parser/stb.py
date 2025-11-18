@@ -15,6 +15,8 @@ Suporte:
     DCER  – associação CER/SVC (§46.18): Nb Gr Mc[u] [Me[u]] (v1.1.1)
     DCSC  – associação CSC/TCSC (§46.22): De Pa Nc Mc[u] [Me[u]] (v1.1.1)
     DVSI  – conversores FACTS VSI (§46.64): 15 campos em colunas fixas (v1.1.1)
+    DCNV  – conversores CA-CC / assoc. (§46.21): colunas fixas No..S4 (v1.1.2)
+    DELO  – associação de elos CC (§46.27): Ne M+[u] [M-[u]] (v1.1.2)
     DOPC  – opções FREQ e BASE extraídas; demais preservadas
     TITU  – título extraído
 
@@ -136,6 +138,10 @@ class ParserSTB:
                 i = ParserSTB._ler_dcsc(linhas, i + 1, caso)
             elif kw == "DVSI":
                 i = ParserSTB._ler_dvsi(linhas, i + 1, caso)
+            elif kw == "DCNV":
+                i = ParserSTB._ler_dcnv(linhas, i + 1, caso)
+            elif kw == "DELO":
+                i = ParserSTB._ler_delo(linhas, i + 1, caso)
             else:
                 i = ParserSTB._pular_bloco(linhas, i + 1)
 
@@ -712,6 +718,97 @@ class ParserSTB:
                         if _sf(linha, 101, 109) is not None
                         else 1.0
                     ),
+                )
+            except (ValueError, IndexError):
+                pass
+            i += 1
+        return i
+
+    @staticmethod
+    def _ler_dcnv(linhas, inicio, caso) -> int:
+        """Lê o bloco DCNV (§46.21) — conversores CA-CC e associação a controles.
+
+        Parser de COLUNAS FIXAS (Gkb/Amn/Amx/Gmn e S1–S4 são opcionais). Os
+        offsets espelham ``_ConversorCACC.serializar()`` / ``_CACC_COLS``.
+        """
+
+        def _si(s: str, a: int, b: int):
+            tok = s[a:b].strip() if len(s) > a else ""
+            return int(tok) if tok else None
+
+        def _sf(s: str, a: int, b: int):
+            tok = s[a:b].strip() if len(s) > a else ""
+            return float(tok) if tok else None
+
+        def _sm(s: str, a: int, b: int):
+            """Modelo em coluna fixa: (num|None, usuario)."""
+            tok = s[a:b].strip() if len(s) > a else ""
+            return _sep_flag_u(tok) if tok else (None, False)
+
+        i = inicio
+        while i < len(linhas):
+            linha = linhas[i]
+            if _e_terminador(linha) or _e_fim(linha):
+                return i + 1
+            stripped = linha.strip()
+            if not stripped or stripped.startswith("("):
+                i += 1
+                continue
+            try:
+                no = _si(linha, 0, 5)
+                mc, mc_u = _sm(linha, 37, 44)
+                if no is None or mc is None:
+                    raise ValueError("No ou Mc ausente")
+                s1, s1_u = _sm(linha, 44, 51)
+                s2, s2_u = _sm(linha, 51, 58)
+                s3, s3_u = _sm(linha, 58, 65)
+                s4, s4_u = _sm(linha, 65, 72)
+                caso.hvdc.adicionar(
+                    no=no,
+                    mc=mc,
+                    gkb=_sf(linha, 5, 13),
+                    amn=_sf(linha, 13, 21),
+                    amx=_sf(linha, 21, 29),
+                    gmn=_sf(linha, 29, 37),
+                    mc_usuario=mc_u,
+                    s1=s1,
+                    s2=s2,
+                    s3=s3,
+                    s4=s4,
+                    s1_usuario=s1_u,
+                    s2_usuario=s2_u,
+                    s3_usuario=s3_u,
+                    s4_usuario=s4_u,
+                )
+            except (ValueError, IndexError):
+                pass
+            i += 1
+        return i
+
+    @staticmethod
+    def _ler_delo(linhas, inicio, caso) -> int:
+        """Lê o bloco DELO (§46.27) — associação de elos CC aos modelos de polo.
+
+        Formato livre: ``Ne M+[u] [M-[u]]`` (Listagem 46.25).
+        """
+        i = inicio
+        while i < len(linhas):
+            linha = _strip_comment(linhas[i])
+            if _e_terminador(linha) or _e_fim(linha):
+                return i + 1
+            stripped = linha.strip()
+            if not stripped:
+                i += 1
+                continue
+            partes = stripped.split()
+            try:
+                ne = int(partes[0])
+                mp, mp_u = _sep_flag_u(partes[1])
+                mm, mm_u = (None, False)
+                if len(partes) > 2:
+                    mm, mm_u = _sep_flag_u(partes[2])
+                caso.delo.adicionar(
+                    ne=ne, mp=mp, mm=mm, mp_usuario=mp_u, mm_usuario=mm_u
                 )
             except (ValueError, IndexError):
                 pass

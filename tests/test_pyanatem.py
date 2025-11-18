@@ -1251,12 +1251,13 @@ def test_statcom_serializa():
 
 
 def test_hvdc_serializa():
+    # DCNV §46.21 — conversor CA-CC + associação (Listagem 46.19)
     b = BlocoHVDC()
-    b.adicionar(no=1, nb_ret=10, nb_inv=20, pcc=900.0, vcc=600.0)
+    b.adicionar(no=25, mc=100, mc_usuario=True, gkb=5.0, amx=90.0)
     t = b.serializar()
     assert "DCNV" in t
-    assert "900" in t
-    assert "600" in t
+    assert "25" in t
+    assert "100U" in t
 
 
 def test_facts_encadeamento():
@@ -1770,7 +1771,7 @@ def test_hvdc_populado_aparece_no_deck():
 
     caso = CasoAnatem()
     caso.darq.sav = "rede.sav"
-    caso.hvdc.adicionar(no=1, nb_ret=10, nb_inv=20)
+    caso.hvdc.adicionar(no=25, mc=100, mc_usuario=True, gkb=5.0)
     stb = caso.deck()
     assert "DCNV" in stb
 
@@ -1946,6 +1947,104 @@ def test_roundtrip_dvsi_serie(tmp_path):
     assert c.cnvk == 0.612372436
     assert c.vb == 138.0 and c.vpt == 138.0 and c.vst == 13.8
     assert c.rv is None  # Rv deixado em branco (recomendação do manual)
+
+
+# ===========================================================================
+# v1.1.2 – HVDC (DCNV/DELO) validados contra o manual §46 + roundtrip
+# ===========================================================================
+
+
+def test_dcnv_roundtrip(tmp_path):
+    """DCNV: conversor 25 com Mc do usuário e ângulos (Listagem 46.19)."""
+    from pyanatem import CasoAnatem
+
+    caso = CasoAnatem()
+    caso.darq.sav = "rede.sav"
+    caso.hvdc.adicionar(no=25, mc=100, mc_usuario=True, gkb=5.0, amx=90.0)
+    p = tmp_path / "dcnv.stb"
+    caso.exportar(p)
+
+    lido = CasoAnatem.ler(p)
+    c = lido.hvdc._conversores[0]
+    assert (c.no, c.mc, c.mc_usuario) == (25, 100, True)
+    assert c.gkb == 5.0 and c.amx == 90.0
+    assert c.amn is None and c.gmn is None  # brancos → None
+    assert c.s1 is None and c.s2 is None
+
+
+def test_dcnv_roundtrip_sinais(tmp_path):
+    """DCNV: sinais de modulação S1 (usuário) + S2 (predefinido)."""
+    from pyanatem import CasoAnatem
+
+    caso = CasoAnatem()
+    caso.darq.sav = "rede.sav"
+    caso.hvdc.adicionar(
+        no=1,
+        mc=50,
+        amn=5.0,
+        amx=90.0,
+        gmn=15.0,
+        s1=200,
+        s1_usuario=True,
+        s2=201,
+    )
+    p = tmp_path / "dcnv_sinais.stb"
+    caso.exportar(p)
+
+    lido = CasoAnatem.ler(p)
+    c = lido.hvdc._conversores[0]
+    assert (c.no, c.mc) == (1, 50)
+    assert (c.amn, c.amx, c.gmn) == (5.0, 90.0, 15.0)
+    assert (c.s1, c.s1_usuario) == (200, True)
+    assert (c.s2, c.s2_usuario) == (201, False)
+    assert c.s3 is None and c.s4 is None
+
+
+def test_delo_exemplo_manual(tmp_path):
+    """Parse literal da Listagem 46.25 (DELO é formato livre)."""
+    from pyanatem import CasoAnatem
+
+    stb = (
+        "DARQ\nSIST rede.sav\n999999\n"
+        "DELO\n(Ne) ( M+ )u( M- )u\n"
+        "0001 10 10\n0002 10 20\n0003 10 100u\n0004 110u\n999999\nFIM\n"
+    )
+    p = tmp_path / "delo_manual.stb"
+    p.write_text(stb, encoding="latin-1")
+    caso = CasoAnatem.ler(p)
+    elos = caso.delo._elos
+    assert len(elos) == 4
+    assert (elos[0].ne, elos[0].mp, elos[0].mm) == (1, 10, 10)  # bipolar predefinido
+    assert (elos[2].ne, elos[2].mp, elos[2].mm, elos[2].mm_usuario) == (
+        3,
+        10,
+        100,
+        True,
+    )
+    assert (elos[3].ne, elos[3].mp, elos[3].mp_usuario, elos[3].mm) == (
+        4,
+        110,
+        True,
+        None,
+    )
+
+
+def test_roundtrip_delo(tmp_path):
+    """DELO: elo bipolar e elo monopolar (só polo +)."""
+    from pyanatem import CasoAnatem
+
+    caso = CasoAnatem()
+    caso.darq.sav = "rede.sav"
+    caso.delo.adicionar(ne=1, mp=10, mm=20)  # bipolar
+    caso.delo.adicionar(ne=2, mp=110, mp_usuario=True)  # monopolar, usuário
+    p = tmp_path / "delo.stb"
+    caso.exportar(p)
+
+    lido = CasoAnatem.ler(p)
+    assert len(lido.delo._elos) == 2
+    e0, e1 = lido.delo._elos
+    assert (e0.ne, e0.mp, e0.mm) == (1, 10, 20)
+    assert (e1.ne, e1.mp, e1.mp_usuario, e1.mm) == (2, 110, True, None)
 
 
 def test_salvar_cdu_cria_arquivo(tmp_path):

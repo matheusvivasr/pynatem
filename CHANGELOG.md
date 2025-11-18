@@ -2,6 +2,28 @@
 
 Todas as mudanças notáveis estão documentadas aqui.
 
+## [1.1.2] — 2026-07-10 — HVDC (DCNV/DELO) validados contra o manual
+
+> Segundo patch da etapa **v1.1 (Confiabilidade Máxima)**.
+
+### Changed
+
+- **BREAKING** — `BlocoHVDC` (DCNV, §46.21) re-modelado de "conversor de elo"
+  best-effort (`nb_ret/nb_inv/pcc/vcc/icc/alfa_*`) para o código real de
+  **dados de conversor CA-CC + associação a controles**:
+  `adicionar(no, mc, gkb=None, amn=None, amx=None, gmn=None, mc_usuario=False,
+  s1..s4=None, s1..s4_usuario=False)`. Serialização em colunas fixas.
+- Confiabilidade DCNV elevada de **Média → Alta** no README.
+
+### Added
+
+- **`BlocoDELO`** (DELO, §46.27) — associação de elos CC aos modelos de polo
+  (`ne, mp, mm=None, mp_usuario, mm_usuario`); exposto em `CasoAnatem.delo` e
+  emitido no deck após o HVDC.
+- Parser lê DCNV (colunas fixas) e DELO (formato livre); antes pulados.
+- 4 testes novos (roundtrip DCNV com/sem sinais, exemplo manual DELO Lst. 46.25,
+  roundtrip DELO bipolar/monopolar). Total: 216 testes.
+
 ## [1.1.1] — 2026-07-10 — FACTS validados contra o manual
 
 > Primeiro patch da etapa **v1.1 (Confiabilidade Máxima)**. Alinha o número de

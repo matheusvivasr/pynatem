@@ -17,6 +17,7 @@ from .blocos import (
     BlocoTCSC,
     BlocoSTATCOM,
     BlocoHVDC,
+    BlocoDELO,
 )
 from .posprocessamento import (
     LeitorPLT,
@@ -48,6 +49,7 @@ __all__ = [
     "BlocoTCSC",
     "BlocoSTATCOM",
     "BlocoHVDC",
+    "BlocoDELO",
     "LeitorPLT",
     "ResultadoPLT",
     "LeitorRelatorio",
@@ -62,4 +64,4 @@ __all__ = [
     "ResultadoSAV",
 ]
 
-__version__ = "1.1.1"
+__version__ = "1.1.2"

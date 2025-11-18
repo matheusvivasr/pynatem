@@ -14,12 +14,13 @@ NOTA DE CONFIANÇA DOS CÓDIGOS:
   - Barras CA, máquinas síncronas, circuitos CA, cargas: códigos confirmados
     contra a estrutura do manual (VBAR, TBAR, FREQ, DELT, OMEG, PGER, QGER,
     ICAM, EEXC, VTER, PELM, PMEC, FLXP, FLXQ, FLXC, PCAG, QCAG).
-  - FACTS (DCER/SVC, DCSC/TCSC, DVSI): campos e ordem validados contra o
-    manual §46.18/§46.22/§46.64 (Listagens 46.16/46.20/46.61), com roundtrip
-    garantido pelo ParserSTB. DCER/DCSC são códigos de ASSOCIAÇÃO de controles.
-  - OLTC e HVDC (DCNV): ainda "best-effort", seguindo o padrão de nomenclatura
-    de 4 letras do ANATEM, sem confirmação verbatim do manual. Confira o código
-    exato antes de uso em produção — use `linha_bruta()` como alternativa.
+  - FACTS (DCER/SVC, DCSC/TCSC, DVSI) e HVDC (DCNV, DELO): campos e ordem
+    validados contra o manual §46.18/§46.22/§46.64/§46.21/§46.27 (Listagens
+    46.16/46.20/46.61/46.19/46.25), com roundtrip garantido pelo ParserSTB.
+    DCER/DCSC/DCNV/DELO são códigos de ASSOCIAÇÃO de controles.
+  - OLTC: ainda "best-effort", seguindo o padrão de nomenclatura de 4 letras
+    do ANATEM, sem confirmação verbatim do manual. Confira o código exato antes
+    de uso em produção — use `linha_bruta()` como alternativa.
 """
 
 from __future__ import annotations
@@ -1479,34 +1480,95 @@ class BlocoSTATCOM(BlocoBase):
         return "".join(linhas)
 
 
-@dataclass
-class _HVDC:
-    """Dados básicos de um conversor de elo HVDC LCC – best-effort."""
+# ---------------------------------------------------------------------------
+# HVDC (elos LCC) – blocos de associação
+#
+# DCNV  §46.21 — dados de conversor CA-CC e associação aos controles
+# DELO  §46.27 — associação de elos CC aos modelos (DMEL / CDU)
+#
+# Como nos FACTS, os dados físicos do conversor/elo (barras, potência, tensão
+# CC) vêm do ANAREDE; DCNV/DELO informam parâmetros de controle e associam os
+# equipamentos aos seus modelos dinâmicos.
+# ---------------------------------------------------------------------------
 
-    no: int
-    nb_ret: int  # barra do retificador
-    nb_inv: int  # barra do inversor
-    pcc: float = 0.0  # potência nominal [MW]
-    vcc: float = 0.0  # tensão nominal CC [kV]
-    icc: float = 0.0  # corrente nominal CC [kA]
-    alfa_min: float = 5.0  # ângulo mínimo de disparo [graus]
-    alfa_max: float = 90.0  # ângulo máximo [graus]
-    gama_min: float = 15.0  # ângulo mínimo de extinção [graus]
+
+def _col_modelo(num: Optional[int], usuario: bool, w: int) -> str:
+    """Formata ``<num>[U]`` (modelo + flag usuário) em coluna fixa; None → branco."""
+    return " " * w if num is None else f"{_sep_u(num, usuario):>{w}}"
+
+
+# Colunas do conversor CA-CC (DCNV §46.21). Gkb/Amn/Amx/Gmn e S1–S4 são
+# opcionais, então usa-se colunas fixas (espelhadas por ParserSTB._ler_dcnv).
+_CACC_COLS = (
+    ("no", 5),
+    ("gkb", 8),
+    ("amn", 8),
+    ("amx", 8),
+    ("gmn", 8),
+    ("mc", 7),
+    ("s1", 7),
+    ("s2", 7),
+    ("s3", 7),
+    ("s4", 7),
+)
+
+
+@dataclass
+class _ConversorCACC:
+    """Conversor CA-CC de elo LCC e sua associação a controles (DCNV, §46.21).
+
+    Régua do manual (Listagem 46.19)::
+
+        (No) (Gkb)(Amn)(Amx)(Gmn)( Mc )u( S1 )u( S2 )u( S3 )u( S4 )u
+
+    ``Mc`` é o modelo de controle (associação obrigatória); ``S1``–``S4`` são
+    modelos de sinal de modulação, todos opcionais. Cada modelo pode trazer a
+    flag ``U`` (definido pelo usuário via DCDU/ACDU). Os ângulos ``Amn``/``Amx``/
+    ``Gmn`` em branco assumem o valor do ANAREDE.
+
+    Nota: o campo ``tap`` (modelo de controle de tap), citado na régua textual
+    §46.21.2, não aparece no exemplo do manual e não é serializado aqui.
+    """
+
+    no: int  # nº de identificação do conversor
+    mc: int  # nº do modelo de controle do conversor (DMCV ou CDU)
+    gkb: Optional[float] = None  # fator do balanceador de ordem de corrente
+    amn: Optional[float] = None  # alpha mínimo [graus]
+    amx: Optional[float] = None  # alpha máximo [graus]
+    gmn: Optional[float] = None  # gama mínimo [graus]
+    mc_usuario: bool = False
+    s1: Optional[int] = None  # modelos de sinal de modulação (opcionais)
+    s2: Optional[int] = None
+    s3: Optional[int] = None
+    s4: Optional[int] = None
+    s1_usuario: bool = False
+    s2_usuario: bool = False
+    s3_usuario: bool = False
+    s4_usuario: bool = False
 
     def serializar(self) -> str:
         return (
-            f"{self.no:>4}  {self.nb_ret:>6}  {self.nb_inv:>6}"
-            f"  {self.pcc:>10.2f}  {self.vcc:>10.2f}  {self.icc:>8.4f}"
-            f"  {self.alfa_min:>6.1f}  {self.alfa_max:>6.1f}  {self.gama_min:>6.1f}"
+            _col_int(self.no, 5)
+            + _col_float(self.gkb, 8)
+            + _col_float(self.amn, 8)
+            + _col_float(self.amx, 8)
+            + _col_float(self.gmn, 8)
+            + _col_modelo(self.mc, self.mc_usuario, 7)
+            + _col_modelo(self.s1, self.s1_usuario, 7)
+            + _col_modelo(self.s2, self.s2_usuario, 7)
+            + _col_modelo(self.s3, self.s3_usuario, 7)
+            + _col_modelo(self.s4, self.s4_usuario, 7)
         )
 
 
 @dataclass
 class BlocoHVDC(BlocoBase):
-    """Dados de conversores HVDC LCC (DCNV) – best-effort.
+    """Associação de conversores CA-CC de elos LCC a controles (DCNV, §46.21).
 
-    Confiança: best-effort — layout de campos confirma estrutura geral do
-    manual (cap. 24), mas colunas exatas não verificadas verbatim.
+    Confiança: Alta — campos e ordem validados contra o manual §46.21
+    (Listagem 46.19); serialização em colunas fixas com roundtrip garantido.
+    As larguras seguem a régua-guia do manual (byte-validação contra `.stb`
+    real do CEPEL pendente de amostra).
     """
 
     keyword: str = field(default="DCNV", init=False, repr=False)
@@ -1518,33 +1580,118 @@ class BlocoHVDC(BlocoBase):
     def adicionar(
         self,
         no: int,
-        nb_ret: int,
-        nb_inv: int,
-        pcc: float = 0.0,
-        vcc: float = 0.0,
-        icc: float = 0.0,
-        alfa_min: float = 5.0,
-        alfa_max: float = 90.0,
-        gama_min: float = 15.0,
+        mc: int,
+        gkb: Optional[float] = None,
+        amn: Optional[float] = None,
+        amx: Optional[float] = None,
+        gmn: Optional[float] = None,
+        mc_usuario: bool = False,
+        s1: Optional[int] = None,
+        s2: Optional[int] = None,
+        s3: Optional[int] = None,
+        s4: Optional[int] = None,
+        s1_usuario: bool = False,
+        s2_usuario: bool = False,
+        s3_usuario: bool = False,
+        s4_usuario: bool = False,
     ) -> "BlocoHVDC":
         self._conversores.append(
-            _HVDC(
+            _ConversorCACC(
                 no=no,
-                nb_ret=nb_ret,
-                nb_inv=nb_inv,
-                pcc=pcc,
-                vcc=vcc,
-                icc=icc,
-                alfa_min=alfa_min,
-                alfa_max=alfa_max,
-                gama_min=gama_min,
+                mc=mc,
+                gkb=gkb,
+                amn=amn,
+                amx=amx,
+                gmn=gmn,
+                mc_usuario=mc_usuario,
+                s1=s1,
+                s2=s2,
+                s3=s3,
+                s4=s4,
+                s1_usuario=s1_usuario,
+                s2_usuario=s2_usuario,
+                s3_usuario=s3_usuario,
+                s4_usuario=s4_usuario,
             )
         )
         return self
 
+    def _guia(self) -> str:
+        rotulos = {
+            "no": "(No)",
+            "gkb": "(Gkb)",
+            "amn": "(Amn)",
+            "amx": "(Amx)",
+            "gmn": "(Gmn)",
+            "mc": "(Mc)u",
+            "s1": "(S1)u",
+            "s2": "(S2)u",
+            "s3": "(S3)u",
+            "s4": "(S4)u",
+        }
+        return "".join(f"{rotulos[nome]:>{w}}" for nome, w in _CACC_COLS) + "\n"
+
     def serializar(self) -> str:
-        linhas = [self._cabecalho()]
+        linhas = [self._cabecalho(), self._guia()]
         for c in self._conversores:
             linhas.append(c.serializar() + "\n")
+        linhas.append(self._terminador())
+        return "".join(linhas)
+
+
+@dataclass
+class _AssocElo:
+    """Associação de um elo CC aos modelos de polo (DELO, §46.27).
+
+    Régua do manual (Listagem 46.25):  ``(Ne) ( M+ )u( M- )u``
+
+    ``mp`` (polo positivo) é obrigatório; ``mm`` (polo negativo) é opcional
+    (elos monopolares só têm polo positivo). Cada modelo pode trazer flag U.
+    """
+
+    ne: int  # nº de identificação do elo CC
+    mp: int  # modelo do polo positivo (DMEL ou CDU)
+    mm: Optional[int] = None  # modelo do polo negativo (opcional)
+    mp_usuario: bool = False
+    mm_usuario: bool = False
+
+    def serializar(self) -> str:
+        partes = [f"{self.ne:>5}", f"{_sep_u(self.mp, self.mp_usuario):>7}"]
+        if self.mm is not None:
+            partes.append(f"{_sep_u(self.mm, self.mm_usuario):>7}")
+        return "".join(partes)
+
+
+@dataclass
+class BlocoDELO(BlocoBase):
+    """Associação de elos CC (LCC) aos seus modelos de polo (DELO, §46.27).
+
+    Confiança: Alta — campos e ordem validados contra o manual §46.27
+    (Listagem 46.25). Roundtrip garantido.
+    """
+
+    keyword: str = field(default="DELO", init=False, repr=False)
+    _elos: list = field(default_factory=list)
+
+    def tem_dados(self) -> bool:
+        return bool(self._elos)
+
+    def adicionar(
+        self,
+        ne: int,
+        mp: int,
+        mm: Optional[int] = None,
+        mp_usuario: bool = False,
+        mm_usuario: bool = False,
+    ) -> "BlocoDELO":
+        self._elos.append(
+            _AssocElo(ne=ne, mp=mp, mm=mm, mp_usuario=mp_usuario, mm_usuario=mm_usuario)
+        )
+        return self
+
+    def serializar(self) -> str:
+        linhas = [self._cabecalho(), "(Ne) ( M+ )u( M- )u\n"]
+        for e in self._elos:
+            linhas.append(e.serializar() + "\n")
         linhas.append(self._terminador())
         return "".join(linhas)

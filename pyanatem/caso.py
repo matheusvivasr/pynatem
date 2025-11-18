@@ -13,7 +13,8 @@ Ordem dos blocos no STB:
     SVC    – Compensadores Estáticos de Reativos (opcional)
     TCSC   – Compensadores Série Controlados a Tiristor (opcional)
     STATCOM – Compensadores Estáticos de Reativos VSC (opcional)
-    HVDC   – Elos HVDC (opcional)
+    HVDC   – Conversores CA-CC de elos LCC / DCNV (opcional)
+    DELO   – Associação de elos CC / DELO (opcional)
     DEVT   – eventos
     DPLT   – variáveis de plotagem
     DSIM   – parâmetros de simulação
@@ -40,6 +41,7 @@ from .blocos import (
     BlocoTCSC,
     BlocoSTATCOM,
     BlocoHVDC,
+    BlocoDELO,
 )
 
 
@@ -91,6 +93,7 @@ class CasoAnatem:
         self.tcsc = BlocoTCSC()
         self.statcom = BlocoSTATCOM()
         self.hvdc = BlocoHVDC()
+        self.delo = BlocoDELO()
         self.devt = BlocoDEVT()
         self.dplt = BlocoDPLT()
         self.dsim = BlocoDSIM()
@@ -114,10 +117,17 @@ class CasoAnatem:
     # ------------------------------------------------------------------
 
     def curto_barra(
-        self, barra: int, t_apl: float, t_rem: float, r_falta: float = 0.0, x_falta: float = 0.0
+        self,
+        barra: int,
+        t_apl: float,
+        t_rem: float,
+        r_falta: float = 0.0,
+        x_falta: float = 0.0,
     ) -> "CasoAnatem":
         """Aplica e remove curto-circuito em barra CA (APCB + RMCB)."""
-        self.devt.curto_barra(barra=barra, tini=t_apl, tipo="APCB", r=r_falta, x=x_falta)
+        self.devt.curto_barra(
+            barra=barra, tini=t_apl, tipo="APCB", r=r_falta, x=x_falta
+        )
         self.devt.curto_barra(barra=barra, tini=t_rem, tipo="RMCB")
         return self
 
@@ -178,7 +188,9 @@ class CasoAnatem:
         )
         return self
 
-    def abrir_linha(self, de: int, para: int, t_aber: float, circ: int = 1) -> "CasoAnatem":
+    def abrir_linha(
+        self, de: int, para: int, t_aber: float, circ: int = 1
+    ) -> "CasoAnatem":
         """Abertura de circuito CA (ABLN)."""
         self.devt.abertura_linha(de=de, para=para, tini=t_aber, circ=circ)
         return self
@@ -207,7 +219,9 @@ class CasoAnatem:
         """Gera o texto completo do arquivo STB."""
         partes: List[str] = []
 
-        partes.append(f"( {self._titulo}\n" if self._titulo else "( Gerado por pyanatem\n")
+        partes.append(
+            f"( {self._titulo}\n" if self._titulo else "( Gerado por pyanatem\n"
+        )
 
         if self._titulo:
             partes.append(f"TITU\n{self._titulo}\n999999\n")
@@ -232,6 +246,8 @@ class CasoAnatem:
             partes.append(self.statcom.serializar())
         if self.hvdc.tem_dados():
             partes.append(self.hvdc.serializar())
+        if self.delo.tem_dados():
+            partes.append(self.delo.serializar())
 
         partes.append(self.devt.serializar())
         partes.append(self.dplt.serializar())
@@ -372,7 +388,9 @@ class CasoAnatem:
 
         # 9. validação cruzada DMAQ ↔ DMDG
         # Coleta os números de modelo predefinidos declarados no DMDG
-        modelos_dmdg = {m.no for m in self.dmdg._md01 + self.dmdg._md02 + self.dmdg._md03}
+        modelos_dmdg = {
+            m.no for m in self.dmdg._md01 + self.dmdg._md02 + self.dmdg._md03
+        }
 
         for assoc in self.dmaq.associacoes:
             # mg — modelo de gerador (sempre predefinido no DMDG, nunca CDU)
@@ -382,19 +400,31 @@ class CasoAnatem:
                     f"gerador mg={assoc.mg} que não está definido no DMDG."
                 )
             # mt — modelo de turbina/regulador de velocidade (predefinido quando mt_cdu=False)
-            if assoc.mt is not None and not assoc.mt_cdu and assoc.mt not in modelos_dmdg:
+            if (
+                assoc.mt is not None
+                and not assoc.mt_cdu
+                and assoc.mt not in modelos_dmdg
+            ):
                 erros.append(
                     f"DMAQ: barra {assoc.barra} grupo {assoc.grupo} referencia modelo de "
                     f"turbina mt={assoc.mt} (predefinido) que não está definido no DMDG."
                 )
             # mv — modelo de regulador de tensão (predefinido quando mv_cdu=False)
-            if assoc.mv is not None and not assoc.mv_cdu and assoc.mv not in modelos_dmdg:
+            if (
+                assoc.mv is not None
+                and not assoc.mv_cdu
+                and assoc.mv not in modelos_dmdg
+            ):
                 erros.append(
                     f"DMAQ: barra {assoc.barra} grupo {assoc.grupo} referencia modelo de "
                     f"regulador mv={assoc.mv} (predefinido) que não está definido no DMDG."
                 )
             # me — modelo de estabilizador (predefinido quando me_cdu=False)
-            if assoc.me is not None and not assoc.me_cdu and assoc.me not in modelos_dmdg:
+            if (
+                assoc.me is not None
+                and not assoc.me_cdu
+                and assoc.me not in modelos_dmdg
+            ):
                 erros.append(
                     f"DMAQ: barra {assoc.barra} grupo {assoc.grupo} referencia modelo de "
                     f"estabilizador me={assoc.me} (predefinido) que não está definido no DMDG."
