@@ -7,19 +7,19 @@
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![Type hints](https://img.shields.io/badge/type%20hints-full-brightgreen.svg)](pyanatem/)
 
-**v1.1.2 — Estável** ⭐
+**v1.1.3 — Estável** ⭐
 
 Biblioteca Python para **geração, manipulação, parsing e execução automatizada** de arquivos de caso do simulador de estabilidade eletromecânica transitória **ANATEM** (CEPEL).
 
 O pyanatem representa um arquivo `.stb` como um grafo de blocos serializáveis (padrão *AST + Serializer*): cada bloco é um objeto Python que sabe se serializar no texto posicional exato esperado pelo ANATEM, e o parser reconstrói a mesma árvore a partir de um `.stb` existente, garantindo *roundtrip*.
 
-> **Versão:** 1.1.2 — **Estável** (base v1.0.0)  
-> **Status:** API estável, 216 testes; etapa v1.1 (Confiabilidade Máxima) em andamento  
+> **Versão:** 1.1.3 — **Estável** (base v1.0.0)  
+> **Status:** API estável, 219 testes; etapa v1.1 (Confiabilidade Máxima) em andamento  
 > Referência técnica: Manual ANATEM 12.10 (CEPEL)  
 
 ---
 
-## Estado Atual (v1.1.2)
+## Estado Atual (v1.1.3)
 
 ✅ **Estável: API testada e documentada; endurecendo a confiabilidade (etapa v1.1)**
 
@@ -36,7 +36,7 @@ O pyanatem representa um arquivo `.stb` como um grafo de blocos serializáveis (
 | **0.14** | Robustez I/O (latin-1, reconciliação) | ✅ v0.14.2 |
 | **0.15** | CI/CD, docs, exemplos, comunidade | ✅ v0.15.0 |
 | **1.0** | API estável, +200 testes, docs teóricas | ✅ v1.0.0 ⭐ |
-| **1.1** | Confiabilidade Máxima (endurecer o existente) | 🔨 v1.1.2 (FACTS + HVDC validados) |
+| **1.1** | Confiabilidade Máxima (endurecer o existente) | 🔨 v1.1.3 (FACTS + HVDC + SAV) |
 
 ### Destaques v1.0.0
 
@@ -257,7 +257,7 @@ Para transparência sobre validação (v1.0.0):
 | **Validação cruzada** | Alta | DMAQ ↔ DMDG validado | v0.7.0 |
 | **LeitorPLT** (formato texto) | Alta | Estrutura validada contra manual, 206 testes | v0.4.0 |
 | **LeitorRelatorio** | Alta | Reconhecimento de palavras-chave validado, testado | v0.4.0 |
-| **LeitorSAV** (ANAREDE) | Média | Parser básico, validação de barras/circuitos | v0.4.7 |
+| **LeitorSAV** (ANAREDE) | Alta | Colunas fixas DBAR/DLIN + tensão-base via DGBT, fallback tolerante² | v1.1.3 |
 | **BlocoCDU** — parâmetros/roundtrip | Alta | Desambiguação por tipo (Cap. 29), 206 testes | v0.4.4 |
 | **Formato `.plt` binário** | ❌ Não implementado | Estrutura de bytes desconhecida | — |
 
@@ -267,6 +267,12 @@ Para transparência sobre validação (v1.0.0):
 > DCNV) cujas larguras seguem a régua-guia do manual. O roundtrip é garantido
 > pelo par serializar↔parser; a validação byte-a-byte contra um `.stb` real do
 > CEPEL fica pendente de amostra.
+>
+> ² **LeitorSAV:** o formato `.sav` é do **ANAREDE** (externo ao manual ANATEM).
+> O parser segue o layout de colunas fixas padrão do ANAREDE para os
+> identificadores usados na validação cruzada (barra, nome, De/Para/circuito) e
+> resolve a tensão-base via DGBT, com *fallback* por espaços. Validação
+> byte-a-byte contra uma versão específica do ANAREDE fica pendente de amostra.
 
 **Safeguards em v1.0.0:**
 - ✅ **Encoding latin-1 garantido** — sem corrupção silenciosa, `ValueError` descritivo se fora do intervalo
@@ -335,7 +341,8 @@ pytest tests/ -v
 
 | Versão | Status | Destaques |
 |--------|--------|----------|
-| **v1.1.2** | ⭐ **Atual (Estável)** | **HVDC DCNV re-modelado + novo DELO, validados §46.21/§46.27 + roundtrip, 216 testes** |
+| **v1.1.3** | ⭐ **Atual (Estável)** | **LeitorSAV robusto (colunas fixas DBAR/DLIN + DGBT), Média→Alta, 219 testes** |
+| v1.1.2 | Estável | HVDC DCNV re-modelado + novo DELO, validados §46.21/§46.27 + roundtrip |
 | v1.1.1 | Estável | FACTS DCER/DCSC/DVSI validados contra o manual §46 (Média→Alta) + roundtrip |
 | v1.0.0 | Estável | API estável, 206 testes, 87%+ cobertura, docs teóricas |
 | v0.15.0 | Estável | CI/CD (GitHub Actions), Codecov, mkdocs, 7 exemplos, comunidade |
@@ -347,7 +354,7 @@ pytest tests/ -v
 | v0.6.0 | Estável | FACTS, HVDC, CDU, pós-processamento, LeitorSAV |
 | v0.4.x–0.5.x | Arquivada | MVP: blocos, parser, ensaios, DMAQ posicional |
 
-**Recomendação:** Use **v1.1.2** para novos projetos. Todas as versões estão disponíveis no repositório como referência histórica.
+**Recomendação:** Use **v1.1.3** para novos projetos. Todas as versões estão disponíveis no repositório como referência histórica.
 
 ---
 

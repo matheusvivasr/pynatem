@@ -1,6 +1,6 @@
 # Roadmap — pyanatem
 
-## Status atual: **v1.1.2** ✅ (estável, lançável)
+## Status atual: **v1.1.3** ✅ (estável, lançável)
 
 Esquema de versão **v1 (SemVer)**. O ciclo `0.x` foi encerrado em v1.0.0
 (lançamento oficial estável). A partir daí:
@@ -23,7 +23,7 @@ Esquema de versão **v1 (SemVer)**. O ciclo `0.x` foi encerrado em v1.0.0
 |-------|------|--------|
 | **v1.1.1** | Validar FACTS (DCER/DCSC/DVSI) contra o manual §46 → Alta | ✅ **Concluído** (2026-07-10) |
 | **v1.1.2** | Validar HVDC (DCNV/DELO) contra o manual §46 → Alta | ✅ **Concluído** (2026-07-10) |
-| v1.1.3 | LeitorSAV robusto — cobrir todos os registros `.sav` → Alta | ⏳ |
+| **v1.1.3** | LeitorSAV robusto — colunas fixas DBAR/DLIN + DGBT → Alta | ✅ **Concluído** (2026-07-10) |
 | v1.1.4 | Resolver `stip` das curvas RELINV (localizar spec) → Alta | ⏳ |
 | v1.1.5 | Validar DPLT 4-letra (OLTC/FACTS/HVDC/CDU) → Alta | ⏳ |
 

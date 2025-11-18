@@ -9,19 +9,22 @@ Implementa:
     CasoAnatem.validar_contra_sav() – validação cruzada STB ↔ SAV
 
 Formato .sav (ANAREDE):
-    - Texto posicional, encoding latin-1
-    - Bloco DBAR: dados de barras CA
-    - Bloco DLIN: dados de circuitos CA
+    - Texto posicional (colunas fixas), encoding latin-1
+    - Bloco DGBT: grupos de base de tensão (grupo → kV)
+    - Bloco DBAR: dados de barras CA (No, Tipo, Gb, Nome, ...)
+    - Bloco DLIN: dados de circuitos CA (De, Para, Nc, ...)
     - Terminador: 99999
     - Comentários: '(' ...
 
-Confiança: Alta para DBAR (No, Nome, Vb) e DLIN (De, Para, Circuito).
-Layout de colunas confirmado contra estrutura padrão ANAREDE.
+Confiança: Alta para os identificadores usados na validação cruzada —
+DBAR (No, Nome, Tipo, grupo Gb) e DLIN (De, Para, Circuito) — via colunas
+fixas do layout padrão ANAREDE, com fallback tolerante. A tensão-base (kV)
+é resolvida via DGBT. O formato .sav é do ANAREDE (externo ao manual ANATEM);
+a validação byte-a-byte contra uma versão específica fica pendente de amostra.
 """
 
 from __future__ import annotations
 
-import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Dict, FrozenSet, List, Optional, Set, Tuple, Union
@@ -41,7 +44,9 @@ class BarraSAV:
 
     numero: int
     nome: str = ""
-    tensao_base: float = 0.0  # kV
+    tensao_base: float = 0.0  # kV (resolvida via grupo de base / DGBT)
+    tipo: Optional[int] = None  # 0=PQ, 1=PV, 2=slack, 3=...
+    grupo_base: Optional[str] = None  # código do grupo de base de tensão (Gb)
 
     def __hash__(self) -> int:
         return hash(self.numero)
@@ -96,25 +101,58 @@ class ResultadoSAV:
 
 
 class LeitorSAV:
-    """Leitor básico de arquivos .sav do ANAREDE.
+    """Leitor de arquivos .sav do ANAREDE.
 
-    Extrai barras (DBAR) e circuitos (DLIN) por parsing posicional/regex.
-    Não decodifica todos os campos — apenas os necessários para validação
-    cruzada com o STB do ANATEM.
+    Extrai barras (DBAR), circuitos (DLIN) e grupos de base de tensão (DGBT)
+    por parsing de **colunas fixas** — o formato dos cartões ANAREDE é
+    posicional, apesar do nome "formato livre". A tensão-base (kV) de cada
+    barra é resolvida a partir do seu grupo de base (campo ``Gb``) contra a
+    tabela DGBT, e não lida diretamente do DBAR (onde só há a tensão em pu).
 
-    Formato DBAR (colunas 1-10 = No, 11-22 = Nome, …, Vb em cols 21-26):
-        A layout exato varia por versão do ANAREDE; o parser usa regex
-        tolerante que captura o número da barra na posição inicial e o
-        nome como sequência alfanumérica seguinte.
+    Layout de colunas (0-based, layout padrão ANAREDE):
 
-    Formato DLIN (De Para Circuito na posição inicial da linha):
-        Extrai os três primeiros campos inteiros da linha.
+    ``DBAR``  ``No[0:5]  Tipo[7:8]  Gb[8:10]  Nome[10:22]``
+    ``DLIN``  ``De[0:5]  Para[10:15]  Nc[15:17]``
+    ``DGBT``  ``Grupo  Tensão(kV)`` (formato livre, 2 campos)
+
+    Quando uma linha não casa com as colunas fixas (versões antigas, campos
+    deslocados), há um *fallback* por split de espaços que recupera ao menos
+    os identificadores. Campos não reconhecidos vão para ``resultado.erros``.
     """
 
-    # Padrão para linha de barra: começa com inteiro, segue nome e campos
-    _RE_DBAR = re.compile(r"^\s*(\d+)\s+([\w\-\.]+)?\s*(\d+)?\s*(\d+)?\s*([\d\.]+)?", re.ASCII)
-    # Padrão simples para circuito: três inteiros no início
-    _RE_DLIN = re.compile(r"^\s*(\d+)\s+(\d+)\s+(\d+)", re.ASCII)
+    @staticmethod
+    def _slice_int(linha: str, a: int, b: int) -> Optional[int]:
+        tok = linha[a:b].strip() if len(linha) > a else ""
+        try:
+            return int(tok) if tok else None
+        except ValueError:
+            return None
+
+    @staticmethod
+    def _slice_str(linha: str, a: int, b: int) -> str:
+        return linha[a:b].strip() if len(linha) > a else ""
+
+    # Blocos ANAREDE reconhecidos como cabeçalho (encerram o modo anterior)
+    _BLOCOS_CONHECIDOS = frozenset(
+        {
+            "DBAR",
+            "DLIN",
+            "DGBT",
+            "DGLT",
+            "DCTE",
+            "DOPC",
+            "TITU",
+            "DGER",
+            "DCAR",
+            "DSHL",
+            "DBSH",
+            "DPMU",
+            "DCSC",
+            "DARE",
+            "DTPF",
+            "DANC",
+        }
+    )
 
     @classmethod
     def ler(cls, caminho: Union[str, Path]) -> ResultadoSAV:
@@ -139,88 +177,105 @@ class LeitorSAV:
     @classmethod
     def _parsear(cls, linhas: List[str]) -> ResultadoSAV:
         resultado = ResultadoSAV()
-        modo = None  # "DBAR" | "DLIN" | None
+        modo = None  # "DBAR" | "DLIN" | "DGBT" | None
+        grupos_base: Dict[str, float] = {}
 
         for linha in linhas:
             stripped = linha.strip()
 
-            # Comentário
-            if stripped.startswith("(") or not stripped:
+            # Comentário / linha vazia
+            if not stripped or stripped.startswith("("):
                 continue
 
-            # Terminador de bloco
+            # Terminador de bloco (99999 ou 99999999)
             if stripped.startswith("99999"):
                 modo = None
                 continue
 
-            kw = stripped.upper().split()[0] if stripped else ""
+            kw = stripped.upper().split()[0]
 
-            # Detecção de blocos
-            if kw == "DBAR":
-                modo = "DBAR"
-                continue
-            if kw == "DLIN":
-                modo = "DLIN"
-                continue
-            if kw in (
-                "DGBT",
-                "DGLT",
-                "DCTE",
-                "DOPC",
-                "TITU",
-                "DGER",
-                "DCAR",
-                "DGBT",
-                "DPMU",
-                "DCSC",
-            ):
-                modo = None
+            # Cabeçalho de bloco: troca de modo
+            if kw in cls._BLOCOS_CONHECIDOS:
+                modo = kw if kw in ("DBAR", "DLIN", "DGBT") else None
                 continue
 
-            if modo == "DBAR":
-                barra = cls._parsear_barra(stripped)
+            if modo == "DGBT":
+                cls._parsear_grupo_base(linha, grupos_base)
+
+            elif modo == "DBAR":
+                barra = cls._parsear_barra(linha)
                 if barra is not None:
                     resultado.barras[barra.numero] = barra
                 else:
                     resultado.erros.append(f"DBAR não interpretada: {stripped[:60]}")
 
             elif modo == "DLIN":
-                circ = cls._parsear_circuito(stripped)
+                circ = cls._parsear_circuito(linha)
                 if circ is not None:
                     resultado.circuitos.append(circ)
                 else:
                     resultado.erros.append(f"DLIN não interpretada: {stripped[:60]}")
 
+        # Resolve a tensão-base de cada barra a partir do seu grupo (DGBT)
+        if grupos_base:
+            for barra in resultado.barras.values():
+                if barra.grupo_base and barra.tensao_base == 0.0:
+                    barra.tensao_base = grupos_base.get(barra.grupo_base, 0.0)
+
         return resultado
 
     @classmethod
-    def _parsear_barra(cls, linha: str) -> Optional[BarraSAV]:
-        """Extrai número, nome e tensão-base de uma linha DBAR."""
+    def _parsear_grupo_base(cls, linha: str, grupos: Dict[str, float]) -> None:
+        """Extrai (grupo, tensão-base kV) de uma linha DGBT.
+
+        Formato: ``Gb  ( tensão )`` — código do grupo + tensão-base em kV.
+        """
         partes = linha.split()
-        if not partes:
-            return None
-        try:
-            numero = int(partes[0])
-        except ValueError:
-            return None
-        nome = partes[1] if len(partes) > 1 else ""
-        # Tensão base é geralmente o último campo numérico em formato decimal
-        # Em muitas versões do SAV: No Nome Tipo Area Zona Vb Ang ...
-        # Tentativa: campo 5 ou 6 pode ser Vb
-        vb = 0.0
-        for tok in partes[2:6]:
+        if len(partes) >= 2:
             try:
-                v = float(tok)
-                if 0.1 < v < 9999:  # heurística para tensão-base em kV
-                    vb = v
-                    break
+                grupos[partes[0].strip()] = float(partes[1])
             except ValueError:
-                continue
-        return BarraSAV(numero=numero, nome=nome, tensao_base=vb)
+                pass
+
+    @classmethod
+    def _parsear_barra(cls, linha: str) -> Optional[BarraSAV]:
+        """Extrai número, tipo, grupo de base e nome de uma linha DBAR.
+
+        Usa colunas fixas do layout ANAREDE; recorre a split de espaços se
+        o número da barra não estiver na coluna esperada.
+        """
+        numero = cls._slice_int(linha, 0, 5)
+        if numero is None:
+            # Fallback: primeiro token inteiro
+            partes = linha.split()
+            if not partes:
+                return None
+            try:
+                numero = int(partes[0])
+            except ValueError:
+                return None
+            nome = partes[1] if len(partes) > 1 else ""
+            return BarraSAV(numero=numero, nome=nome)
+
+        tipo = cls._slice_int(linha, 7, 8)
+        grupo = cls._slice_str(linha, 8, 10) or None
+        nome = cls._slice_str(linha, 10, 22)
+        return BarraSAV(numero=numero, nome=nome, tipo=tipo, grupo_base=grupo)
 
     @classmethod
     def _parsear_circuito(cls, linha: str) -> Optional[CircuitoSAV]:
-        """Extrai De, Para, Circuito de uma linha DLIN."""
+        """Extrai De, Para, Circuito de uma linha DLIN (colunas fixas).
+
+        Recorre a split de espaços se as colunas fixas não produzirem
+        inteiros válidos para De/Para.
+        """
+        de = cls._slice_int(linha, 0, 5)
+        para = cls._slice_int(linha, 10, 15)
+        nc = cls._slice_int(linha, 15, 17)
+        if de is not None and para is not None:
+            return CircuitoSAV(de=de, para=para, circuito=nc if nc is not None else 1)
+
+        # Fallback: três primeiros inteiros
         partes = linha.split()
         if len(partes) < 2:
             return None
@@ -257,9 +312,13 @@ def validar_contra_sav(caso: "CasoAnatem", path_sav: Union[str, Path]) -> List[s
     # Barras referenciadas em eventos
     for ev in caso.devt._eventos:
         if ev.nb1 and ev.nb1 not in barras_sav:
-            erros.append(f"DEVT: barra {ev.nb1} (evento {ev.codigo}) não existe no SAV.")
+            erros.append(
+                f"DEVT: barra {ev.nb1} (evento {ev.codigo}) não existe no SAV."
+            )
         if ev.nb2 and ev.nb2 not in barras_sav:
-            erros.append(f"DEVT: barra {ev.nb2} (evento {ev.codigo}) não existe no SAV.")
+            erros.append(
+                f"DEVT: barra {ev.nb2} (evento {ev.codigo}) não existe no SAV."
+            )
         if ev.nb2 and ev.nc:
             chave = (min(ev.nb1, ev.nb2), max(ev.nb1, ev.nb2), ev.nc)
             if chave not in circuitos_sav:
@@ -275,7 +334,9 @@ def validar_contra_sav(caso: "CasoAnatem", path_sav: Union[str, Path]) -> List[s
             try:
                 nb = int(partes[1])
                 if nb and nb not in barras_sav:
-                    erros.append(f"DPLT: barra {nb} (var {partes[0]}) não existe no SAV.")
+                    erros.append(
+                        f"DPLT: barra {nb} (var {partes[0]}) não existe no SAV."
+                    )
             except ValueError:
                 pass
 

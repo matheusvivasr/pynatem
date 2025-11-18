@@ -2,6 +2,27 @@
 
 Todas as mudanças notáveis estão documentadas aqui.
 
+## [1.1.3] — 2026-07-10 — LeitorSAV robusto (colunas fixas + DGBT)
+
+> Terceiro patch da etapa **v1.1 (Confiabilidade Máxima)**.
+
+### Changed
+
+- `LeitorSAV` reescrito para **colunas fixas** do layout ANAREDE (antes fazia
+  split de espaços, que quebrava com nomes de barra contendo espaços e errava
+  a posição do circuito no DLIN). Mantém *fallback* por espaços para tolerância.
+- Tensão-base (kV) das barras agora é **resolvida via bloco DGBT** (grupo → kV),
+  em vez da heurística anterior que buscava um kV "plausível" no DBAR (onde só
+  há a tensão em pu). `BarraSAV` ganhou os campos `tipo` e `grupo_base`.
+- Reconhece mais blocos ANAREDE (DGBT, DSHL, DBSH, DARE, DTPF, DANC) como
+  cabeçalhos, evitando falsos "não interpretada".
+- Confiabilidade LeitorSAV elevada de **Média → Alta** no README.
+
+### Added
+
+- 3 testes novos: DBAR/DGBT em colunas fixas (nome com espaço + tensão-base),
+  DLIN em colunas fixas, e blocos extras ignorados sem erro. Total: 219 testes.
+
 ## [1.1.2] — 2026-07-10 — HVDC (DCNV/DELO) validados contra o manual
 
 > Segundo patch da etapa **v1.1 (Confiabilidade Máxima)**.

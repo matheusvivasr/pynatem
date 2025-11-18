@@ -1703,6 +1703,46 @@ def test_leitor_sav_arquivo_real(tmp_path):
     assert (1, 2, 1) in r.chaves_circuitos()
 
 
+# ---- v1.1.3: robustez por colunas fixas + resolução de tensão-base (DGBT) ----
+
+
+def test_leitor_sav_colunas_fixas_dbar_dgbt():
+    """DBAR em colunas fixas: nome com espaço preservado + tensão via DGBT.
+
+    O split por espaços do parser antigo quebrava nomes com espaço (pegava
+    só "SAO"); o parser de colunas fixas preserva "SAO PAULO". A tensão-base
+    vem do grupo Gb resolvido contra a tabela DGBT (não está no DBAR).
+    """
+    #     No=1  tipo=2  Gb=01  nome="SAO PAULO" (col 11+)
+    sav = "DGBT\n01 138.\n99999\n" "DBAR\n" "    1  201SAO PAULO\n" "99999\n"
+    r = LeitorSAV.ler_texto(sav)
+    b = r.barras[1]
+    assert b.nome == "SAO PAULO"  # nome com espaço preservado
+    assert b.tipo == 2
+    assert b.grupo_base == "01"
+    assert b.tensao_base == 138.0  # resolvido via DGBT
+
+
+def test_leitor_sav_dlin_colunas_fixas():
+    """DLIN em colunas fixas: De[0:5] Para[10:15] Nc[15:17]."""
+    sav = "DLIN\n" "   10        20 1\n" "99999\n"
+    r = LeitorSAV.ler_texto(sav)
+    assert (10, 20, 1) in r.chaves_circuitos()
+
+
+def test_leitor_sav_ignora_blocos_extras():
+    """Blocos ANAREDE não-alvo (DGER, DCAR, DARE) são ignorados sem erro."""
+    sav = (
+        "DBAR\n    1  201BARRA A\n99999\n"
+        "DGER\n1 100. 50.\n99999\n"
+        "DCAR\n1 10. 5.\n99999\n"
+        "DARE\n1 SUDESTE\n99999\n"
+    )
+    r = LeitorSAV.ler_texto(sav)
+    assert 1 in r.barras
+    assert r.erros == []  # blocos extras não geram erros
+
+
 # ===========================================================================
 # v0.6.4 — Testes de integração FACTS, HVDC e CDU no CasoAnatem
 # ===========================================================================
