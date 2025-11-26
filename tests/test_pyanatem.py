@@ -137,37 +137,45 @@ def test_dplt_barras_maquinas_circuitos_cargas():
 
 
 def test_dplt_oltc():
+    # §13.3.1: tap do transformador = TAP (régua El/Pa/Nc)
     d = BlocoDPLT()
     d.tap_oltc(de=10, para=20, circ=1)
-    assert "TAPO" in d.serializar()
+    assert "TAP" in d.serializar()
 
 
 def test_dplt_facts_svc():
+    # §25.4: CER = QCES/BCES/ICES/VCES (régua barra + grupo)
     d = BlocoDPLT()
     d.reativo_svc(5)
     d.tensao_svc(5)
     d.susceptancia_svc(5)
+    d.corrente_svc(5)
     t = d.serializar()
-    assert "QSVC" in t and "VSVC" in t and "BSVC" in t
+    assert "QCES" in t and "VCES" in t and "BCES" in t and "ICES" in t
 
 
 def test_dplt_facts_tcsc():
+    # §26.4: CSC = XCSC/BCSC/ICSC (régua De/Para/Nc)
     d = BlocoDPLT()
     d.reatancia_tcsc(10, 20, 1)
-    d.potencia_tcsc(10, 20, 1)
+    d.susceptancia_tcsc(10, 20, 1)
+    d.corrente_tcsc(10, 20, 1)
     t = d.serializar()
-    assert "XTCS" in t and "PTCS" in t
+    assert "XCSC" in t and "BCSC" in t and "ICSC" in t
 
 
 def test_dplt_facts_statcom():
+    # §27.5: VSI = QVSI/PVSI/IMVSI/ETMVSI (régua conversor)
     d = BlocoDPLT()
     d.reativo_statcom(3)
-    d.tensao_statcom(3)
+    d.ativo_statcom(3)
+    d.tensao_interna_statcom(3)
     t = d.serializar()
-    assert "QSTA" in t and "VSTA" in t
+    assert "QVSI" in t and "PVSI" in t and "ETMVSI" in t
 
 
 def test_dplt_hvdc():
+    # §24.6.1: conversor CA-CC = VCNV/CCNV/PCNV/ALFA/GAMA (régua conversor)
     d = BlocoDPLT()
     d.tensao_cc(1)
     d.corrente_cc(1)
@@ -175,15 +183,41 @@ def test_dplt_hvdc():
     d.angulo_disparo(1)
     d.angulo_extincao(1)
     t = d.serializar()
-    for cod in ["VCCD", "ICCD", "PCCD", "ALFA", "GAMA"]:
+    for cod in ["VCNV", "CCNV", "PCNV", "ALFA", "GAMA"]:
         assert cod in t
 
 
 def test_dplt_saida_cdu():
+    # §29.10: variável de saída/estado de CDU = tipo CDU / CDUE
     d = BlocoDPLT()
     d.saida_cdu(num_cdu=2, num_bloco=7)
+    d.estado_cdu(num_cdu=2, num_bloco=8)
     t = d.serializar()
-    assert "SCDU" in t and "2" in t and "7" in t
+    assert "CDU " in t and "CDUE" in t and "2" in t and "7" in t
+
+
+def test_dplt_facts_hvdc_roundtrip(tmp_path):
+    """As linhas DPLT 4-letra sobrevivem ao roundtrip export → ler."""
+    from pyanatem import CasoAnatem
+
+    caso = CasoAnatem()
+    caso.darq.sav = "rede.sav"
+    caso.dplt.reativo_svc(5, grupo=1)  # QCES
+    caso.dplt.reatancia_tcsc(10, 20, 1)  # XCSC
+    caso.dplt.reativo_statcom(3)  # QVSI
+    caso.dplt.tensao_cc(1)  # VCNV
+    caso.dplt.saida_cdu(2, 7)  # CDU
+    p = tmp_path / "dplt.stb"
+    caso.exportar(p)
+
+    conteudo = p.read_text(encoding="latin-1")
+    for cod in ("QCES", "XCSC", "QVSI", "VCNV", "CDU"):
+        assert cod in conteudo
+
+    lido = CasoAnatem.ler(p)
+    texto_lido = "\n".join(lido.dplt.linhas)
+    for cod in ("QCES", "XCSC", "QVSI", "VCNV", "CDU"):
+        assert cod in texto_lido
 
 
 # ===========================================================================

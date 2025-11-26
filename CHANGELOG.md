@@ -2,6 +2,40 @@
 
 Todas as mudanças notáveis estão documentadas aqui.
 
+## [1.1.5] — 2026-07-10 — DPLT 4-letra (OLTC/FACTS/HVDC/CDU) validado — fecha a etapa v1.1 🎉
+
+> Quinto e último patch da etapa **v1.1 (Confiabilidade Máxima)**. Com ele o
+> Inventário B fica zerado: todos os itens que estavam em Média/best-effort
+> passaram a Alta.
+
+### Fixed
+
+- Mnemônicos das variáveis de plotagem DPLT de 4 letras estavam **inventados**.
+  Substituídos pelos códigos e réguas reais do manual:
+  - **OLTC** (§13.3.1): `TAPO` → **`TAP`** (régua De/Para/Nc).
+  - **CER/SVC** (§25.4): `QSVC/VSVC/BSVC` → **`QCES/VCES/BCES/ICES`** (régua
+    barra + grupo; antes só 1 identificador).
+  - **CSC/TCSC** (§26.4): `XTCS/PTCS` → **`XCSC/BCSC/ICSC`** (não existe variável
+    de potência; `potencia_tcsc` foi substituído por `susceptancia_tcsc`/
+    `corrente_tcsc`).
+  - **VSI/STATCOM** (§27.5): `QSTA/VSTA` → **`QVSI/PVSI/IMVSI/ETMVSI`**.
+  - **HVDC conversor** (§24.6.1): `VCCD/ICCD/PCCD` → **`VCNV/CCNV/PCNV`** (+`QCNV`,
+    `VBDC`); `ALFA`/`GAMA` já estavam corretos.
+  - **CDU** (§29.10): `SCDU` → **`CDU`** (saída) e novo **`CDUE`** (estado).
+
+### Changed
+
+- Confiabilidade DPLT 4-letra: **Média → Alta**. Com isso, **Inventário B zerado**
+  e a etapa v1.1 (Confiabilidade Máxima) está **concluída**.
+
+### Added
+
+- Métodos novos em `BlocoDPLT`: `corrente_svc`, `susceptancia_tcsc`,
+  `corrente_tcsc`, `ativo_statcom`, `corrente_statcom`, `tensao_interna_statcom`,
+  `reativo_cc`, `tensao_barra_cc`, `estado_cdu`.
+- 1 teste novo de roundtrip das linhas DPLT 4-letra; os testes existentes foram
+  atualizados para os mnemônicos reais. Total: 222 testes.
+
 ## [1.1.4] — 2026-07-10 — Curvas de tempo inverso (bloco CURVA) validadas
 
 > Quarto patch da etapa **v1.1 (Confiabilidade Máxima)**. Fecha o item

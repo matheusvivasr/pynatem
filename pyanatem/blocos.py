@@ -18,9 +18,13 @@ NOTA DE CONFIANÇA DOS CÓDIGOS:
     validados contra o manual §46.18/§46.22/§46.64/§46.21/§46.27 (Listagens
     46.16/46.20/46.61/46.19/46.25), com roundtrip garantido pelo ParserSTB.
     DCER/DCSC/DCNV/DELO são códigos de ASSOCIAÇÃO de controles.
-  - OLTC: ainda "best-effort", seguindo o padrão de nomenclatura de 4 letras
-    do ANATEM, sem confirmação verbatim do manual. Confira o código exato antes
-    de uso em produção — use `linha_bruta()` como alternativa.
+  - Variáveis de plotagem DPLT 4-letra (OLTC/FACTS/HVDC/CDU): mnemônicos e
+    réguas validados contra o manual (§13.3.1, §25.4, §26.4, §27.5, §24.6.1,
+    §22.2, §29.10). Ex.: tap OLTC=TAP; CER=QCES/BCES/ICES/VCES; CSC=XCSC/BCSC/
+    ICSC; VSI=QVSI/PVSI/IMVSI/ETMVSI; conversor CA-CC=VCNV/CCNV/PCNV/ALFA/GAMA;
+    CDU=CDU/CDUE. As linhas fazem roundtrip como texto no ParserSTB.
+  - O EQUIPAMENTO OLTC (código DLTC) ainda não é modelado (só a variável de
+    plotagem TAP está validada). Use `linha_bruta()` para casos não cobertos.
 """
 
 from __future__ import annotations
@@ -457,82 +461,106 @@ class BlocoDPLT(BlocoBase):
         """Potência reativa de carga [pu]."""
         return self._add("QCAG", barra)
 
-    # -- OLTC (best-effort, ver nota de confiança no topo do módulo) --------
+    # -- Transformadores OLTC (§13.3.1, régua El=DE, Pa=PARA, Nc) ------------
 
     def tap_oltc(self, de: int, para: int, circ: int = 1) -> "BlocoDPLT":
-        """Posição do tap de transformador OLTC.
+        """Valor do tap do transformador no lado primário [pu] (§13.3.1: TAP)."""
+        return self._add("TAP", de, para, circ)
 
-        Código best-effort ('TAPO'); confira no manual (cap. 14) antes
-        de uso em produção.
-        """
-        return self._add("TAPO", de, para, circ)
+    # -- FACTS CER/SVC (§25.4, régua El=barra CA, Gp=grupo) -----------------
 
-    # -- FACTS: CER/SVC (best-effort) ---------------------------------------
+    def reativo_svc(self, barra: int, grupo: int = 0) -> "BlocoDPLT":
+        """Potência reativa do compensador estático [Mvar] (§25.4: QCES)."""
+        return self._add("QCES", barra, grupo)
 
-    def reativo_svc(self, num: int) -> "BlocoDPLT":
-        """Potência reativa injetada pelo CER/SVC [pu ou Mvar] (best-effort)."""
-        return self._add("QSVC", num)
+    def susceptancia_svc(self, barra: int, grupo: int = 0) -> "BlocoDPLT":
+        """Susceptância do compensador estático [pu] (§25.4: BCES)."""
+        return self._add("BCES", barra, grupo)
 
-    def tensao_svc(self, num: int) -> "BlocoDPLT":
-        """Tensão controlada pelo CER/SVC [pu] (best-effort)."""
-        return self._add("VSVC", num)
+    def corrente_svc(self, barra: int, grupo: int = 0) -> "BlocoDPLT":
+        """Corrente no compensador estático [pu] (§25.4: ICES)."""
+        return self._add("ICES", barra, grupo)
 
-    def susceptancia_svc(self, num: int) -> "BlocoDPLT":
-        """Susceptância equivalente do CER/SVC [pu] (best-effort)."""
-        return self._add("BSVC", num)
+    def tensao_svc(self, barra: int, grupo: int = 0) -> "BlocoDPLT":
+        """Tensão na barra controlada pelo CER [pu] (§25.4: VCES)."""
+        return self._add("VCES", barra, grupo)
 
-    # -- FACTS: TCSC (best-effort) -------------------------------------------
+    # -- FACTS CSC/TCSC (§26.4, régua El=DE, Pa=PARA, Nc) -------------------
 
     def reatancia_tcsc(self, de: int, para: int, circ: int = 1) -> "BlocoDPLT":
-        """Reatância inserida pelo TCSC [pu] (best-effort)."""
-        return self._add("XTCS", de, para, circ)
+        """Reatância equivalente do compensador série [%] (§26.4: XCSC)."""
+        return self._add("XCSC", de, para, circ)
 
-    def potencia_tcsc(self, de: int, para: int, circ: int = 1) -> "BlocoDPLT":
-        """Fluxo de potência ativa através do TCSC [pu] (best-effort)."""
-        return self._add("PTCS", de, para, circ)
+    def susceptancia_tcsc(self, de: int, para: int, circ: int = 1) -> "BlocoDPLT":
+        """Susceptância equivalente do compensador série [pu] (§26.4: BCSC)."""
+        return self._add("BCSC", de, para, circ)
 
-    # -- FACTS VSI: STATCOM/SSSC/UPFC (best-effort) --------------------------
+    def corrente_tcsc(self, de: int, para: int, circ: int = 1) -> "BlocoDPLT":
+        """Módulo da corrente do compensador série [pu] (§26.4: ICSC)."""
+        return self._add("ICSC", de, para, circ)
 
-    def reativo_statcom(self, num: int) -> "BlocoDPLT":
-        """Potência reativa do STATCOM [pu ou Mvar] (best-effort)."""
-        return self._add("QSTA", num)
+    # -- FACTS VSI: STATCOM/SSSC (§27.5, régua El=conversor) ----------------
 
-    def tensao_statcom(self, num: int) -> "BlocoDPLT":
-        """Tensão controlada pelo STATCOM [pu] (best-effort)."""
-        return self._add("VSTA", num)
+    def reativo_statcom(self, conversor: int) -> "BlocoDPLT":
+        """Potência reativa no lado CA do conversor VSI [pu] (§27.5: QVSI)."""
+        return self._add("QVSI", conversor)
 
-    # -- HVDC (best-effort) ---------------------------------------------------
+    def ativo_statcom(self, conversor: int) -> "BlocoDPLT":
+        """Potência ativa no lado CA do conversor VSI [pu] (§27.5: PVSI)."""
+        return self._add("PVSI", conversor)
 
-    def tensao_cc(self, polo: int) -> "BlocoDPLT":
-        """Tensão CC do elo/polo HVDC [pu ou kV] (best-effort)."""
-        return self._add("VCCD", polo)
+    def corrente_statcom(self, conversor: int) -> "BlocoDPLT":
+        """Módulo da corrente CA do conversor VSI [pu] (§27.5: IMVSI)."""
+        return self._add("IMVSI", conversor)
 
-    def corrente_cc(self, polo: int) -> "BlocoDPLT":
-        """Corrente CC do elo/polo HVDC [pu ou kA] (best-effort)."""
-        return self._add("ICCD", polo)
+    def tensao_interna_statcom(self, conversor: int) -> "BlocoDPLT":
+        """Módulo da tensão interna CA do conversor VSI [pu] (§27.5: ETMVSI)."""
+        return self._add("ETMVSI", conversor)
 
-    def potencia_cc(self, polo: int) -> "BlocoDPLT":
-        """Potência transmitida pelo elo/polo HVDC [pu ou MW] (best-effort)."""
-        return self._add("PCCD", polo)
+    # -- HVDC: conversor CA-CC (§24.6.1, régua El=conversor DCNV) -----------
 
-    def angulo_disparo(self, polo: int) -> "BlocoDPLT":
-        """Ângulo de disparo do retificador, alfa [graus] (best-effort)."""
-        return self._add("ALFA", polo)
+    def tensao_cc(self, conversor: int) -> "BlocoDPLT":
+        """Tensão de saída do conversor CA-CC [pu] (§24.6.1: VCNV)."""
+        return self._add("VCNV", conversor)
 
-    def angulo_extincao(self, polo: int) -> "BlocoDPLT":
-        """Ângulo de extinção do inversor, gama [graus] (best-effort)."""
-        return self._add("GAMA", polo)
+    def corrente_cc(self, conversor: int) -> "BlocoDPLT":
+        """Corrente no conversor CA-CC [pu] (§24.6.1: CCNV)."""
+        return self._add("CCNV", conversor)
 
-    # -- CDU: saída de bloco de controlador ----------------------------------
+    def potencia_cc(self, conversor: int) -> "BlocoDPLT":
+        """Potência ativa drenada da rede CA pelo conversor [MW] (§24.6.1: PCNV)."""
+        return self._add("PCNV", conversor)
+
+    def reativo_cc(self, conversor: int) -> "BlocoDPLT":
+        """Potência reativa drenada da rede CA pelo conversor [Mvar] (§24.6.1: QCNV)."""
+        return self._add("QCNV", conversor)
+
+    def angulo_disparo(self, conversor: int) -> "BlocoDPLT":
+        """Ângulo de disparo do conversor, alfa [graus] (§24.6.1: ALFA)."""
+        return self._add("ALFA", conversor)
+
+    def angulo_extincao(self, conversor: int) -> "BlocoDPLT":
+        """Ângulo de extinção do inversor, gama [graus] (§24.6.1: GAMA)."""
+        return self._add("GAMA", conversor)
+
+    def tensao_barra_cc(self, barra_cc: int) -> "BlocoDPLT":
+        """Tensão de barra CC [pu] (§22.2: VBDC)."""
+        return self._add("VBDC", barra_cc)
+
+    # -- CDU: variável de saída/estado de bloco (§29.10, régua El=CDU, Bl) --
 
     def saida_cdu(self, num_cdu: int, num_bloco: int) -> "BlocoDPLT":
-        """Saída de um bloco específico dentro de um CDU numerado (best-effort).
+        """Variável de saída de um bloco de CDU (§29.10: tipo CDU).
 
         Args:
-            num_cdu:   número do controlador CDU.
-            num_bloco: número do bloco dentro do CDU (saída a plotar).
+            num_cdu:   número do controlador (ncdu).
+            num_bloco: número do bloco do CDU cuja saída será plotada.
         """
-        return self._add("SCDU", num_cdu, num_bloco)
+        return self._add("CDU", num_cdu, num_bloco)
+
+    def estado_cdu(self, num_cdu: int, num_bloco: int) -> "BlocoDPLT":
+        """Variável de estado de um bloco de CDU (§29.10: tipo CDUE)."""
+        return self._add("CDUE", num_cdu, num_bloco)
 
     # -- Escape hatch ---------------------------------------------------------
 

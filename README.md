@@ -7,19 +7,19 @@
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![Type hints](https://img.shields.io/badge/type%20hints-full-brightgreen.svg)](pyanatem/)
 
-**v1.1.4 — Estável** ⭐
+**v1.1.5 — Estável** ⭐
 
 Biblioteca Python para **geração, manipulação, parsing e execução automatizada** de arquivos de caso do simulador de estabilidade eletromecânica transitória **ANATEM** (CEPEL).
 
 O pyanatem representa um arquivo `.stb` como um grafo de blocos serializáveis (padrão *AST + Serializer*): cada bloco é um objeto Python que sabe se serializar no texto posicional exato esperado pelo ANATEM, e o parser reconstrói a mesma árvore a partir de um `.stb` existente, garantindo *roundtrip*.
 
-> **Versão:** 1.1.4 — **Estável** (base v1.0.0)  
-> **Status:** API estável, 221 testes; etapa v1.1 (Confiabilidade Máxima) em andamento  
+> **Versão:** 1.1.5 — **Estável** (base v1.0.0)  
+> **Status:** API estável, 222 testes; etapa v1.1 (Confiabilidade Máxima) **concluída** ✅  
 > Referência técnica: Manual ANATEM 12.10 (CEPEL)  
 
 ---
 
-## Estado Atual (v1.1.4)
+## Estado Atual (v1.1.5)
 
 ✅ **Estável: API testada e documentada; endurecendo a confiabilidade (etapa v1.1)**
 
@@ -36,7 +36,7 @@ O pyanatem representa um arquivo `.stb` como um grafo de blocos serializáveis (
 | **0.14** | Robustez I/O (latin-1, reconciliação) | ✅ v0.14.2 |
 | **0.15** | CI/CD, docs, exemplos, comunidade | ✅ v0.15.0 |
 | **1.0** | API estável, +200 testes, docs teóricas | ✅ v1.0.0 ⭐ |
-| **1.1** | Confiabilidade Máxima (endurecer o existente) | 🔨 v1.1.4 (FACTS + HVDC + SAV + CURVA) |
+| **1.1** | Confiabilidade Máxima (Inventário B zerado) | ✅ v1.1.5 (FACTS + HVDC + SAV + CURVA + DPLT) |
 
 ### Destaques v1.0.0
 
@@ -251,7 +251,7 @@ Para transparência sobre validação (v1.0.0):
 | **DCER** (associação CER/SVC) | Alta | Campos/ordem §46.18 (Lst. 46.16), roundtrip | v1.1.1 |
 | **DCSC** (associação CSC/TCSC) | Alta | Campos/ordem §46.22 (Lst. 46.20), roundtrip | v1.1.1 |
 | **DVSI** (conversores FACTS VSI) | Alta | 15 campos/ordem §46.64 (Lst. 46.61), colunas fixas + roundtrip¹ | v1.1.1 |
-| **DPLT** — OLTC, FACTS, HVDC, CDU | Média | Padrão nomenclatura 4-letra, estrutura validada | v0.4.3 |
+| **DPLT** — OLTC, FACTS, HVDC, CDU | Alta | Mnemônicos/réguas validados §13.3.1/25.4/26.4/27.5/24.6.1/29.10 | v1.1.5 |
 | **DCNV** (conversores CA-CC LCC) | Alta | Campos/ordem §46.21 (Lst. 46.19), colunas fixas + roundtrip¹ | v1.1.2 |
 | **DELO** (associação de elos CC) | Alta | Campos/ordem §46.27 (Lst. 46.25), roundtrip | v1.1.2 |
 | **Validação cruzada** | Alta | DMAQ ↔ DMDG validado | v0.7.0 |
@@ -342,7 +342,8 @@ pytest tests/ -v
 
 | Versão | Status | Destaques |
 |--------|--------|----------|
-| **v1.1.4** | ⭐ **Atual (Estável)** | **Curvas de tempo inverso: tipo CURVA + IEC/IEC2/IEEE/IEEE2 (§29.3.13), best-effort→Alta, 221 testes** |
+| **v1.1.5** | ⭐ **Atual (Estável)** | **DPLT 4-letra (OLTC/FACTS/HVDC/CDU) validado, Média→Alta — fecha a etapa v1.1 (Inventário B zerado), 222 testes** |
+| v1.1.4 | Estável | Curvas de tempo inverso: tipo CURVA + IEC/IEC2/IEEE/IEEE2 (§29.3.13), best-effort→Alta |
 | v1.1.3 | Estável | LeitorSAV robusto (colunas fixas DBAR/DLIN + DGBT), Média→Alta |
 | v1.1.2 | Estável | HVDC DCNV re-modelado + novo DELO, validados §46.21/§46.27 + roundtrip |
 | v1.1.1 | Estável | FACTS DCER/DCSC/DVSI validados contra o manual §46 (Média→Alta) + roundtrip |
@@ -356,7 +357,7 @@ pytest tests/ -v
 | v0.6.0 | Estável | FACTS, HVDC, CDU, pós-processamento, LeitorSAV |
 | v0.4.x–0.5.x | Arquivada | MVP: blocos, parser, ensaios, DMAQ posicional |
 
-**Recomendação:** Use **v1.1.4** para novos projetos. Todas as versões estão disponíveis no repositório como referência histórica.
+**Recomendação:** Use **v1.1.5** para novos projetos. Todas as versões estão disponíveis no repositório como referência histórica.
 
 ---
 

@@ -1,6 +1,6 @@
 # Roadmap — pyanatem
 
-## Status atual: **v1.1.4** ✅ (estável, lançável)
+## Status atual: **v1.1.5** ✅ (estável, lançável) — etapa v1.1 concluída 🎉
 
 Esquema de versão **v1 (SemVer)**. O ciclo `0.x` foi encerrado em v1.0.0
 (lançamento oficial estável). A partir daí:
@@ -15,9 +15,10 @@ Esquema de versão **v1 (SemVer)**. O ciclo `0.x` foi encerrado em v1.0.0
 
 ---
 
-## v1.1.0 — Confiabilidade Máxima 🥇 *(em andamento)*
+## v1.1.0 — Confiabilidade Máxima 🥇 ✅ **CONCLUÍDA**
 
-*Endurece o existente sem adicionar superfície nova — maior retorno por esforço.*
+*Endureceu o existente sem adicionar superfície nova — maior retorno por esforço.
+Inventário B zerado: tudo que estava em Média/best-effort passou a Alta.*
 
 | Patch | Meta | Status |
 |-------|------|--------|
@@ -25,7 +26,7 @@ Esquema de versão **v1 (SemVer)**. O ciclo `0.x` foi encerrado em v1.0.0
 | **v1.1.2** | Validar HVDC (DCNV/DELO) contra o manual §46 → Alta | ✅ **Concluído** (2026-07-10) |
 | **v1.1.3** | LeitorSAV robusto — colunas fixas DBAR/DLIN + DGBT → Alta | ✅ **Concluído** (2026-07-10) |
 | **v1.1.4** | Curvas de tempo inverso (bloco CURVA §29.3.13, subtipos IEC/IEC2/IEEE/IEEE2) → Alta | ✅ **Concluído** (2026-07-10) |
-| v1.1.5 | Validar DPLT 4-letra (OLTC/FACTS/HVDC/CDU) → Alta | ⏳ |
+| **v1.1.5** | Validar DPLT 4-letra (OLTC/FACTS/HVDC/CDU) contra o manual → Alta | ✅ **Concluído** (2026-07-10) |
 
 **v1.1.1 entregou:** DCER/DCSC re-modelados como códigos de *associação de
 controles* (§46.18/§46.22) e DVSI com os 15 campos reais do conversor (§46.64);
