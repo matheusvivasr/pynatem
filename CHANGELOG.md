@@ -2,6 +2,31 @@
 
 Todas as mudanças notáveis estão documentadas aqui.
 
+## [1.1.4] — 2026-07-10 — Curvas de tempo inverso (bloco CURVA) validadas
+
+> Quarto patch da etapa **v1.1 (Confiabilidade Máxima)**. Fecha o item
+> best-effort do `stip` de RELINV.
+
+### Fixed
+
+- Curvas de tempo inverso: o tipo de bloco correto é **`CURVA`** (§29.3.13), não
+  `RELINV` (que não consta no manual 12.10). O parser agora reconhece o tipo
+  `CURVA` e **todos os subtipos** de `stip`: **IEC, IEC2, IEEE, IEEE2**. Antes só
+  `IEC`/`IEEE` eram aceitos — `IEC2`/`IEEE2` eram confundidos com a variável de
+  entrada, deslocando todos os campos seguintes.
+- `RELINV` mantido como **alias legado** do tipo (retrocompatível).
+
+### Changed
+
+- Confiabilidade das curvas de tempo inverso: **best-effort → Alta** (validado
+  contra as Listagens 29.97–29.100 do manual). A "regra da ignorância" que
+  bloqueava o `stip` foi removida (a referência §29.3.13 está disponível).
+
+### Added
+
+- 2 testes novos: roundtrip do bloco CURVA nos 4 subtipos + alias RELINV.
+  Total: 221 testes.
+
 ## [1.1.3] — 2026-07-10 — LeitorSAV robusto (colunas fixas + DGBT)
 
 > Terceiro patch da etapa **v1.1 (Confiabilidade Máxima)**.

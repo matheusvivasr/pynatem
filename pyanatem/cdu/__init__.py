@@ -15,7 +15,9 @@ Referência: Manual ANATEM 12.10, Cap. 29 (blocos_CDU_completo.md)
 CONFIANÇA:
   Tipos aritméticos e dinâmicos: Alta (confirmados no manual).
   Tipos lógicos, interface, seletores, limitadores: Alta (confirmados no manual).
-  Curvas de tempo inverso (RELINV): best-effort.
+  Curvas de tempo inverso (bloco CURVA, §29.3.13): Alta — subtipos
+    IEC/IEC2/IEEE/IEEE2 validados contra o manual (Listagens 29.97–29.100).
+    `RELINV` é mantido como alias legado do tipo (não consta no manual 12.10).
 """
 
 from __future__ import annotations
@@ -78,7 +80,8 @@ TIPOS_PARAMETROS = {
     "MULTPL": 0,  # Entradas vêm em linhas extras
     "DIVSAO": 0,  # Entradas vêm em linhas extras
     "POLS": 2,  # POLS tem configuração especial
-    "RELINV": 3,  # Curva de tempo inverso: tipo + 3 parâmetros
+    "CURVA": 3,  # Curva de tempo inverso (§29.3.13): P1/P2/P3
+    "RELINV": 3,  # alias legado do bloco CURVA (o manual 12.10 usa CURVA)
 }
 
 # O campo stip é determinado pelo TIPO do bloco, conforme o manual (Cap. 29) —
@@ -104,11 +107,14 @@ TIPOS_STIP_SO_VSAI = frozenset({"IMPORT", "INPUT", "SERIET"})
 # Blocos de interface de exportação: só têm variável de entrada (vsai vazio)
 TIPOS_STIP_SO_VENT = frozenset({"EXPORT", "OUTPUT"})
 
-# RELINV: curvas de tempo inverso. A seção correspondente do manual não está
-# disponível em markdowns_referencia/ (Regra da ignorância: validação do stip
-# de RELINV permanece bloqueada até a referência ser fornecida). Heurística
-# conservadora por palavra-chave, restrita a este tipo.
-STIP_RELINV = frozenset({"IEC", "IEEE"})
+# Curvas de tempo inverso: bloco tipo CURVA (§29.3.13). O stip (subtipo) indica
+# a norma da característica de tempo inverso:
+#   IEC / IEC2   – característica IEC 60255 (IEC2 usa reset "eletromecânico")
+#   IEEE / IEEE2 – característica IEEE C37.112 (IEEE2 usa reset "eletromecânico")
+# Parâmetros: P1 (referência), P2 (tipo de curva 1–5), P3 (dial de tempo TD).
+# Validado contra o manual (Listagens 29.97–29.100).
+STIP_CURVA = frozenset({"IEC", "IEC2", "IEEE", "IEEE2"})
+STIP_RELINV = STIP_CURVA  # alias legado
 
 # Tipos dinâmicos e limitadores dinâmicos
 TIPOS_DINAMICOS = frozenset(
@@ -166,12 +172,14 @@ TIPOS_NAO_LINEARES = frozenset(
     }
 )
 
-# Curvas de tempo inverso
-TIPOS_RELINV = frozenset(
+# Curvas de tempo inverso (bloco tipo CURVA, §29.3.13; RELINV é alias legado)
+TIPOS_CURVA = frozenset(
     {
+        "CURVA",
         "RELINV",
     }
 )
+TIPOS_RELINV = TIPOS_CURVA  # alias legado
 
 # Interface com a rede
 TIPOS_INTERFACE = frozenset(
@@ -199,7 +207,7 @@ TODOS_TIPOS = (
     | TIPOS_LOGICOS
     | TIPOS_SELETORES
     | TIPOS_NAO_LINEARES
-    | TIPOS_RELINV
+    | TIPOS_CURVA
     | TIPOS_INTERFACE
     | TIPOS_TERMINADORES
 )
@@ -413,10 +421,14 @@ class ControladorCDU:
     # API fluente
     # ------------------------------------------------------------------
 
-    def defpar(self, nome: str, valor: Union[float, str], comentario: str = "") -> "ControladorCDU":
+    def defpar(
+        self, nome: str, valor: Union[float, str], comentario: str = ""
+    ) -> "ControladorCDU":
         """Adiciona parâmetro DEFPAR."""
         _validar_nome_par(nome, "defpar(nome)")
-        self._parametros.append(ParametroCDU(nome=nome, valor=valor, comentario=comentario))
+        self._parametros.append(
+            ParametroCDU(nome=nome, valor=valor, comentario=comentario)
+        )
         return self
 
     def bloco(
@@ -470,7 +482,9 @@ class ControladorCDU:
     ) -> "ControladorCDU":
         """Adiciona DEFVAL."""
         _validar_nome_var(vdef, "defval(vdef)")
-        self._defvals.append(ValorInicialCDU(vdef=vdef, d1=d1, stip=stip, silent=silent, d2=d2))
+        self._defvals.append(
+            ValorInicialCDU(vdef=vdef, d1=d1, stip=stip, silent=silent, d2=d2)
+        )
         return self
 
     def defvdf(self, vdef: str, valor: Union[float, str]) -> "ControladorCDU":
@@ -650,7 +664,9 @@ def _parsear_controlador(linhas: List[str], inicio: int, ctrl: ControladorCDU) -
         if kw == "DEFPAR":
             nome = partes[1] if len(partes) > 1 else ""
             val_str = partes[2] if len(partes) > 2 else "0"
-            ctrl._parametros.append(ParametroCDU(nome=nome, valor=_parse_param(val_str)))
+            ctrl._parametros.append(
+                ParametroCDU(nome=nome, valor=_parse_param(val_str))
+            )
             i += 1
             continue
 
@@ -689,7 +705,9 @@ def _parsear_controlador(linhas: List[str], inicio: int, ctrl: ControladorCDU) -
         if kw == "DEFVDF":
             vdef = partes[1] if len(partes) > 1 else ""
             val_str = partes[2] if len(partes) > 2 else "0"
-            ctrl._defvdfs.append(ValorDefaultCDU(vdef=vdef, valor=_parse_param(val_str)))
+            ctrl._defvdfs.append(
+                ValorDefaultCDU(vdef=vdef, valor=_parse_param(val_str))
+            )
             i += 1
             continue
 
@@ -744,8 +762,8 @@ def _parsear_controlador(linhas: List[str], inicio: int, ctrl: ControladorCDU) -
             if idx < len(partes):
                 stip = partes[idx]
                 idx += 1
-        elif tipo_upper in TIPOS_RELINV:
-            if idx < len(partes) and partes[idx].upper() in STIP_RELINV:
+        elif tipo_upper in TIPOS_CURVA:
+            if idx < len(partes) and partes[idx].upper() in STIP_CURVA:
                 stip = partes[idx]
                 idx += 1
 

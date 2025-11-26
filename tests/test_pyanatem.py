@@ -2407,6 +2407,58 @@ def test_cdu_soma_quatro_entradas_roundtrip():
     assert b == b2
 
 
+def test_cdu_curva_tempo_inverso_roundtrip():
+    """Bloco CURVA (§29.3.13) com todos os subtipos de tempo inverso.
+
+    Regressão v1.1.4: antes o tipo era "RELINV" (inexistente no manual) e o
+    parser só reconhecia stip IEC/IEEE — IEC2/IEEE2 eram tratados como vent,
+    deslocando todos os campos. Agora o tipo é CURVA e os 4 subtipos
+    (Listagens 29.97–29.100) fazem roundtrip completo.
+    """
+    for stip in ("IEC", "IEC2", "IEEE", "IEEE2"):
+        dcdu = BlocoDCDU()
+        ctrl = dcdu.novo_controlador(ncdu=1, nome=f"CURVA_{stip}")
+        ctrl.bloco(
+            10,
+            "CURVA",
+            stip=stip,
+            vent="Uin",
+            vsai="Ysai",
+            p1="#Uref",
+            p2="#Tipo",
+            p3="#Dial",
+        )
+        texto = dcdu.serializar()
+        assert "CURVA" in texto and stip in texto
+
+        b2 = _roundtrip_dcdu(dcdu)._controladores[0]._blocos[0]
+        assert b2.tipo == "CURVA", stip
+        assert b2.stip == stip, stip  # subtipo preservado (IEC2/IEEE2 inclusive)
+        assert b2.vent == "Uin", stip  # vent não confundido com stip
+        assert b2.vsai == "Ysai", stip
+        assert (b2.p1, b2.p2, b2.p3) == ("#Uref", "#Tipo", "#Dial"), stip
+
+
+def test_cdu_relinv_alias_legado():
+    """RELINV segue reconhecido como alias legado do tipo CURVA."""
+    dcdu = BlocoDCDU()
+    ctrl = dcdu.novo_controlador(ncdu=1, nome="LEGADO")
+    ctrl.bloco(
+        10,
+        "RELINV",
+        stip="IEC",
+        vent="Uin",
+        vsai="Ysai",
+        p1="#Uref",
+        p2="#Tipo",
+        p3="#Dial",
+    )
+    b2 = _roundtrip_dcdu(dcdu)._controladores[0]._blocos[0]
+    assert b2.tipo == "RELINV"
+    assert b2.stip == "IEC"
+    assert b2.vent == "Uin" and b2.vsai == "Ysai"
+
+
 def test_cdu_multpl_tres_entradas_roundtrip():
     """MULTPL com 3 entradas: serialização, parsing e roundtrip."""
     dcdu = BlocoDCDU()
