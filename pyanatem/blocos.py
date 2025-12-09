@@ -1190,13 +1190,15 @@ class BlocoDMDG(BlocoBase):
 # ---------------------------------------------------------------------------
 # Modelos predefinidos de controle de máquina síncrona
 #
-# DRGT  §16.3 — Regulador de Tensão e Excitatriz (24 modelos MD01–MD24)
+# DRGT  §16.3 — Regulador de Tensão e Excitatriz  (24 modelos MD01–MD24)
+# DRGV  §16.4 — Regulador de Velocidade e Turbina (7 modelos MD01–MD07)
 #
 # Cada modelo MDxx tem régua de parâmetros própria. Estes blocos usam
 # armazenamento GENÉRICO POSICIONAL: nº de identificação + parâmetros na ordem
-# da régua do modelo. Isso cobre todos os 24 modelos com roundtrip garantido,
-# sem hardcode de cada régua. O modelo MD01 tem construtor nomeado, validado
-# campo a campo contra o manual. A associação à máquina é feita via DMAQ.
+# da régua do modelo. Isso cobre todos os modelos com roundtrip garantido, sem
+# hardcode de cada régua. O modelo MD01 tem construtor nomeado, validado campo
+# a campo contra o manual. A associação à máquina é feita via DMAQ (DRGT→Mv,
+# DRGV→Mt).
 # ---------------------------------------------------------------------------
 
 
@@ -1219,14 +1221,14 @@ def _norm_md(modelo) -> str:
 
 
 @dataclass
-class _ModeloRegTensao:
-    """Registro de um modelo predefinido de regulador de tensão (DRGT MDxx).
+class _ModeloMDxx:
+    """Registro genérico de um modelo predefinido MDxx (DRGT/DRGV/DEST).
 
-    Armazenamento genérico: ``no`` (identificador usado no DMAQ) + ``parametros``
-    posicionais, na ordem exata da régua do modelo MDxx (§16.3).
+    Armazenamento: ``no`` (identificador usado no DMAQ) + ``parametros``
+    posicionais, na ordem exata da régua do modelo MDxx no manual.
     """
 
-    modelo: str  # "MD01" ... "MD24"
+    modelo: str  # "MD01" ...
     no: int
     parametros: list = field(default_factory=list)
 
@@ -1235,38 +1237,64 @@ class _ModeloRegTensao:
 
 
 @dataclass
-class BlocoDRGT(BlocoBase):
-    """Modelos predefinidos de Regulador de Tensão e Excitatriz (DRGT, §16.3).
+class _BlocoModeloMDxx(BlocoBase):
+    """Base dos blocos de modelos predefinidos por variante MDxx.
 
-    24 modelos (MD01–MD24). Cobre TODOS via parâmetros posicionais (roundtrip
-    garantido); o MD01 tem construtor nomeado validado campo a campo. A
-    associação à máquina é feita no DMAQ (campo Mv). Reguladores fora dos
-    modelos predefinidos usam CDU (código DCDU).
-
-    Confiança: Alta — estrutura (keyword + MDxx + No + params + 999999) e o
-    MD01 validados contra §16.3; roundtrip garantido pelo ParserSTB.
+    Cobre qualquer modelo via parâmetros posicionais (roundtrip garantido).
+    Emite um sub-bloco ``<keyword> MDxx`` por variante (o manual só permite
+    uma variante por execução do código). Subclasses definem a ``keyword`` e
+    construtores nomeados para os modelos mais comuns.
     """
 
-    keyword: str = field(default="DRGT", init=False, repr=False)
     _modelos: list = field(default_factory=list)
 
     def tem_dados(self) -> bool:
         return bool(self._modelos)
 
-    def adicionar(self, modelo, no: int, *parametros) -> "BlocoDRGT":
-        """Adiciona um modelo de regulador genérico (qualquer MDxx).
+    def adicionar(self, modelo, no: int, *parametros):
+        """Adiciona um modelo genérico (qualquer MDxx).
 
         Args:
-            modelo: "MD01".."MD24" (ou o número/inteiro correspondente).
+            modelo: "MD01".."MDnn" (ou o inteiro correspondente).
             no: número de identificação do modelo.
-            *parametros: valores posicionais na ordem da régua do modelo (§16.3).
+            *parametros: valores posicionais na ordem da régua do modelo.
         """
         self._modelos.append(
-            _ModeloRegTensao(
-                modelo=_norm_md(modelo), no=no, parametros=list(parametros)
-            )
+            _ModeloMDxx(modelo=_norm_md(modelo), no=no, parametros=list(parametros))
         )
         return self
+
+    def serializar(self) -> str:
+        ordem: list = []
+        grupos: dict = {}
+        for m in self._modelos:
+            if m.modelo not in grupos:
+                grupos[m.modelo] = []
+                ordem.append(m.modelo)
+            grupos[m.modelo].append(m)
+
+        linhas: list = []
+        for variante in ordem:
+            linhas.append(f"{self.keyword} {variante}\n")
+            for m in grupos[variante]:
+                linhas.append(m.serializar() + "\n")
+            linhas.append(self._terminador())
+        return "".join(linhas)
+
+
+@dataclass
+class BlocoDRGT(_BlocoModeloMDxx):
+    """Modelos predefinidos de Regulador de Tensão e Excitatriz (DRGT, §16.3).
+
+    24 modelos (MD01–MD24). Cobre TODOS via parâmetros posicionais; o MD01 tem
+    construtor nomeado validado campo a campo. Associação à máquina via DMAQ
+    (campo Mv). Reguladores fora dos modelos predefinidos usam CDU (DCDU).
+
+    Confiança: Alta — estrutura e MD01 validados contra §16.3; roundtrip
+    garantido pelo ParserSTB.
+    """
+
+    keyword: str = field(default="DRGT", init=False, repr=False)
 
     def adicionar_md01(
         self,
@@ -1295,24 +1323,51 @@ class BlocoDRGT(BlocoBase):
             "MD01", no, cs, ka, ke, kf, tm, ta, te, tf, lmn, lmx, l, s
         )
 
-    def serializar(self) -> str:
-        # Um sub-bloco "DRGT MDxx" por variante (o manual só permite uma
-        # variante por execução do código), preservando ordem de aparição.
-        ordem: list = []
-        grupos: dict = {}
-        for m in self._modelos:
-            if m.modelo not in grupos:
-                grupos[m.modelo] = []
-                ordem.append(m.modelo)
-            grupos[m.modelo].append(m)
 
-        linhas: list = []
-        for variante in ordem:
-            linhas.append(f"{self.keyword} {variante}\n")
-            for m in grupos[variante]:
-                linhas.append(m.serializar() + "\n")
-            linhas.append(self._terminador())
-        return "".join(linhas)
+@dataclass
+class BlocoDRGV(_BlocoModeloMDxx):
+    """Modelos predefinidos de Regulador de Velocidade e Turbina (DRGV, §16.4).
+
+    7 modelos (MD01–MD07). Cobre TODOS via parâmetros posicionais; o MD01 tem
+    construtor nomeado validado campo a campo. Associação à máquina via DMAQ
+    (campo Mt). Reguladores fora dos modelos predefinidos usam CDU (DCDU).
+
+    Confiança: Alta — estrutura e MD01 validados contra §16.4; roundtrip
+    garantido pelo ParserSTB.
+    """
+
+    keyword: str = field(default="DRGV", init=False, repr=False)
+
+    def adicionar_md01(
+        self,
+        no: int,
+        r: float,
+        rp: float,
+        at: float,
+        qnl: float,
+        tw: float,
+        tr: float,
+        tf: float,
+        tg: float,
+        lmn: float,
+        lmx: float,
+        dtb: float,
+        d: float,
+        pbg: float,
+        pbt: float,
+    ) -> "BlocoDRGV":
+        """Regulador de velocidade MD01 (§16.4), campos nomeados e validados.
+
+        Campos (na ordem da régua): R (estatismo permanente), Rp (estatismo
+        transitório), At (ganho da turbina), Qnl (vazão sem carga), Tw (água),
+        Tr (regulador), Tf (filtragem), Tg (servomotor), Lmn/Lmx (limites de
+        abertura da comporta), Dtb (amortecimento da turbina), D (amortecimento
+        da carga), Pbg (potência base do gerador, MVA), Pbt (potência base da
+        turbina, MW).
+        """
+        return self.adicionar(
+            "MD01", no, r, rp, at, qnl, tw, tr, tf, tg, lmn, lmx, dtb, d, pbg, pbt
+        )
 
 
 # ---------------------------------------------------------------------------

@@ -13,6 +13,7 @@ Suporte:
     DMAQ  – linhas preservadas como texto bruto
     DMDG  – MD01, MD02 e MD03 totalmente estruturados (Sessão 4)
     DRGT  – reguladores de tensão predefinidos (§16.3): MD01–MD24 genérico (v1.2.1)
+    DRGV  – reguladores de velocidade/turbina (§16.4): MD01–MD07 genérico (v1.2.2)
     DCER  – associação CER/SVC (§46.18): Nb Gr Mc[u] [Me[u]] (v1.1.1)
     DCSC  – associação CSC/TCSC (§46.22): De Pa Nc Mc[u] [Me[u]] (v1.1.1)
     DVSI  – conversores FACTS VSI (§46.64): 15 campos em colunas fixas (v1.1.1)
@@ -145,7 +146,9 @@ class ParserSTB:
             elif kw.startswith("DMDG"):
                 i = ParserSTB._ler_dmdg(linhas, i, caso)
             elif kw.startswith("DRGT"):
-                i = ParserSTB._ler_drgt(linhas, i, caso)
+                i = ParserSTB._ler_modelo_mdxx(linhas, i, caso, "drgt")
+            elif kw.startswith("DRGV"):
+                i = ParserSTB._ler_modelo_mdxx(linhas, i, caso, "drgv")
             elif kw == "TITU":
                 i = ParserSTB._ler_titu(linhas, i + 1, caso)
             elif kw == "DCDU":
@@ -619,16 +622,13 @@ class ParserSTB:
             return ParserSTB._pular_bloco(linhas, i)
 
     @staticmethod
-    def _ler_drgt(linhas, inicio, caso) -> int:
-        """Lê um bloco DRGT MDxx (§16.3) — regulador de tensão predefinido.
+    def _ler_modelo_mdxx(linhas, inicio, caso, atributo: str) -> int:
+        """Lê um bloco de modelo predefinido ``<KW> MDxx`` (DRGT/DRGV).
 
-        A linha ``inicio`` contém 'DRGT MDxx'. Cada linha de dados é ``No`` +
-        parâmetros posicionais, armazenados genericamente (cobre MD01–MD24).
+        A linha ``inicio`` contém '<KW> MDxx'. Cada linha de dados é ``No`` +
+        parâmetros posicionais, armazenados genericamente no bloco ``caso.<attr>``.
         """
-        from pyanatem.blocos import BlocoDRGT
-
-        if not hasattr(caso, "drgt") or caso.drgt is None:
-            caso.drgt = BlocoDRGT()
+        bloco = getattr(caso, atributo)
 
         header = _strip_comment(linhas[inicio]).strip().upper()
         variante = "MD01"
@@ -650,7 +650,7 @@ class ParserSTB:
             try:
                 no = int(partes[0])
                 params = [_parse_valor(p) for p in partes[1:]]
-                caso.drgt.adicionar(variante, no, *params)
+                bloco.adicionar(variante, no, *params)
             except (ValueError, IndexError):
                 pass
             i += 1

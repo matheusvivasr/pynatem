@@ -751,6 +751,75 @@ def test_drgt_aparece_no_deck_antes_de_dmaq():
     assert stb.find("DRGT") < stb.find("DMAQ")
 
 
+# ===========================================================================
+# v1.2.2 – DRGV: reguladores de velocidade/turbina (§16.4)
+# ===========================================================================
+
+
+def test_drgv_md01_nomeado():
+    """MD01 (§16.4): construtor nomeado emite No + parâmetros na ordem da régua."""
+    from pyanatem import BlocoDRGV
+
+    b = BlocoDRGV()
+    b.adicionar_md01(
+        no=1,
+        r=0.05,
+        rp=0.3,
+        at=1.0,
+        qnl=0.1,
+        tw=1.0,
+        tr=5.0,
+        tf=0.05,
+        tg=0.2,
+        lmn=0.0,
+        lmx=1.0,
+        dtb=0.5,
+        d=0.0,
+        pbg=100.0,
+        pbt=90.0,
+    )
+    t = b.serializar()
+    assert "DRGV MD01" in t
+    assert "0.05" in t and "90" in t
+    assert t.rstrip().endswith("999999")
+
+
+def test_roundtrip_drgv(tmp_path):
+    """DRGV: export → ler preserva variante, No e parâmetros; genérico MD03."""
+    from pyanatem import CasoAnatem
+
+    caso = CasoAnatem()
+    caso.darq.sav = "rede.sav"
+    caso.drgv.adicionar_md01(
+        no=1,
+        r=0.05,
+        rp=0.3,
+        at=1.0,
+        qnl=0.1,
+        tw=1.0,
+        tr=5.0,
+        tf=0.05,
+        tg=0.2,
+        lmn=0.0,
+        lmx=1.0,
+        dtb=0.5,
+        d=0.0,
+        pbg=100.0,
+        pbt=90.0,
+    )
+    caso.drgv.adicionar("MD03", 2, 0.04, 1.5, 2.0)
+    p = tmp_path / "drgv.stb"
+    caso.exportar(p)
+
+    lido = CasoAnatem.ler(p)
+    assert len(lido.drgv._modelos) == 2
+    m1, m3 = lido.drgv._modelos
+    assert (m1.modelo, m1.no) == ("MD01", 1)
+    assert m1.parametros[0] == 0.05 and 90.0 in m1.parametros
+    assert (m3.modelo, m3.no, m3.parametros) == ("MD03", 2, [0.04, 1.5, 2.0])
+    assert lido.drgv.serializar() == caso.drgv.serializar()
+
+
 def test_dmdg_md01_serializa_campos_basicos():
     """MD01: No, L'd, Ra, H, D, MVA presentes na saída."""
     b = BlocoDMDG()

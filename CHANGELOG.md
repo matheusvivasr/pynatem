@@ -2,6 +2,29 @@
 
 Todas as mudanças notáveis estão documentadas aqui.
 
+## [1.2.2] — 2026-07-10 — Reguladores de Velocidade/Turbina predefinidos (DRGV)
+
+> Segundo patch da etapa **v1.2 (Máquina Síncrona Completa)**.
+
+### Added
+
+- **`BlocoDRGV`** (§16.4) — Modelos predefinidos de Regulador de Velocidade e
+  Turbina. Cobre os **7 modelos** (MD01–MD07) via armazenamento genérico
+  posicional, com roundtrip garantido. `adicionar_md01(...)` tem campos
+  nomeados validados (R/Rp/At/Qnl/Tw/Tr/Tf/Tg/Lmn/Lmx/Dtb/D/Pbg/Pbt).
+- Exposto em `CasoAnatem.drgv`; emitido no deck entre DMDG e DMAQ (associação
+  via campo Mt). Parser lê `DRGV MDxx`.
+
+### Changed
+
+- Refatoração: `BlocoDRGT`/`BlocoDRGV` agora herdam de `_BlocoModeloMDxx`
+  (base genérica para blocos de modelo predefinido por variante MDxx). Reduz
+  duplicação e deixa DEST (v1.2.3) trivial. O parser usa `_ler_modelo_mdxx`.
+
+### Added (cont.)
+
+- 2 testes novos (MD01 nomeado + roundtrip com genérico). Total: 228 testes.
+
 ## [1.2.1] — 2026-07-10 — Reguladores de Tensão predefinidos (DRGT)
 
 > Primeiro patch da etapa **v1.2 (Máquina Síncrona Completa)**. Começa a
