@@ -1188,6 +1188,134 @@ class BlocoDMDG(BlocoBase):
 
 
 # ---------------------------------------------------------------------------
+# Modelos predefinidos de controle de máquina síncrona
+#
+# DRGT  §16.3 — Regulador de Tensão e Excitatriz (24 modelos MD01–MD24)
+#
+# Cada modelo MDxx tem régua de parâmetros própria. Estes blocos usam
+# armazenamento GENÉRICO POSICIONAL: nº de identificação + parâmetros na ordem
+# da régua do modelo. Isso cobre todos os 24 modelos com roundtrip garantido,
+# sem hardcode de cada régua. O modelo MD01 tem construtor nomeado, validado
+# campo a campo contra o manual. A associação à máquina é feita via DMAQ.
+# ---------------------------------------------------------------------------
+
+
+def _fmt_valor(v) -> str:
+    """Formata um valor de parâmetro (int/float/str) de forma compacta."""
+    if isinstance(v, float):
+        return f"{v:g}"
+    return str(v)
+
+
+def _norm_md(modelo) -> str:
+    """Normaliza o identificador de variante para 'MDnn' (ex.: 1 → 'MD01')."""
+    if isinstance(modelo, int):
+        return f"MD{modelo:02d}"
+    m = str(modelo).upper().strip()
+    if m.startswith("MD"):
+        num = m[2:]
+        return f"MD{int(num):02d}" if num.isdigit() else m
+    return f"MD{int(m):02d}" if m.isdigit() else m
+
+
+@dataclass
+class _ModeloRegTensao:
+    """Registro de um modelo predefinido de regulador de tensão (DRGT MDxx).
+
+    Armazenamento genérico: ``no`` (identificador usado no DMAQ) + ``parametros``
+    posicionais, na ordem exata da régua do modelo MDxx (§16.3).
+    """
+
+    modelo: str  # "MD01" ... "MD24"
+    no: int
+    parametros: list = field(default_factory=list)
+
+    def serializar(self) -> str:
+        return "  ".join([f"{self.no:>4}"] + [_fmt_valor(p) for p in self.parametros])
+
+
+@dataclass
+class BlocoDRGT(BlocoBase):
+    """Modelos predefinidos de Regulador de Tensão e Excitatriz (DRGT, §16.3).
+
+    24 modelos (MD01–MD24). Cobre TODOS via parâmetros posicionais (roundtrip
+    garantido); o MD01 tem construtor nomeado validado campo a campo. A
+    associação à máquina é feita no DMAQ (campo Mv). Reguladores fora dos
+    modelos predefinidos usam CDU (código DCDU).
+
+    Confiança: Alta — estrutura (keyword + MDxx + No + params + 999999) e o
+    MD01 validados contra §16.3; roundtrip garantido pelo ParserSTB.
+    """
+
+    keyword: str = field(default="DRGT", init=False, repr=False)
+    _modelos: list = field(default_factory=list)
+
+    def tem_dados(self) -> bool:
+        return bool(self._modelos)
+
+    def adicionar(self, modelo, no: int, *parametros) -> "BlocoDRGT":
+        """Adiciona um modelo de regulador genérico (qualquer MDxx).
+
+        Args:
+            modelo: "MD01".."MD24" (ou o número/inteiro correspondente).
+            no: número de identificação do modelo.
+            *parametros: valores posicionais na ordem da régua do modelo (§16.3).
+        """
+        self._modelos.append(
+            _ModeloRegTensao(
+                modelo=_norm_md(modelo), no=no, parametros=list(parametros)
+            )
+        )
+        return self
+
+    def adicionar_md01(
+        self,
+        no: int,
+        cs: int,
+        ka: float,
+        ke: float,
+        kf: float,
+        tm: float,
+        ta: float,
+        te: float,
+        tf: float,
+        lmn: float,
+        lmx: float,
+        l: str = "D",
+        s: str = "I",
+    ) -> "BlocoDRGT":
+        """Regulador de tensão MD01 (§16.3), com campos nomeados e validados.
+
+        Campos (na ordem da régua): Cs (curva saturação/DCST), Ka (ganho), Ke
+        (excitatriz), Kf (ganho realimentação), Tm (transdutor), Ta (regulador),
+        Te (excitatriz), Tf (realimentação), Lmn/Lmx (limites), L ('D' dinâmico
+        ou 'E' estático), S ('D' se saturação × tensão de campo, senão 'I').
+        """
+        return self.adicionar(
+            "MD01", no, cs, ka, ke, kf, tm, ta, te, tf, lmn, lmx, l, s
+        )
+
+    def serializar(self) -> str:
+        # Um sub-bloco "DRGT MDxx" por variante (o manual só permite uma
+        # variante por execução do código), preservando ordem de aparição.
+        ordem: list = []
+        grupos: dict = {}
+        for m in self._modelos:
+            if m.modelo not in grupos:
+                grupos[m.modelo] = []
+                ordem.append(m.modelo)
+            grupos[m.modelo].append(m)
+
+        linhas: list = []
+        for variante in ordem:
+            linhas.append(f"{self.keyword} {variante}\n")
+            for m in grupos[variante]:
+                linhas.append(m.serializar() + "\n")
+            linhas.append(self._terminador())
+        return "".join(linhas)
+
+
+# ---------------------------------------------------------------------------
 # FACTS – blocos de associação e de conversores
 #
 # DCER  §46.18 — associação de compensador estático (CER/SVC) a modelos

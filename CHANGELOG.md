@@ -2,6 +2,30 @@
 
 Todas as mudanças notáveis estão documentadas aqui.
 
+## [1.2.1] — 2026-07-10 — Reguladores de Tensão predefinidos (DRGT)
+
+> Primeiro patch da etapa **v1.2 (Máquina Síncrona Completa)**. Começa a
+> preencher o Inventário A (capacidades ausentes).
+
+### Added
+
+- **`BlocoDRGT`** (§16.3) — Modelos predefinidos de Regulador de Tensão e
+  Excitatriz. Cobre os **24 modelos** (MD01–MD24) via armazenamento genérico
+  posicional (No + parâmetros na ordem da régua), com roundtrip garantido.
+  - `adicionar(modelo, no, *parametros)` — qualquer MDxx.
+  - `adicionar_md01(...)` — construtor nomeado, validado campo a campo contra
+    a régua do MD01 (Cs/Ka/Ke/Kf/Tm/Ta/Te/Tf/Lmn/Lmx/L/S).
+- Exposto em `CasoAnatem.drgt`; emitido no deck entre DMDG e DMAQ (que o
+  associa à máquina via campo Mv). Parser `ParserSTB` lê `DRGT MDxx`.
+- 4 testes novos (MD01 nomeado, genérico multi-variante, roundtrip, ordem no
+  deck). Total: 226 testes.
+
+### Notas
+
+- Abordagem "genérico paramétrico + MD01 nomeado" (decidida com o usuário):
+  cobertura total dos 24 modelos com risco baixo; o MD01 tem API ergonômica.
+  Demais modelos usam parâmetros posicionais (a régua de cada um está no §16.3).
+
 ## [1.1.5] — 2026-07-10 — DPLT 4-letra (OLTC/FACTS/HVDC/CDU) validado — fecha a etapa v1.1 🎉
 
 > Quinto e último patch da etapa **v1.1 (Confiabilidade Máxima)**. Com ele o

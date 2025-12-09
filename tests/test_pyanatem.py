@@ -648,7 +648,107 @@ if __name__ == "__main__":
 # DMDG – introduzido em v0.4.1 (etapa 0.4)
 # ===========================================================================
 
-from pyanatem import BlocoDMDG
+from pyanatem import BlocoDMDG, BlocoDRGT
+
+# ===========================================================================
+# v1.2.1 – DRGT: reguladores de tensão predefinidos (§16.3)
+# ===========================================================================
+
+
+def test_drgt_md01_nomeado():
+    """MD01 (§16.3): construtor nomeado emite No + parâmetros na ordem da régua."""
+    b = BlocoDRGT()
+    b.adicionar_md01(
+        no=1,
+        cs=0,
+        ka=200.0,
+        ke=1.0,
+        kf=0.05,
+        tm=0.0,
+        ta=0.05,
+        te=0.5,
+        tf=1.0,
+        lmn=-5.0,
+        lmx=5.0,
+        l="D",
+        s="I",
+    )
+    t = b.serializar()
+    assert "DRGT MD01" in t
+    assert "200" in t and "-5" in t and "5" in t
+    assert t.rstrip().endswith("999999")
+
+
+def test_drgt_generico_qualquer_modelo():
+    """adicionar() aceita qualquer MDxx via parâmetros posicionais."""
+    b = BlocoDRGT()
+    b.adicionar("MD05", 2, 0.5, 1.0, 2.0, "D")  # 4 params posicionais
+    b.adicionar(7, 3, 10.0)  # inteiro 7 → 'MD07'
+    t = b.serializar()
+    assert "DRGT MD05" in t and "DRGT MD07" in t
+
+
+def test_roundtrip_drgt(tmp_path):
+    """DRGT: export → ler preserva variante, No e parâmetros (MD01 + MD05)."""
+    from pyanatem import CasoAnatem
+
+    caso = CasoAnatem()
+    caso.darq.sav = "rede.sav"
+    caso.drgt.adicionar_md01(
+        no=1,
+        cs=0,
+        ka=200.0,
+        ke=1.0,
+        kf=0.05,
+        tm=0.0,
+        ta=0.05,
+        te=0.5,
+        tf=1.0,
+        lmn=-5.0,
+        lmx=5.0,
+        l="D",
+        s="I",
+    )
+    caso.drgt.adicionar("MD05", 2, 0.5, 1.0, 2.0)
+    p = tmp_path / "drgt.stb"
+    caso.exportar(p)
+
+    lido = CasoAnatem.ler(p)
+    assert len(lido.drgt._modelos) == 2
+    m1, m5 = lido.drgt._modelos
+    assert (m1.modelo, m1.no) == ("MD01", 1)
+    assert m1.parametros[0] == 0  # Cs
+    assert 200.0 in m1.parametros and "D" in m1.parametros and "I" in m1.parametros
+    assert (m5.modelo, m5.no) == ("MD05", 2)
+    assert m5.parametros == [0.5, 1.0, 2.0]
+
+    # idempotência textual da serialização
+    assert lido.drgt.serializar() == caso.drgt.serializar()
+
+
+def test_drgt_aparece_no_deck_antes_de_dmaq():
+    """deck() emite DRGT entre DMDG e DMAQ quando populado."""
+    from pyanatem import CasoAnatem
+
+    caso = CasoAnatem()
+    caso.darq.sav = "rede.sav"
+    caso.drgt.adicionar_md01(
+        no=1,
+        cs=0,
+        ka=200.0,
+        ke=1.0,
+        kf=0.0,
+        tm=0.0,
+        ta=0.05,
+        te=0.5,
+        tf=1.0,
+        lmn=-5.0,
+        lmx=5.0,
+    )
+    caso.adicionar_maquina(barra=100, grupo=1, mv=1)
+    stb = caso.deck()
+    assert "DRGT MD01" in stb
+    assert stb.find("DRGT") < stb.find("DMAQ")
 
 
 def test_dmdg_md01_serializa_campos_basicos():

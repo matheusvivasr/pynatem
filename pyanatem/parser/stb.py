@@ -12,6 +12,7 @@ Suporte:
             objetos estruturados no parser ainda
     DMAQ  – linhas preservadas como texto bruto
     DMDG  – MD01, MD02 e MD03 totalmente estruturados (Sessão 4)
+    DRGT  – reguladores de tensão predefinidos (§16.3): MD01–MD24 genérico (v1.2.1)
     DCER  – associação CER/SVC (§46.18): Nb Gr Mc[u] [Me[u]] (v1.1.1)
     DCSC  – associação CSC/TCSC (§46.22): De Pa Nc Mc[u] [Me[u]] (v1.1.1)
     DVSI  – conversores FACTS VSI (§46.64): 15 campos em colunas fixas (v1.1.1)
@@ -54,6 +55,21 @@ def _safe_int(s: str, default: int = 0) -> int:
         return int(s)
     except (ValueError, TypeError):
         return default
+
+
+def _parse_valor(token: str):
+    """Converte um token de parâmetro em int, float ou str (nesta ordem).
+
+    Preserva o tipo natural: ``"3"`` → 3, ``"1.5"`` → 1.5, ``"D"`` → "D".
+    """
+    try:
+        return int(token)
+    except ValueError:
+        pass
+    try:
+        return float(token)
+    except ValueError:
+        return token
 
 
 def _sep_flag_u(token: str) -> Tuple[int, bool]:
@@ -128,6 +144,8 @@ class ParserSTB:
                 i = ParserSTB._ler_dmaq(linhas, i + 1, caso)
             elif kw.startswith("DMDG"):
                 i = ParserSTB._ler_dmdg(linhas, i, caso)
+            elif kw.startswith("DRGT"):
+                i = ParserSTB._ler_drgt(linhas, i, caso)
             elif kw == "TITU":
                 i = ParserSTB._ler_titu(linhas, i + 1, caso)
             elif kw == "DCDU":
@@ -599,6 +617,44 @@ class ParserSTB:
         else:
             # variante desconhecida — pula o bloco
             return ParserSTB._pular_bloco(linhas, i)
+
+    @staticmethod
+    def _ler_drgt(linhas, inicio, caso) -> int:
+        """Lê um bloco DRGT MDxx (§16.3) — regulador de tensão predefinido.
+
+        A linha ``inicio`` contém 'DRGT MDxx'. Cada linha de dados é ``No`` +
+        parâmetros posicionais, armazenados genericamente (cobre MD01–MD24).
+        """
+        from pyanatem.blocos import BlocoDRGT
+
+        if not hasattr(caso, "drgt") or caso.drgt is None:
+            caso.drgt = BlocoDRGT()
+
+        header = _strip_comment(linhas[inicio]).strip().upper()
+        variante = "MD01"
+        for tok in header.split():
+            if tok.startswith("MD"):
+                variante = tok
+                break
+
+        i = inicio + 1
+        while i < len(linhas):
+            linha = _strip_comment(linhas[i])
+            if _e_terminador(linha) or _e_fim(linha):
+                return i + 1
+            stripped = linha.strip()
+            if not stripped or stripped.startswith("("):
+                i += 1
+                continue
+            partes = stripped.split()
+            try:
+                no = int(partes[0])
+                params = [_parse_valor(p) for p in partes[1:]]
+                caso.drgt.adicionar(variante, no, *params)
+            except (ValueError, IndexError):
+                pass
+            i += 1
+        return i
 
     @staticmethod
     def _ler_dcer(linhas, inicio, caso) -> int:

@@ -7,19 +7,19 @@
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![Type hints](https://img.shields.io/badge/type%20hints-full-brightgreen.svg)](pyanatem/)
 
-**v1.1.5 — Estável** ⭐
+**v1.2.1 — Estável** ⭐
 
 Biblioteca Python para **geração, manipulação, parsing e execução automatizada** de arquivos de caso do simulador de estabilidade eletromecânica transitória **ANATEM** (CEPEL).
 
 O pyanatem representa um arquivo `.stb` como um grafo de blocos serializáveis (padrão *AST + Serializer*): cada bloco é um objeto Python que sabe se serializar no texto posicional exato esperado pelo ANATEM, e o parser reconstrói a mesma árvore a partir de um `.stb` existente, garantindo *roundtrip*.
 
-> **Versão:** 1.1.5 — **Estável** (base v1.0.0)  
-> **Status:** API estável, 222 testes; etapa v1.1 (Confiabilidade Máxima) **concluída** ✅  
+> **Versão:** 1.2.1 — **Estável** (base v1.0.0)  
+> **Status:** API estável, 226 testes; v1.1 concluída ✅ · etapa v1.2 (Máquina Síncrona) em andamento  
 > Referência técnica: Manual ANATEM 12.10 (CEPEL)  
 
 ---
 
-## Estado Atual (v1.1.5)
+## Estado Atual (v1.2.1)
 
 ✅ **Estável: API testada e documentada; endurecendo a confiabilidade (etapa v1.1)**
 
@@ -37,6 +37,7 @@ O pyanatem representa um arquivo `.stb` como um grafo de blocos serializáveis (
 | **0.15** | CI/CD, docs, exemplos, comunidade | ✅ v0.15.0 |
 | **1.0** | API estável, +200 testes, docs teóricas | ✅ v1.0.0 ⭐ |
 | **1.1** | Confiabilidade Máxima (Inventário B zerado) | ✅ v1.1.5 (FACTS + HVDC + SAV + CURVA + DPLT) |
+| **1.2** | Máquina Síncrona Completa (reguladores/PSS/modelos) | 🔨 v1.2.1 (DRGT reg. de tensão) |
 
 ### Destaques v1.0.0
 
@@ -260,6 +261,7 @@ Para transparência sobre validação (v1.0.0):
 | **LeitorSAV** (ANAREDE) | Alta | Colunas fixas DBAR/DLIN + tensão-base via DGBT, fallback tolerante² | v1.1.3 |
 | **BlocoCDU** — parâmetros/roundtrip | Alta | Desambiguação por tipo (Cap. 29), 206 testes | v0.4.4 |
 | **CDU curvas de tempo inverso** (CURVA) | Alta | Tipo CURVA + subtipos IEC/IEC2/IEEE/IEEE2 §29.3.13 (Lst. 29.97–29.100) | v1.1.4 |
+| **DRGT** (regulador de tensão) | Alta | Estrutura §16.3 + MD01 nomeado; MD01–MD24 genérico posicional + roundtrip | v1.2.1 |
 | **Formato `.plt` binário** | ❌ Não implementado | Estrutura de bytes desconhecida | — |
 
 > ¹ **DVSI e DCNV:** conjunto e ordem dos campos validados contra o manual
@@ -303,6 +305,7 @@ Para transparência sobre validação (v1.0.0):
 | **BlocoDPLT** | Variáveis de plotagem (barras, máquinas, FACTS, HVDC, CDU) | v0.4.0 | ✅ |
 | **BlocoDMDG** | Modelos predefinidos de geradores (MD01–MD03) | v0.4.1 | ✅ |
 | **BlocoDMAQ** | Associação máquina ↔ modelo dinâmico (posicional, completo) | v0.5.0 | ✅ |
+| **BlocoDRGT** | Reguladores de tensão/excitatriz predefinidos §16.3 (MD01–MD24) | v1.2.1 | ✅ |
 | **BlocoSVC, TCSC, STATCOM** (DCER/DCSC/DVSI) | FACTS — associação de controles (CER/CSC) e conversores VSI; validados §46 + roundtrip | v0.4.3 (Alta em v1.1.1) | ✅ |
 | **BlocoHVDC** (DCNV) | Conversores CA-CC de elos LCC + associação; validado §46.21 + roundtrip | v0.4.3 (Alta em v1.1.2) | ✅ |
 | **BlocoDELO** (DELO) | Associação de elos CC aos modelos de polo; validado §46.27 + roundtrip | v1.1.2 | ✅ |
@@ -342,7 +345,8 @@ pytest tests/ -v
 
 | Versão | Status | Destaques |
 |--------|--------|----------|
-| **v1.1.5** | ⭐ **Atual (Estável)** | **DPLT 4-letra (OLTC/FACTS/HVDC/CDU) validado, Média→Alta — fecha a etapa v1.1 (Inventário B zerado), 222 testes** |
+| **v1.2.1** | ⭐ **Atual (Estável)** | **DRGT: reguladores de tensão predefinidos §16.3 (MD01–MD24 genérico + MD01 nomeado), 226 testes** |
+| v1.1.5 | Estável | DPLT 4-letra (OLTC/FACTS/HVDC/CDU) validado — fecha a etapa v1.1 (Inventário B zerado) |
 | v1.1.4 | Estável | Curvas de tempo inverso: tipo CURVA + IEC/IEC2/IEEE/IEEE2 (§29.3.13), best-effort→Alta |
 | v1.1.3 | Estável | LeitorSAV robusto (colunas fixas DBAR/DLIN + DGBT), Média→Alta |
 | v1.1.2 | Estável | HVDC DCNV re-modelado + novo DELO, validados §46.21/§46.27 + roundtrip |
@@ -357,7 +361,7 @@ pytest tests/ -v
 | v0.6.0 | Estável | FACTS, HVDC, CDU, pós-processamento, LeitorSAV |
 | v0.4.x–0.5.x | Arquivada | MVP: blocos, parser, ensaios, DMAQ posicional |
 
-**Recomendação:** Use **v1.1.5** para novos projetos. Todas as versões estão disponíveis no repositório como referência histórica.
+**Recomendação:** Use **v1.2.1** para novos projetos. Todas as versões estão disponíveis no repositório como referência histórica.
 
 ---
 
