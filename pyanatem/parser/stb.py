@@ -14,6 +14,7 @@ Suporte:
     DMDG  – MD01, MD02 e MD03 totalmente estruturados (Sessão 4)
     DRGT  – reguladores de tensão predefinidos (§16.3): MD01–MD24 genérico (v1.2.1)
     DRGV  – reguladores de velocidade/turbina (§16.4): MD01–MD07 genérico (v1.2.2)
+    DEST  – estabilizadores/PSS (§16.5): MD01–MD12 genérico (v1.2.3)
     DCER  – associação CER/SVC (§46.18): Nb Gr Mc[u] [Me[u]] (v1.1.1)
     DCSC  – associação CSC/TCSC (§46.22): De Pa Nc Mc[u] [Me[u]] (v1.1.1)
     DVSI  – conversores FACTS VSI (§46.64): 15 campos em colunas fixas (v1.1.1)
@@ -149,6 +150,8 @@ class ParserSTB:
                 i = ParserSTB._ler_modelo_mdxx(linhas, i, caso, "drgt")
             elif kw.startswith("DRGV"):
                 i = ParserSTB._ler_modelo_mdxx(linhas, i, caso, "drgv")
+            elif kw.startswith("DEST"):
+                i = ParserSTB._ler_modelo_mdxx(linhas, i, caso, "dest")
             elif kw == "TITU":
                 i = ParserSTB._ler_titu(linhas, i + 1, caso)
             elif kw == "DCDU":

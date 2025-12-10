@@ -820,6 +820,47 @@ def test_roundtrip_drgv(tmp_path):
     assert lido.drgv.serializar() == caso.drgv.serializar()
 
 
+# ===========================================================================
+# v1.2.3 – DEST: estabilizadores (PSS) aplicados em regulador de tensão (§16.5)
+# ===========================================================================
+
+
+def test_dest_md01_nomeado():
+    """MD01 (§16.5): construtor nomeado emite No + K/T/T1..T4/Lmn/Lmx."""
+    from pyanatem import BlocoDEST
+
+    b = BlocoDEST()
+    b.adicionar_md01(
+        no=1, k=5.0, t=10.0, t1=0.1, t2=0.05, t3=0.1, t4=0.05, lmn=-0.1, lmx=0.1
+    )
+    t = b.serializar()
+    assert "DEST MD01" in t
+    assert "5" in t and "-0.1" in t
+    assert t.rstrip().endswith("999999")
+
+
+def test_roundtrip_dest(tmp_path):
+    """DEST: export → ler preserva variante, No e parâmetros; genérico MD04."""
+    from pyanatem import CasoAnatem
+
+    caso = CasoAnatem()
+    caso.darq.sav = "rede.sav"
+    caso.dest.adicionar_md01(
+        no=1, k=5.0, t=10.0, t1=0.1, t2=0.05, t3=0.1, t4=0.05, lmn=-0.1, lmx=0.1
+    )
+    caso.dest.adicionar("MD04", 2, 1.0, 2.0)
+    p = tmp_path / "dest.stb"
+    caso.exportar(p)
+
+    lido = CasoAnatem.ler(p)
+    assert len(lido.dest._modelos) == 2
+    m1, m4 = lido.dest._modelos
+    assert (m1.modelo, m1.no) == ("MD01", 1)
+    assert m1.parametros[0] == 5.0 and -0.1 in m1.parametros
+    assert (m4.modelo, m4.no, m4.parametros) == ("MD04", 2, [1.0, 2.0])
+    assert lido.dest.serializar() == caso.dest.serializar()
+
+
 def test_dmdg_md01_serializa_campos_basicos():
     """MD01: No, L'd, Ra, H, D, MVA presentes na saída."""
     b = BlocoDMDG()

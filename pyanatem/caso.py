@@ -38,6 +38,7 @@ from .blocos import (
     BlocoDMDG,
     BlocoDRGT,
     BlocoDRGV,
+    BlocoDEST,
     BlocoEXSI,
     BlocoSVC,
     BlocoTCSC,
@@ -92,6 +93,7 @@ class CasoAnatem:
         self.dmdg = BlocoDMDG()
         self.drgt = BlocoDRGT()
         self.drgv = BlocoDRGV()
+        self.dest = BlocoDEST()
         self.dmaq = BlocoDMAQ()
         self.svc = BlocoSVC()
         self.tcsc = BlocoTCSC()
@@ -243,6 +245,8 @@ class CasoAnatem:
             partes.append(self.drgt.serializar())
         if self.drgv.tem_dados():
             partes.append(self.drgv.serializar())
+        if self.dest.tem_dados():
+            partes.append(self.dest.serializar())
 
         if self.dmaq.tem_dados():
             partes.append(self.dmaq.serializar())

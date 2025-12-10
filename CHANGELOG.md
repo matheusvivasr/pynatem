@@ -2,6 +2,20 @@
 
 Todas as mudanças notáveis estão documentadas aqui.
 
+## [1.2.3] — 2026-07-10 — Estabilizadores (PSS) predefinidos (DEST)
+
+> Terceiro patch da etapa **v1.2 (Máquina Síncrona Completa)**.
+
+### Added
+
+- **`BlocoDEST`** (§16.5) — Modelos predefinidos de Estabilizador (PSS)
+  aplicado em regulador de tensão. Cobre os **12 modelos** (MD01–MD12) via
+  armazenamento genérico posicional, com roundtrip garantido.
+  `adicionar_md01(...)` tem campos nomeados validados (K/T/T1/T2/T3/T4/Lmn/Lmx).
+- Exposto em `CasoAnatem.dest`; emitido no deck entre DMDG e DMAQ (associação
+  via campo Me). Parser lê `DEST MDxx`.
+- 2 testes novos (MD01 nomeado + roundtrip com genérico). Total: 230 testes.
+
 ## [1.2.2] — 2026-07-10 — Reguladores de Velocidade/Turbina predefinidos (DRGV)
 
 > Segundo patch da etapa **v1.2 (Máquina Síncrona Completa)**.

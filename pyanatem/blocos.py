@@ -1190,15 +1190,16 @@ class BlocoDMDG(BlocoBase):
 # ---------------------------------------------------------------------------
 # Modelos predefinidos de controle de máquina síncrona
 #
-# DRGT  §16.3 — Regulador de Tensão e Excitatriz  (24 modelos MD01–MD24)
-# DRGV  §16.4 — Regulador de Velocidade e Turbina (7 modelos MD01–MD07)
+# DRGT  §16.3 — Regulador de Tensão e Excitatriz   (24 modelos MD01–MD24)
+# DRGV  §16.4 — Regulador de Velocidade e Turbina   (7 modelos MD01–MD07)
+# DEST  §16.5 — Estabilizador (PSS) em Reg. de Tensão (12 modelos MD01–MD12)
 #
 # Cada modelo MDxx tem régua de parâmetros própria. Estes blocos usam
 # armazenamento GENÉRICO POSICIONAL: nº de identificação + parâmetros na ordem
 # da régua do modelo. Isso cobre todos os modelos com roundtrip garantido, sem
 # hardcode de cada régua. O modelo MD01 tem construtor nomeado, validado campo
 # a campo contra o manual. A associação à máquina é feita via DMAQ (DRGT→Mv,
-# DRGV→Mt).
+# DRGV→Mt, DEST→Me).
 # ---------------------------------------------------------------------------
 
 
@@ -1368,6 +1369,42 @@ class BlocoDRGV(_BlocoModeloMDxx):
         return self.adicionar(
             "MD01", no, r, rp, at, qnl, tw, tr, tf, tg, lmn, lmx, dtb, d, pbg, pbt
         )
+
+
+@dataclass
+class BlocoDEST(_BlocoModeloMDxx):
+    """Modelos predefinidos de Estabilizador aplicado em Regulador de Tensão
+    (PSS) — código DEST (§16.5).
+
+    12 modelos (MD01–MD12). Cobre TODOS via parâmetros posicionais; o MD01 tem
+    construtor nomeado validado campo a campo. Associação à máquina via DMAQ
+    (campo Me). Estabilizadores fora dos modelos predefinidos usam CDU (DCDU).
+
+    Confiança: Alta — estrutura e MD01 validados contra §16.5; roundtrip
+    garantido pelo ParserSTB.
+    """
+
+    keyword: str = field(default="DEST", init=False, repr=False)
+
+    def adicionar_md01(
+        self,
+        no: int,
+        k: float,
+        t: float,
+        t1: float,
+        t2: float,
+        t3: float,
+        t4: float,
+        lmn: float,
+        lmx: float,
+    ) -> "BlocoDEST":
+        """Estabilizador (PSS) MD01 (§16.5), com campos nomeados e validados.
+
+        Campos (na ordem da régua): K (ganho), T (constante de tempo do
+        transdutor/washout), T1–T4 (constantes de tempo dos compensadores de
+        fase), Lmn/Lmx (limites de saída do estabilizador).
+        """
+        return self.adicionar("MD01", no, k, t, t1, t2, t3, t4, lmn, lmx)
 
 
 # ---------------------------------------------------------------------------

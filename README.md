@@ -7,19 +7,19 @@
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![Type hints](https://img.shields.io/badge/type%20hints-full-brightgreen.svg)](pyanatem/)
 
-**v1.2.2 — Estável** ⭐
+**v1.2.3 — Estável** ⭐
 
 Biblioteca Python para **geração, manipulação, parsing e execução automatizada** de arquivos de caso do simulador de estabilidade eletromecânica transitória **ANATEM** (CEPEL).
 
 O pyanatem representa um arquivo `.stb` como um grafo de blocos serializáveis (padrão *AST + Serializer*): cada bloco é um objeto Python que sabe se serializar no texto posicional exato esperado pelo ANATEM, e o parser reconstrói a mesma árvore a partir de um `.stb` existente, garantindo *roundtrip*.
 
-> **Versão:** 1.2.2 — **Estável** (base v1.0.0)  
-> **Status:** API estável, 228 testes; v1.1 concluída ✅ · etapa v1.2 (Máquina Síncrona) em andamento  
+> **Versão:** 1.2.3 — **Estável** (base v1.0.0)  
+> **Status:** API estável, 230 testes; v1.1 concluída ✅ · etapa v1.2 (Máquina Síncrona) em andamento  
 > Referência técnica: Manual ANATEM 12.10 (CEPEL)  
 
 ---
 
-## Estado Atual (v1.2.2)
+## Estado Atual (v1.2.3)
 
 ✅ **Estável: API testada e documentada; endurecendo a confiabilidade (etapa v1.1)**
 
@@ -37,7 +37,7 @@ O pyanatem representa um arquivo `.stb` como um grafo de blocos serializáveis (
 | **0.15** | CI/CD, docs, exemplos, comunidade | ✅ v0.15.0 |
 | **1.0** | API estável, +200 testes, docs teóricas | ✅ v1.0.0 ⭐ |
 | **1.1** | Confiabilidade Máxima (Inventário B zerado) | ✅ v1.1.5 (FACTS + HVDC + SAV + CURVA + DPLT) |
-| **1.2** | Máquina Síncrona Completa (reguladores/PSS/modelos) | 🔨 v1.2.2 (DRGT + DRGV reguladores) |
+| **1.2** | Máquina Síncrona Completa (reguladores/PSS/modelos) | 🔨 v1.2.3 (DRGT + DRGV + DEST) |
 
 ### Destaques v1.0.0
 
@@ -263,6 +263,7 @@ Para transparência sobre validação (v1.0.0):
 | **CDU curvas de tempo inverso** (CURVA) | Alta | Tipo CURVA + subtipos IEC/IEC2/IEEE/IEEE2 §29.3.13 (Lst. 29.97–29.100) | v1.1.4 |
 | **DRGT** (regulador de tensão) | Alta | Estrutura §16.3 + MD01 nomeado; MD01–MD24 genérico posicional + roundtrip | v1.2.1 |
 | **DRGV** (regulador de velocidade) | Alta | Estrutura §16.4 + MD01 nomeado; MD01–MD07 genérico posicional + roundtrip | v1.2.2 |
+| **DEST** (estabilizador/PSS) | Alta | Estrutura §16.5 + MD01 nomeado; MD01–MD12 genérico posicional + roundtrip | v1.2.3 |
 | **Formato `.plt` binário** | ❌ Não implementado | Estrutura de bytes desconhecida | — |
 
 > ¹ **DVSI e DCNV:** conjunto e ordem dos campos validados contra o manual
@@ -308,6 +309,7 @@ Para transparência sobre validação (v1.0.0):
 | **BlocoDMAQ** | Associação máquina ↔ modelo dinâmico (posicional, completo) | v0.5.0 | ✅ |
 | **BlocoDRGT** | Reguladores de tensão/excitatriz predefinidos §16.3 (MD01–MD24) | v1.2.1 | ✅ |
 | **BlocoDRGV** | Reguladores de velocidade/turbina predefinidos §16.4 (MD01–MD07) | v1.2.2 | ✅ |
+| **BlocoDEST** | Estabilizadores (PSS) predefinidos §16.5 (MD01–MD12) | v1.2.3 | ✅ |
 | **BlocoSVC, TCSC, STATCOM** (DCER/DCSC/DVSI) | FACTS — associação de controles (CER/CSC) e conversores VSI; validados §46 + roundtrip | v0.4.3 (Alta em v1.1.1) | ✅ |
 | **BlocoHVDC** (DCNV) | Conversores CA-CC de elos LCC + associação; validado §46.21 + roundtrip | v0.4.3 (Alta em v1.1.2) | ✅ |
 | **BlocoDELO** (DELO) | Associação de elos CC aos modelos de polo; validado §46.27 + roundtrip | v1.1.2 | ✅ |
@@ -347,7 +349,8 @@ pytest tests/ -v
 
 | Versão | Status | Destaques |
 |--------|--------|----------|
-| **v1.2.2** | ⭐ **Atual (Estável)** | **DRGV: reguladores de velocidade/turbina §16.4 (MD01–MD07 genérico + MD01 nomeado), 228 testes** |
+| **v1.2.3** | ⭐ **Atual (Estável)** | **DEST: estabilizadores (PSS) §16.5 (MD01–MD12 genérico + MD01 nomeado), 230 testes** |
+| v1.2.2 | Estável | DRGV: reguladores de velocidade/turbina §16.4 (MD01–MD07 genérico + MD01 nomeado) |
 | v1.2.1 | Estável | DRGT: reguladores de tensão predefinidos §16.3 (MD01–MD24 genérico + MD01 nomeado) |
 | v1.1.5 | Estável | DPLT 4-letra (OLTC/FACTS/HVDC/CDU) validado — fecha a etapa v1.1 (Inventário B zerado) |
 | v1.1.4 | Estável | Curvas de tempo inverso: tipo CURVA + IEC/IEC2/IEEE/IEEE2 (§29.3.13), best-effort→Alta |
@@ -364,7 +367,7 @@ pytest tests/ -v
 | v0.6.0 | Estável | FACTS, HVDC, CDU, pós-processamento, LeitorSAV |
 | v0.4.x–0.5.x | Arquivada | MVP: blocos, parser, ensaios, DMAQ posicional |
 
-**Recomendação:** Use **v1.2.2** para novos projetos. Todas as versões estão disponíveis no repositório como referência histórica.
+**Recomendação:** Use **v1.2.3** para novos projetos. Todas as versões estão disponíveis no repositório como referência histórica.
 
 ---
 
