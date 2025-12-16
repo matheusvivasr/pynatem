@@ -45,7 +45,7 @@ os modelos MDxx + construtor nomeado para o modelo mais comum.*
 | **v1.2.1** | Reguladores de Tensão / Excitatriz predefinidos (DRGT §16.3) | ✅ **Concluído** (2026-07-10) |
 | **v1.2.2** | Reguladores de Velocidade / Turbina (DRGV §16.4) | ✅ **Concluído** (2026-07-10) |
 | **v1.2.3** | Estabilizadores (PSS) predefinidos (DEST §16.5) | ✅ **Concluído** (2026-07-10) |
-| v1.2.4 | Modelos de máquina MD04–MD24 (hoje só MD01–03) | ⏳ |
+| ~~v1.2.4~~ | ~~Modelos de máquina MD04–MD24~~ — **N/A: o DMDG tem só 3 modelos (MD01–03, §16.1), todos já implementados**. O "MD04–24" foi confusão com o DRGT. | ✅ **Sem trabalho** (revisado 2026-07-10) |
 | v1.2.5 | Curvas de saturação (DCST) + CAG + Controle Centralizado de Tensão | ⏳ |
 
 ---
