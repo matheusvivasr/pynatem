@@ -1,6 +1,6 @@
 # Roadmap — pyanatem
 
-## Status atual: **v1.2.3** ✅ (estável, lançável) — etapa v1.1 concluída; v1.2 em andamento
+## Status atual: **v1.2.5** ✅ (estável, lançável) — etapa v1.1 concluída; v1.2 em andamento
 
 Esquema de versão **v1 (SemVer)**. O ciclo `0.x` foi encerrado em v1.0.0
 (lançamento oficial estável). A partir daí:
@@ -46,7 +46,9 @@ os modelos MDxx + construtor nomeado para o modelo mais comum.*
 | **v1.2.2** | Reguladores de Velocidade / Turbina (DRGV §16.4) | ✅ **Concluído** (2026-07-10) |
 | **v1.2.3** | Estabilizadores (PSS) predefinidos (DEST §16.5) | ✅ **Concluído** (2026-07-10) |
 | ~~v1.2.4~~ | ~~Modelos de máquina MD04–MD24~~ — **N/A: o DMDG tem só 3 modelos (MD01–03, §16.1), todos já implementados**. O "MD04–24" foi confusão com o DRGT. | ✅ **Sem trabalho** (revisado 2026-07-10) |
-| v1.2.5 | Curvas de saturação (DCST) + CAG + Controle Centralizado de Tensão | ⏳ |
+| **v1.2.5** | Curvas de saturação (DCST §16.2) | ✅ **Concluído** (2026-07-10) |
+| v1.2.6 | Controle Automático de Geração (CAG §16.7) | ⏳ *(separado do bundle original)* |
+| v1.2.7 | Controle Centralizado de Tensão (§16.8) | ⏳ *(separado do bundle original)* |
 
 ---
 

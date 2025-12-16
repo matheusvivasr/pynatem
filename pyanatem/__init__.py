@@ -16,6 +16,7 @@ from .blocos import (
     BlocoDRGT,
     BlocoDRGV,
     BlocoDEST,
+    BlocoDCST,
     BlocoSVC,
     BlocoTCSC,
     BlocoSTATCOM,
@@ -51,6 +52,7 @@ __all__ = [
     "BlocoDRGT",
     "BlocoDRGV",
     "BlocoDEST",
+    "BlocoDCST",
     "BlocoSVC",
     "BlocoTCSC",
     "BlocoSTATCOM",
@@ -70,4 +72,4 @@ __all__ = [
     "ResultadoSAV",
 ]
 
-__version__ = "1.2.3"
+__version__ = "1.2.5"

@@ -861,6 +861,55 @@ def test_roundtrip_dest(tmp_path):
     assert lido.dest.serializar() == caso.dest.serializar()
 
 
+# ===========================================================================
+# v1.2.5 – DCST: curvas de saturação de máquina síncrona (§16.2)
+# ===========================================================================
+
+
+def test_dcst_serializa():
+    """DCST (§16.2): emite Nc, Tipo, P1, P2, P3 por curva."""
+    from pyanatem import BlocoDCST
+
+    b = BlocoDCST()
+    b.adicionar(nc=1, tipo=1, p1=1.2, p2=1.8, p3=2.0)
+    t = b.serializar()
+    assert "DCST" in t
+    assert "1.2" in t and "1.8" in t
+    assert t.rstrip().endswith("999999")
+
+
+def test_roundtrip_dcst(tmp_path):
+    """DCST: export → ler preserva as curvas (Nc, Tipo, P1..P3)."""
+    from pyanatem import CasoAnatem
+
+    caso = CasoAnatem()
+    caso.darq.sav = "rede.sav"
+    caso.dcst.adicionar(nc=1, tipo=1, p1=1.2, p2=1.8, p3=2.0)  # exp. c/ desc.
+    caso.dcst.adicionar(nc=2, tipo=3, p1=1.1, p2=1.5, p3=1.9)  # linear
+    p = tmp_path / "dcst.stb"
+    caso.exportar(p)
+
+    lido = CasoAnatem.ler(p)
+    assert len(lido.dcst._curvas) == 2
+    c1, c2 = lido.dcst._curvas
+    assert (c1.nc, c1.tipo, c1.p1, c1.p2, c1.p3) == (1, 1, 1.2, 1.8, 2.0)
+    assert (c2.nc, c2.tipo, c2.p1, c2.p2, c2.p3) == (2, 3, 1.1, 1.5, 1.9)
+    assert lido.dcst.serializar() == caso.dcst.serializar()
+
+
+def test_dcst_aparece_antes_de_dmdg_no_deck():
+    """deck() emite DCST antes de DMDG (curvas referenciadas pelo Cs)."""
+    from pyanatem import CasoAnatem
+
+    caso = CasoAnatem()
+    caso.darq.sav = "rede.sav"
+    caso.dcst.adicionar(nc=1, tipo=1, p1=1.2, p2=1.8, p3=2.0)
+    caso.dmdg.adicionar_md01(no=20, ld=20.0, h=5.0, mva=100.0)
+    stb = caso.deck()
+    assert "DCST" in stb
+    assert stb.find("DCST") < stb.find("DMDG")
+
+
 def test_dmdg_md01_serializa_campos_basicos():
     """MD01: No, L'd, Ra, H, D, MVA presentes na saída."""
     b = BlocoDMDG()

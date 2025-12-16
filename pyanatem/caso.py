@@ -39,6 +39,7 @@ from .blocos import (
     BlocoDRGT,
     BlocoDRGV,
     BlocoDEST,
+    BlocoDCST,
     BlocoEXSI,
     BlocoSVC,
     BlocoTCSC,
@@ -90,6 +91,7 @@ class CasoAnatem:
     def __init__(self) -> None:
         self.dopc = BlocoDOPC()
         self.darq = BlocoDARQ()
+        self.dcst = BlocoDCST()
         self.dmdg = BlocoDMDG()
         self.drgt = BlocoDRGT()
         self.drgv = BlocoDRGV()
@@ -236,6 +238,10 @@ class CasoAnatem:
             partes.append(self.dopc.serializar())
 
         partes.append(self.darq.serializar())
+
+        # Curvas de saturação (referenciadas pelo campo Cs do DMDG/DRGT)
+        if self.dcst.tem_dados():
+            partes.append(self.dcst.serializar())
 
         if self.dmdg.tem_dados():
             partes.append(self.dmdg.serializar())

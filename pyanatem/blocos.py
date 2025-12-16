@@ -1193,6 +1193,7 @@ class BlocoDMDG(BlocoBase):
 # DRGT  §16.3 — Regulador de Tensão e Excitatriz   (24 modelos MD01–MD24)
 # DRGV  §16.4 — Regulador de Velocidade e Turbina   (7 modelos MD01–MD07)
 # DEST  §16.5 — Estabilizador (PSS) em Reg. de Tensão (12 modelos MD01–MD12)
+# DCST  §16.2 — Curva de Saturação (bloco plano; 4 tipos, sem variante MDxx)
 #
 # Cada modelo MDxx tem régua de parâmetros própria. Estes blocos usam
 # armazenamento GENÉRICO POSICIONAL: nº de identificação + parâmetros na ordem
@@ -1405,6 +1406,65 @@ class BlocoDEST(_BlocoModeloMDxx):
         fase), Lmn/Lmx (limites de saída do estabilizador).
         """
         return self.adicionar("MD01", no, k, t, t1, t2, t3, t4, lmn, lmx)
+
+
+@dataclass
+class _CurvaSaturacao:
+    """Uma curva de saturação de máquina síncrona (código DCST, §16.2)."""
+
+    nc: int  # nº de identificação (referenciado no campo Cs do DMDG/DRGT)
+    tipo: int  # 1=exp. c/ descontinuidade, 2=exp., 3=linear, 4=linear por partes
+    p1: float  # Y1 (tipos 1/3/4) ou A (tipo 2)
+    p2: float  # Y2 (tipos 1/3/4) ou B (tipo 2)
+    p3: float  # X1 (tipos 1/3/4) ou C (tipo 2)
+
+    def serializar(self) -> str:
+        return "  ".join(
+            [f"{self.nc:>4}", f"{self.tipo:>2}"]
+            + [_fmt_valor(p) for p in (self.p1, self.p2, self.p3)]
+        )
+
+
+@dataclass
+class BlocoDCST(BlocoBase):
+    """Modelos de Curva de Saturação de máquina síncrona (DCST, §16.2).
+
+    4 tipos de curva (campo Tp): 1 exponencial com descontinuidade, 2
+    exponencial, 3 linear, 4 linear por partes. Cada curva é identificada por
+    ``Nc`` e referenciada pelo campo ``Cs`` dos modelos de máquina/regulador
+    (DMDG/DRGT). Parâmetros P1/P2/P3 conforme o tipo (§16.2).
+
+    Confiança: Alta — régua (Nc, Tipo, P1, P2, P3) validada contra §16.2;
+    roundtrip garantido pelo ParserSTB.
+    """
+
+    keyword: str = field(default="DCST", init=False, repr=False)
+    _curvas: list = field(default_factory=list)
+
+    def tem_dados(self) -> bool:
+        return bool(self._curvas)
+
+    def adicionar(
+        self, nc: int, tipo: int, p1: float, p2: float, p3: float
+    ) -> "BlocoDCST":
+        """Adiciona uma curva de saturação.
+
+        Args:
+            nc: número de identificação (usado no campo Cs do DMDG/DRGT).
+            tipo: 1 (exp. c/ descontinuidade), 2 (exp.), 3 (linear) ou 4
+                (linear por partes).
+            p1, p2, p3: parâmetros da curva (Y1/Y2/X1 nos tipos 1/3/4;
+                A/B/C no tipo 2).
+        """
+        self._curvas.append(_CurvaSaturacao(nc=nc, tipo=tipo, p1=p1, p2=p2, p3=p3))
+        return self
+
+    def serializar(self) -> str:
+        linhas = [self._cabecalho(), "(Nc) Tp ( P1 )( P2 )( P3 )\n"]
+        for c in self._curvas:
+            linhas.append(c.serializar() + "\n")
+        linhas.append(self._terminador())
+        return "".join(linhas)
 
 
 # ---------------------------------------------------------------------------

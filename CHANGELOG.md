@@ -2,6 +2,29 @@
 
 Todas as mudanças notáveis estão documentadas aqui.
 
+## [1.2.5] — 2026-07-10 — Curvas de saturação de máquina (DCST)
+
+> Patch da etapa **v1.2 (Máquina Síncrona Completa)**. Completa a cadeia de
+> modelagem da máquina: curva de saturação + os 3 tipos de regulador.
+> (A versão 1.2.4 foi omitida — o item "modelos de máquina MD04–MD24" era N/A,
+> pois o DMDG só tem 3 modelos, todos já implementados; ver ROADMAP.)
+
+### Added
+
+- **`BlocoDCST`** (§16.2) — Modelos de Curva de Saturação de máquina síncrona.
+  Bloco plano com régua `Nc, Tipo, P1, P2, P3` (4 tipos: exponencial com
+  descontinuidade, exponencial, linear, linear por partes). Cada curva é
+  identificada por `Nc` e referenciada pelo campo `Cs` do DMDG/DRGT.
+- Exposto em `CasoAnatem.dcst`; emitido no deck **antes** do DMDG (que a
+  referencia). Parser lê `DCST`. Roundtrip garantido.
+- 3 testes novos (serialização, roundtrip, ordem no deck). Total: 233 testes.
+
+### Notas
+
+- CAG (Controle Automático de Geração) e Controle Centralizado de Tensão, que o
+  roadmap agrupava neste patch, foram **separados** em v1.2.6 e v1.2.7 (são
+  esquemas de controle maiores; patches focados).
+
 ## [1.2.3] — 2026-07-10 — Estabilizadores (PSS) predefinidos (DEST)
 
 > Terceiro patch da etapa **v1.2 (Máquina Síncrona Completa)**.

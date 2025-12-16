@@ -15,6 +15,7 @@ Suporte:
     DRGT  – reguladores de tensão predefinidos (§16.3): MD01–MD24 genérico (v1.2.1)
     DRGV  – reguladores de velocidade/turbina (§16.4): MD01–MD07 genérico (v1.2.2)
     DEST  – estabilizadores/PSS (§16.5): MD01–MD12 genérico (v1.2.3)
+    DCST  – curvas de saturação (§16.2): Nc Tp P1 P2 P3 (v1.2.5)
     DCER  – associação CER/SVC (§46.18): Nb Gr Mc[u] [Me[u]] (v1.1.1)
     DCSC  – associação CSC/TCSC (§46.22): De Pa Nc Mc[u] [Me[u]] (v1.1.1)
     DVSI  – conversores FACTS VSI (§46.64): 15 campos em colunas fixas (v1.1.1)
@@ -152,6 +153,8 @@ class ParserSTB:
                 i = ParserSTB._ler_modelo_mdxx(linhas, i, caso, "drgv")
             elif kw.startswith("DEST"):
                 i = ParserSTB._ler_modelo_mdxx(linhas, i, caso, "dest")
+            elif kw == "DCST":
+                i = ParserSTB._ler_dcst(linhas, i + 1, caso)
             elif kw == "TITU":
                 i = ParserSTB._ler_titu(linhas, i + 1, caso)
             elif kw == "DCDU":
@@ -654,6 +657,34 @@ class ParserSTB:
                 no = int(partes[0])
                 params = [_parse_valor(p) for p in partes[1:]]
                 bloco.adicionar(variante, no, *params)
+            except (ValueError, IndexError):
+                pass
+            i += 1
+        return i
+
+    @staticmethod
+    def _ler_dcst(linhas, inicio, caso) -> int:
+        """Lê o bloco DCST (§16.2) — curvas de saturação de máquina síncrona.
+
+        Formato plano: ``Nc Tp P1 P2 P3`` por curva.
+        """
+        i = inicio
+        while i < len(linhas):
+            linha = _strip_comment(linhas[i])
+            if _e_terminador(linha) or _e_fim(linha):
+                return i + 1
+            stripped = linha.strip()
+            if not stripped:
+                i += 1
+                continue
+            partes = stripped.split()
+            try:
+                nc = int(partes[0])
+                tipo = int(partes[1])
+                p1 = _safe_float(partes[2]) if len(partes) > 2 else 0.0
+                p2 = _safe_float(partes[3]) if len(partes) > 3 else 0.0
+                p3 = _safe_float(partes[4]) if len(partes) > 4 else 0.0
+                caso.dcst.adicionar(nc, tipo, p1, p2, p3)
             except (ValueError, IndexError):
                 pass
             i += 1
