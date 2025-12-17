@@ -40,6 +40,8 @@ from .blocos import (
     BlocoDRGV,
     BlocoDEST,
     BlocoDCST,
+    BlocoDCAG,
+    BlocoDCCT,
     BlocoEXSI,
     BlocoSVC,
     BlocoTCSC,
@@ -97,6 +99,8 @@ class CasoAnatem:
         self.drgv = BlocoDRGV()
         self.dest = BlocoDEST()
         self.dmaq = BlocoDMAQ()
+        self.dcag = BlocoDCAG()
+        self.dcct = BlocoDCCT()
         self.svc = BlocoSVC()
         self.tcsc = BlocoTCSC()
         self.statcom = BlocoSTATCOM()
@@ -256,6 +260,12 @@ class CasoAnatem:
 
         if self.dmaq.tem_dados():
             partes.append(self.dmaq.serializar())
+
+        # Associação de controles de área (CAG/CCT) a modelos CDU
+        if self.dcag.tem_dados():
+            partes.append(self.dcag.serializar())
+        if self.dcct.tem_dados():
+            partes.append(self.dcct.serializar())
 
         # Blocos FACTS/HVDC — emitidos entre DMAQ e DEVT quando populados
         if self.svc.tem_dados():

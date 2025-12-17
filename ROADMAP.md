@@ -1,6 +1,6 @@
 # Roadmap — pyanatem
 
-## Status atual: **v1.2.5** ✅ (estável, lançável) — etapa v1.1 concluída; v1.2 em andamento
+## Status atual: **v1.2.6** ✅ (estável, lançável) — etapas v1.1 e v1.2 concluídas 🎉
 
 Esquema de versão **v1 (SemVer)**. O ciclo `0.x` foi encerrado em v1.0.0
 (lançamento oficial estável). A partir daí:
@@ -34,7 +34,7 @@ parser de leitura + roundtrip por bloco; confiabilidade Média→**Alta**.
 
 ---
 
-## v1.2.0 — Máquina Síncrona Completa 🥈 *(em andamento)*
+## v1.2.0 — Máquina Síncrona Completa 🥈 ✅ **CONCLUÍDA**
 
 *Sem reguladores/PSS predefinidos, casos reais de estabilidade são inviáveis.
 Abordagem para modelos predefinidos: bloco genérico posicional cobrindo todos
@@ -47,8 +47,7 @@ os modelos MDxx + construtor nomeado para o modelo mais comum.*
 | **v1.2.3** | Estabilizadores (PSS) predefinidos (DEST §16.5) | ✅ **Concluído** (2026-07-10) |
 | ~~v1.2.4~~ | ~~Modelos de máquina MD04–MD24~~ — **N/A: o DMDG tem só 3 modelos (MD01–03, §16.1), todos já implementados**. O "MD04–24" foi confusão com o DRGT. | ✅ **Sem trabalho** (revisado 2026-07-10) |
 | **v1.2.5** | Curvas de saturação (DCST §16.2) | ✅ **Concluído** (2026-07-10) |
-| v1.2.6 | Controle Automático de Geração (CAG §16.7) | ⏳ *(separado do bundle original)* |
-| v1.2.7 | Controle Centralizado de Tensão (§16.8) | ⏳ *(separado do bundle original)* |
+| **v1.2.6** | CAG (DCAG §46.13/§16.7) + Controle Centralizado de Tensão (DCCT §46.15/§16.8) | ✅ **Concluído** (2026-07-10) |
 
 ---
 

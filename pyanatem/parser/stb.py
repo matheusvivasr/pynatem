@@ -16,6 +16,8 @@ Suporte:
     DRGV  – reguladores de velocidade/turbina (§16.4): MD01–MD07 genérico (v1.2.2)
     DEST  – estabilizadores/PSS (§16.5): MD01–MD12 genérico (v1.2.3)
     DCST  – curvas de saturação (§16.2): Nc Tp P1 P2 P3 (v1.2.5)
+    DCAG  – associação CAG↔CDU (§46.13): Nc Mc[u] (v1.2.6)
+    DCCT  – associação CCT↔CDU (§46.15): Nc Mc[u] (v1.2.6)
     DCER  – associação CER/SVC (§46.18): Nb Gr Mc[u] [Me[u]] (v1.1.1)
     DCSC  – associação CSC/TCSC (§46.22): De Pa Nc Mc[u] [Me[u]] (v1.1.1)
     DVSI  – conversores FACTS VSI (§46.64): 15 campos em colunas fixas (v1.1.1)
@@ -155,6 +157,10 @@ class ParserSTB:
                 i = ParserSTB._ler_modelo_mdxx(linhas, i, caso, "dest")
             elif kw == "DCST":
                 i = ParserSTB._ler_dcst(linhas, i + 1, caso)
+            elif kw == "DCAG":
+                i = ParserSTB._ler_assoc_cdu(linhas, i + 1, caso, "dcag")
+            elif kw == "DCCT":
+                i = ParserSTB._ler_assoc_cdu(linhas, i + 1, caso, "dcct")
             elif kw == "TITU":
                 i = ParserSTB._ler_titu(linhas, i + 1, caso)
             elif kw == "DCDU":
@@ -657,6 +663,32 @@ class ParserSTB:
                 no = int(partes[0])
                 params = [_parse_valor(p) for p in partes[1:]]
                 bloco.adicionar(variante, no, *params)
+            except (ValueError, IndexError):
+                pass
+            i += 1
+        return i
+
+    @staticmethod
+    def _ler_assoc_cdu(linhas, inicio, caso, atributo: str) -> int:
+        """Lê um código de associação de controle de área a CDU (DCAG/DCCT).
+
+        Formato livre: ``Nc Mc[u]`` (Listagens 46.11 / 46.13).
+        """
+        bloco = getattr(caso, atributo)
+        i = inicio
+        while i < len(linhas):
+            linha = _strip_comment(linhas[i])
+            if _e_terminador(linha) or _e_fim(linha):
+                return i + 1
+            stripped = linha.strip()
+            if not stripped:
+                i += 1
+                continue
+            partes = stripped.split()
+            try:
+                nc = int(partes[0])
+                mc, usuario = _sep_flag_u(partes[1])
+                bloco.adicionar(nc, mc, usuario=usuario)
             except (ValueError, IndexError):
                 pass
             i += 1

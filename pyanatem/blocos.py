@@ -1468,6 +1468,75 @@ class BlocoDCST(BlocoBase):
 
 
 # ---------------------------------------------------------------------------
+# Controles de área associados a CDU (código de associação Nc + Mc[U])
+#
+# DCAG  §46.13 — Controle Automático de Geração (CAG, §16.7)
+# DCCT  §46.15 — Controle Centralizado de Tensão (CCT, §16.8)
+#
+# Ambos só possuem modelo definido por CDU (não há modelos predefinidos), então
+# o código apenas associa o controle (Nc) ao seu modelo CDU (Mc, sempre 'U').
+# ---------------------------------------------------------------------------
+
+
+@dataclass
+class _AssocCDU:
+    """Associação de um controle de área ao seu modelo CDU (Nc + Mc[U])."""
+
+    nc: int  # nº de identificação do controle (CAG ou CCT)
+    mc: int  # nº do modelo CDU (campo ncdu do DCDU)
+    usuario: bool = True  # sempre 'U' — só há modelo por CDU
+
+    def serializar(self) -> str:
+        return f"{self.nc:>4}  {_sep_u(self.mc, self.usuario):>7}"
+
+
+@dataclass
+class _BlocoAssocCDU(BlocoBase):
+    """Base dos códigos de associação de controle de área a um modelo CDU."""
+
+    _assoc: list = field(default_factory=list)
+
+    def tem_dados(self) -> bool:
+        return bool(self._assoc)
+
+    def adicionar(self, nc: int, mc: int, usuario: bool = True):
+        """Associa o controle ``nc`` ao modelo CDU ``mc`` (``usuario`` = flag U)."""
+        self._assoc.append(_AssocCDU(nc=nc, mc=mc, usuario=usuario))
+        return self
+
+    def serializar(self) -> str:
+        linhas = [self._cabecalho(), "(Nc) ( Mc )u\n"]
+        for a in self._assoc:
+            linhas.append(a.serializar() + "\n")
+        linhas.append(self._terminador())
+        return "".join(linhas)
+
+
+@dataclass
+class BlocoDCAG(_BlocoAssocCDU):
+    """Associação de Controle Automático de Geração a modelo CDU (DCAG, §46.13).
+
+    O CAG (§16.7) só pode ser modelado por CDU; este código associa o CAG (Nc)
+    ao seu modelo CDU (Mc). Confiança: Alta — régua validada contra §46.13
+    (Listagem 46.11); roundtrip garantido.
+    """
+
+    keyword: str = field(default="DCAG", init=False, repr=False)
+
+
+@dataclass
+class BlocoDCCT(_BlocoAssocCDU):
+    """Associação de Controle Centralizado de Tensão a modelo CDU (DCCT, §46.15).
+
+    O CCT (§16.8) só pode ser modelado por CDU; este código associa o CCT (Nc)
+    ao seu modelo CDU (Mc). Confiança: Alta — régua validada contra §46.15
+    (Listagem 46.13); roundtrip garantido.
+    """
+
+    keyword: str = field(default="DCCT", init=False, repr=False)
+
+
+# ---------------------------------------------------------------------------
 # FACTS – blocos de associação e de conversores
 #
 # DCER  §46.18 — associação de compensador estático (CER/SVC) a modelos

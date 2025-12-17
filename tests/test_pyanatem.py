@@ -910,6 +910,45 @@ def test_dcst_aparece_antes_de_dmdg_no_deck():
     assert stb.find("DCST") < stb.find("DMDG")
 
 
+# ===========================================================================
+# v1.2.6 – CAG (DCAG §46.13) e Controle Centralizado de Tensão (DCCT §46.15)
+# ===========================================================================
+
+
+def test_dcag_exemplo_manual(tmp_path):
+    """DCAG (Listagem 46.11): associa CAG 10 ao modelo CDU 140U."""
+    from pyanatem import CasoAnatem
+
+    stb = "DARQ\nSIST rede.sav\n999999\nDCAG\n(Nc) ( Mc )u\n10 140U\n999999\nFIM\n"
+    p = tmp_path / "dcag.stb"
+    p.write_text(stb, encoding="latin-1")
+    caso = CasoAnatem.ler(p)
+    a = caso.dcag._assoc[0]
+    assert (a.nc, a.mc, a.usuario) == (10, 140, True)
+
+
+def test_roundtrip_dcag_dcct(tmp_path):
+    """DCAG e DCCT: export → ler preserva as associações; ambos no deck."""
+    from pyanatem import CasoAnatem
+
+    caso = CasoAnatem()
+    caso.darq.sav = "rede.sav"
+    caso.dcag.adicionar(nc=10, mc=140)  # CAG → CDU 140
+    caso.dcct.adicionar(nc=20, mc=240)  # CCT → CDU 240
+    p = tmp_path / "cag_cct.stb"
+    caso.exportar(p)
+
+    conteudo = p.read_text(encoding="latin-1")
+    assert "DCAG" in conteudo and "DCCT" in conteudo
+    assert "140U" in conteudo and "240U" in conteudo
+
+    lido = CasoAnatem.ler(p)
+    assert (lido.dcag._assoc[0].nc, lido.dcag._assoc[0].mc) == (10, 140)
+    assert (lido.dcct._assoc[0].nc, lido.dcct._assoc[0].mc) == (20, 240)
+    assert lido.dcag.serializar() == caso.dcag.serializar()
+    assert lido.dcct.serializar() == caso.dcct.serializar()
+
+
 def test_dmdg_md01_serializa_campos_basicos():
     """MD01: No, L'd, Ra, H, D, MVA presentes na saída."""
     b = BlocoDMDG()

@@ -2,6 +2,30 @@
 
 Todas as mudanças notáveis estão documentadas aqui.
 
+## [1.2.6] — 2026-07-10 — CAG + Controle Centralizado de Tensão — fecha a etapa v1.2 🎉
+
+> Último patch da etapa **v1.2 (Máquina Síncrona Completa)**. Com ele, toda a
+> cadeia de modelagem da máquina síncrona está disponível.
+
+### Added
+
+- **`BlocoDCAG`** (§46.13, §16.7) — associação de Controle Automático de Geração
+  (CAG) ao seu modelo CDU. Régua `Nc Mc[U]`.
+- **`BlocoDCCT`** (§46.15, §16.8) — associação de Controle Centralizado de
+  Tensão (CCT) ao seu modelo CDU. Régua `Nc Mc[U]`.
+- Ambos herdam de `_BlocoAssocCDU` (base para códigos de associação de controle
+  de área a CDU). CAG e CCT só têm modelo por CDU (não há predefinidos).
+- Expostos em `CasoAnatem.dcag`/`.dcct`; emitidos no deck após o DMAQ. Parser
+  usa `_ler_assoc_cdu`. Roundtrip garantido.
+- 2 testes novos (exemplo do manual + roundtrip de ambos). Total: 235 testes.
+
+### Notas
+
+- CAG (v1.2.6) e CCT (v1.2.7 no roadmap) foram entregues juntos — são códigos de
+  associação idênticos e triviais. Isto **conclui a etapa v1.2**: o usuário já
+  pode modelar uma máquina síncrona completa (curva de saturação + regulador de
+  tensão + regulador de velocidade + PSS) e controles de área (CAG/CCT).
+
 ## [1.2.5] — 2026-07-10 — Curvas de saturação de máquina (DCST)
 
 > Patch da etapa **v1.2 (Máquina Síncrona Completa)**. Completa a cadeia de
