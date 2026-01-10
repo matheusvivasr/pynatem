@@ -1537,6 +1537,99 @@ class BlocoDCCT(_BlocoAssocCDU):
 
 
 # ---------------------------------------------------------------------------
+# Cargas estáticas funcionais — DCAR (§46.14 / Cap. 11)
+#
+# Define a variação da carga estática com a tensão via parâmetros ZIP:
+#   A/B → parcela ativa que varia com V / V²   (corrente/impedância constante)
+#   C/D → parcela reativa que varia com V / V²
+#   Vmn → tensão (%) abaixo da qual a carga vira impedância constante
+#
+# O DCAR usa "linguagem de seleção" (Cap. 42) para escolher as barras/cargas
+# alvo — uma feature à parte (roadmap A43). Aqui a seleção é tratada como uma
+# string opaca; a leitura preserva a linha bruta (roundtrip garantido).
+# ---------------------------------------------------------------------------
+
+
+@dataclass
+class _CargaFuncional:
+    """Definição/alteração de carga estática funcional (DCAR §46.14)."""
+
+    selecao: str = ""  # expressão de seleção (ex.: "BARR 1 A BARR 9998")
+    a: float = 0.0  # parcela ativa ~ V (corrente constante)
+    b: float = 0.0  # parcela ativa ~ V² (impedância constante)
+    c: float = 0.0  # parcela reativa ~ V
+    d: float = 0.0  # parcela reativa ~ V²
+    vmn: float = 70.0  # tensão (%) abaixo da qual vira Z constante
+    texto_bruto: str = ""  # linha original (preserva roundtrip quando lida)
+
+    def serializar(self) -> str:
+        if self.texto_bruto:
+            return self.texto_bruto
+        params = "  ".join(
+            _fmt_valor(v) for v in (self.a, self.b, self.c, self.d, self.vmn)
+        )
+        return f"{self.selecao}  {params}".rstrip()
+
+
+@dataclass
+class BlocoDCAR(BlocoBase):
+    """Cargas estáticas funcionais — modelo ZIP por tensão (DCAR, §46.14).
+
+    Confiança: Média — os parâmetros do modelo de carga (A/B/C/D/Vmn) são
+    estruturados e validados contra §46.14, mas a *linguagem de seleção* que
+    escolhe as barras alvo (Cap. 42) é tratada como string opaca (roadmap A43).
+    A leitura preserva a linha bruta, garantindo roundtrip.
+    """
+
+    keyword: str = field(default="DCAR", init=False, repr=False)
+    opcoes: str = ""  # opções na linha de cabeçalho (ex.: "IMPR")
+    _cargas: list = field(default_factory=list)
+
+    def tem_dados(self) -> bool:
+        return bool(self._cargas)
+
+    def adicionar(
+        self,
+        selecao: str,
+        a: float = 0.0,
+        b: float = 0.0,
+        c: float = 0.0,
+        d: float = 0.0,
+        vmn: float = 70.0,
+    ) -> "BlocoDCAR":
+        """Adiciona/altera um modelo de carga funcional (ZIP).
+
+        Args:
+            selecao: expressão da linguagem de seleção (barras/cargas alvo).
+            a, b: parcelas da carga ativa que variam com V e V².
+            c, d: parcelas da carga reativa que variam com V e V².
+            vmn: tensão (%) abaixo da qual a carga vira impedância constante.
+        """
+        self._cargas.append(
+            _CargaFuncional(selecao=selecao, a=a, b=b, c=c, d=d, vmn=vmn)
+        )
+        return self
+
+    def adicionar_bruto(self, texto: str) -> "BlocoDCAR":
+        """Adiciona uma linha DCAR no formato literal (escape hatch)."""
+        self._cargas.append(_CargaFuncional(texto_bruto=texto))
+        return self
+
+    def _cabecalho(self) -> str:
+        return f"{self.keyword} {self.opcoes}\n".replace(" \n", "\n")
+
+    def serializar(self) -> str:
+        linhas = [
+            self._cabecalho(),
+            "(tp) ( no) C (tp) ( no) C (tp) ( no) C (tp) ( no) (A) (B) (C) (D) (Vmn)\n",
+        ]
+        for c in self._cargas:
+            linhas.append(c.serializar() + "\n")
+        linhas.append(self._terminador())
+        return "".join(linhas)
+
+
+# ---------------------------------------------------------------------------
 # FACTS – blocos de associação e de conversores
 #
 # DCER  §46.18 — associação de compensador estático (CER/SVC) a modelos

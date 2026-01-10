@@ -18,6 +18,7 @@ Suporte:
     DCST  – curvas de saturação (§16.2): Nc Tp P1 P2 P3 (v1.2.5)
     DCAG  – associação CAG↔CDU (§46.13): Nc Mc[u] (v1.2.6)
     DCCT  – associação CCT↔CDU (§46.15): Nc Mc[u] (v1.2.6)
+    DCAR  – cargas funcionais (§46.14): params ZIP; seleção preservada bruta (v1.3.1)
     DCER  – associação CER/SVC (§46.18): Nb Gr Mc[u] [Me[u]] (v1.1.1)
     DCSC  – associação CSC/TCSC (§46.22): De Pa Nc Mc[u] [Me[u]] (v1.1.1)
     DVSI  – conversores FACTS VSI (§46.64): 15 campos em colunas fixas (v1.1.1)
@@ -157,6 +158,8 @@ class ParserSTB:
                 i = ParserSTB._ler_modelo_mdxx(linhas, i, caso, "dest")
             elif kw == "DCST":
                 i = ParserSTB._ler_dcst(linhas, i + 1, caso)
+            elif kw.startswith("DCAR"):
+                i = ParserSTB._ler_dcar(linhas, i, caso)
             elif kw == "DCAG":
                 i = ParserSTB._ler_assoc_cdu(linhas, i + 1, caso, "dcag")
             elif kw == "DCCT":
@@ -691,6 +694,29 @@ class ParserSTB:
                 bloco.adicionar(nc, mc, usuario=usuario)
             except (ValueError, IndexError):
                 pass
+            i += 1
+        return i
+
+    @staticmethod
+    def _ler_dcar(linhas, inicio, caso) -> int:
+        """Lê o bloco DCAR (§46.14) — cargas estáticas funcionais.
+
+        A linha ``inicio`` é 'DCAR [opções]'. Cada linha de dados usa linguagem
+        de seleção (Cap. 42), preservada como texto bruto para roundtrip fiel.
+        """
+        header = _strip_comment(linhas[inicio]).strip().split()
+        caso.dcar.opcoes = " ".join(header[1:]) if len(header) > 1 else ""
+
+        i = inicio + 1
+        while i < len(linhas):
+            linha = _strip_comment(linhas[i])
+            if _e_terminador(linha) or _e_fim(linha):
+                return i + 1
+            stripped = linha.strip()
+            if not stripped or stripped.startswith("("):
+                i += 1
+                continue
+            caso.dcar.adicionar_bruto(stripped)
             i += 1
         return i
 

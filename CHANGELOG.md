@@ -2,6 +2,25 @@
 
 Todas as mudanças notáveis estão documentadas aqui.
 
+## [1.3.1] — 2026-07-10 — Cargas estáticas funcionais (DCAR)
+
+> Primeiro patch da etapa **v1.3 (Cargas, Shunt, OLTC e Circuitos)**.
+
+### Added
+
+- **`BlocoDCAR`** (§46.14) — Cargas estáticas funcionais (modelo ZIP por
+  tensão). Parâmetros `A/B` (parcela ativa ~ V / V²), `C/D` (reativa ~ V / V²)
+  e `Vmn` (tensão abaixo da qual vira Z constante), estruturados e validados.
+  Exposto em `CasoAnatem.dcar`; emitido no deck; parser preserva a linha.
+- 2 testes novos (serialização, roundtrip com opções de cabeçalho). Total: 237.
+
+### Notas
+
+- Confiabilidade **Média**: os parâmetros do modelo de carga são estruturados,
+  mas a *linguagem de seleção* (Cap. 42) que escolhe as barras alvo é tratada
+  como string opaca e preservada bruta no roundtrip (parsing estruturado da
+  seleção fica para o roadmap A43 / v1.9.2).
+
 ## [1.2.6] — 2026-07-10 — CAG + Controle Centralizado de Tensão — fecha a etapa v1.2 🎉
 
 > Último patch da etapa **v1.2 (Máquina Síncrona Completa)**. Com ele, toda a

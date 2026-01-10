@@ -42,6 +42,7 @@ from .blocos import (
     BlocoDCST,
     BlocoDCAG,
     BlocoDCCT,
+    BlocoDCAR,
     BlocoEXSI,
     BlocoSVC,
     BlocoTCSC,
@@ -101,6 +102,7 @@ class CasoAnatem:
         self.dmaq = BlocoDMAQ()
         self.dcag = BlocoDCAG()
         self.dcct = BlocoDCCT()
+        self.dcar = BlocoDCAR()
         self.svc = BlocoSVC()
         self.tcsc = BlocoTCSC()
         self.statcom = BlocoSTATCOM()
@@ -266,6 +268,10 @@ class CasoAnatem:
             partes.append(self.dcag.serializar())
         if self.dcct.tem_dados():
             partes.append(self.dcct.serializar())
+
+        # Cargas funcionais (modelo ZIP por tensão)
+        if self.dcar.tem_dados():
+            partes.append(self.dcar.serializar())
 
         # Blocos FACTS/HVDC — emitidos entre DMAQ e DEVT quando populados
         if self.svc.tem_dados():

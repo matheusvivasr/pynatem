@@ -949,6 +949,46 @@ def test_roundtrip_dcag_dcct(tmp_path):
     assert lido.dcct.serializar() == caso.dcct.serializar()
 
 
+# ===========================================================================
+# v1.3.1 – DCAR: cargas estáticas funcionais (modelo ZIP) (§46.14)
+# ===========================================================================
+
+
+def test_dcar_serializa():
+    """DCAR (§46.14): seleção + parâmetros ZIP (A/B/C/D/Vmn)."""
+    from pyanatem import BlocoDCAR
+
+    b = BlocoDCAR()
+    b.adicionar(selecao="BARR 1 A BARR 9998", a=100.0, b=0.0, c=0.0, d=100.0)
+    t = b.serializar()
+    assert "DCAR" in t
+    assert "BARR 1 A BARR 9998" in t and "100" in t
+    assert t.rstrip().endswith("999999")
+
+
+def test_roundtrip_dcar(tmp_path):
+    """DCAR: export → ler preserva a linha (bruta) e as opções do cabeçalho."""
+    from pyanatem import CasoAnatem
+
+    caso = CasoAnatem()
+    caso.darq.sav = "rede.sav"
+    caso.dcar.opcoes = "IMPR"
+    caso.dcar.adicionar(selecao="BARR 1 A BARR 9998", a=100.0, b=0.0, c=0.0, d=100.0)
+    p = tmp_path / "dcar.stb"
+    caso.exportar(p)
+
+    conteudo = p.read_text(encoding="latin-1")
+    assert "DCAR IMPR" in conteudo
+    assert "BARR 1 A BARR 9998" in conteudo
+
+    lido = CasoAnatem.ler(p)
+    assert lido.dcar.opcoes == "IMPR"
+    assert len(lido.dcar._cargas) == 1
+    # A seleção é preservada como texto bruto (linguagem de seleção = A43)
+    assert "BARR 1 A BARR 9998" in lido.dcar._cargas[0].texto_bruto
+    assert lido.dcar.serializar() == caso.dcar.serializar()
+
+
 def test_dmdg_md01_serializa_campos_basicos():
     """MD01: No, L'd, Ra, H, D, MVA presentes na saída."""
     b = BlocoDMDG()
