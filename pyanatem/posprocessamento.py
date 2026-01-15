@@ -76,7 +76,9 @@ class ResultadoPLT:
         """
         if variavel not in self.dados:
             disponiveis = ", ".join(self.dados.keys())
-            raise KeyError(f"Variável '{variavel}' não encontrada. Disponíveis: {disponiveis}")
+            raise KeyError(
+                f"Variável '{variavel}' não encontrada. Disponíveis: {disponiveis}"
+            )
         return self.dados[variavel]
 
 
@@ -187,7 +189,12 @@ class LeitorRelatorio:
 
     _PALAVRAS_ERRO = ["ERRO", "DIVERG", "FALHA", "NAO CONVERGIU", "NÃO CONVERGIU"]
     _PALAVRAS_AVISO = ["AVISO", "ATENCAO", "ATENÇÃO"]
-    _PALAVRAS_SUCESSO = ["CONVERGIU", "FIM NORMAL", "EXECUCAO CONCLUIDA", "EXECUÇÃO CONCLUÍDA"]
+    _PALAVRAS_SUCESSO = [
+        "CONVERGIU",
+        "FIM NORMAL",
+        "EXECUCAO CONCLUIDA",
+        "EXECUÇÃO CONCLUÍDA",
+    ]
 
     @staticmethod
     def ler(caminho: Union[str, Path]) -> ResultadoExecucao:

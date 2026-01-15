@@ -35,7 +35,9 @@ def _executar_um(args: tuple) -> "subprocess.CompletedProcess":
 class EnsaioAnatem:
     """Gerencia um conjunto de casos derivados de um template STB."""
 
-    def __init__(self, template: Optional[CasoAnatem] = None, anatem_exe: Optional[str] = None):
+    def __init__(
+        self, template: Optional[CasoAnatem] = None, anatem_exe: Optional[str] = None
+    ):
         self._template = template or CasoAnatem()
         self.anatem_exe: Optional[str] = anatem_exe
         self._casos: Dict[str, CasoAnatem] = {}
@@ -355,7 +357,11 @@ class EnsaioAnatem:
         linhas.append("-" * 70)
         for r in resultados:
             nome = Path(r["arquivo"]).stem[:38]
-            conv = "Sim" if r.get("convergiu") else ("Não" if r.get("convergiu") is False else "?")
+            conv = (
+                "Sim"
+                if r.get("convergiu")
+                else ("Não" if r.get("convergiu") is False else "?")
+            )
             passou = "Sim" if r.get("passou") else "Não"
             nerros = len(r.get("erros", []))
             linhas.append(f"{nome:<40}{conv:<11}{passou:<8}{nerros}")
