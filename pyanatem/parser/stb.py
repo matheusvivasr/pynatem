@@ -19,6 +19,8 @@ Suporte:
     DCAG  – associação CAG↔CDU (§46.13): Nc Mc[u] (v1.2.6)
     DCCT  – associação CCT↔CDU (§46.15): Nc Mc[u] (v1.2.6)
     DCAR  – cargas funcionais (§46.14): params ZIP; seleção preservada bruta (v1.3.1)
+    DMTC  – controle de tap de OLTC (§14.1): MDxx genérico (v1.3.3)
+    DLTC  – dados/associação de OLTC (§46.40): colunas fixas De..Kbs (v1.3.3)
     DCER  – associação CER/SVC (§46.18): Nb Gr Mc[u] [Me[u]] (v1.1.1)
     DCSC  – associação CSC/TCSC (§46.22): De Pa Nc Mc[u] [Me[u]] (v1.1.1)
     DVSI  – conversores FACTS VSI (§46.64): 15 campos em colunas fixas (v1.1.1)
@@ -156,6 +158,10 @@ class ParserSTB:
                 i = ParserSTB._ler_modelo_mdxx(linhas, i, caso, "drgv")
             elif kw.startswith("DEST"):
                 i = ParserSTB._ler_modelo_mdxx(linhas, i, caso, "dest")
+            elif kw.startswith("DMTC"):
+                i = ParserSTB._ler_modelo_mdxx(linhas, i, caso, "dmtc")
+            elif kw == "DLTC":
+                i = ParserSTB._ler_dltc(linhas, i + 1, caso)
             elif kw == "DCST":
                 i = ParserSTB._ler_dcst(linhas, i + 1, caso)
             elif kw.startswith("DCAR"):
@@ -692,6 +698,57 @@ class ParserSTB:
                 nc = int(partes[0])
                 mc, usuario = _sep_flag_u(partes[1])
                 bloco.adicionar(nc, mc, usuario=usuario)
+            except (ValueError, IndexError):
+                pass
+            i += 1
+        return i
+
+    @staticmethod
+    def _ler_dltc(linhas, inicio, caso) -> int:
+        """Lê o bloco DLTC (§46.40) — dados de OLTC + associação a controle.
+
+        Parser de COLUNAS FIXAS (Tmn/Tmx/Kbs opcionais). Offsets espelham
+        ``_AssocOLTC.serializar()`` / ``_DLTC_COLS`` em ``blocos.py``.
+        """
+
+        def _si(s, a, b):
+            tok = s[a:b].strip() if len(s) > a else ""
+            return int(tok) if tok else None
+
+        def _sf(s, a, b):
+            tok = s[a:b].strip() if len(s) > a else ""
+            return float(tok) if tok else None
+
+        def _sm(s, a, b):
+            tok = s[a:b].strip() if len(s) > a else ""
+            return _sep_flag_u(tok) if tok else (None, False)
+
+        i = inicio
+        while i < len(linhas):
+            linha = linhas[i]
+            if _e_terminador(linha) or _e_fim(linha):
+                return i + 1
+            stripped = linha.strip()
+            if not stripped or stripped.startswith("("):
+                i += 1
+                continue
+            try:
+                de = _si(linha, 0, 6)
+                pa = _si(linha, 6, 12)
+                mt, mt_u = _sm(linha, 16, 23)
+                if de is None or pa is None or mt is None:
+                    raise ValueError("De/Pa/Mt ausente")
+                caso.dltc.adicionar(
+                    de=de,
+                    pa=pa,
+                    mt=mt,
+                    nc=_si(linha, 12, 16) or 1,
+                    nst=_si(linha, 39, 44) or 1,
+                    mt_usuario=mt_u,
+                    tmn=_sf(linha, 23, 31),
+                    tmx=_sf(linha, 31, 39),
+                    kbs=_si(linha, 44, 51),
+                )
             except (ValueError, IndexError):
                 pass
             i += 1

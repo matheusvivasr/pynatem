@@ -7,19 +7,19 @@
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![Type hints](https://img.shields.io/badge/type%20hints-full-brightgreen.svg)](pyanatem/)
 
-**v1.3.2 — Estável** ⭐
+**v1.3.3 — Estável** ⭐
 
 Biblioteca Python para **geração, manipulação, parsing e execução automatizada** de arquivos de caso do simulador de estabilidade eletromecânica transitória **ANATEM** (CEPEL).
 
 O pyanatem representa um arquivo `.stb` como um grafo de blocos serializáveis (padrão *AST + Serializer*): cada bloco é um objeto Python que sabe se serializar no texto posicional exato esperado pelo ANATEM, e o parser reconstrói a mesma árvore a partir de um `.stb` existente, garantindo *roundtrip*.
 
-> **Versão:** 1.3.2 — **Estável** (base v1.0.0)  
-> **Status:** API estável, 239 testes; v1.1 e v1.2 concluídas ✅ · etapa v1.3 (equipamentos de rede) em andamento  
+> **Versão:** 1.3.3 — **Estável** (base v1.0.0)  
+> **Status:** API estável, 241 testes; v1.1 e v1.2 concluídas ✅ · etapa v1.3 (equipamentos de rede) em andamento  
 > Referência técnica: Manual ANATEM 12.10 (CEPEL)  
 
 ---
 
-## Estado Atual (v1.3.2)
+## Estado Atual (v1.3.3)
 
 ✅ **Estável: API testada e documentada; endurecendo a confiabilidade (etapa v1.1)**
 
@@ -38,7 +38,7 @@ O pyanatem representa um arquivo `.stb` como um grafo de blocos serializáveis (
 | **1.0** | API estável, +200 testes, docs teóricas | ✅ v1.0.0 ⭐ |
 | **1.1** | Confiabilidade Máxima (Inventário B zerado) | ✅ v1.1.5 (FACTS + HVDC + SAV + CURVA + DPLT) |
 | **1.2** | Máquina Síncrona Completa (reguladores/PSS/modelos/CAG/CCT) | ✅ v1.2.6 (DRGT+DRGV+DEST+DCST+CAG+CCT) |
-| **1.3** | Cargas, Shunt, OLTC e Circuitos | 🔨 v1.3.2 (DCAR cargas + shunt MDSH/plotagem) |
+| **1.3** | Cargas, Shunt, OLTC e Circuitos | 🔨 v1.3.3 (DCAR + shunt + OLTC DMTC/DLTC) |
 
 ### Destaques v1.0.0
 
@@ -268,6 +268,7 @@ Para transparência sobre validação (v1.0.0):
 | **DCST** (curva de saturação) | Alta | Régua Nc/Tipo/P1–P3 §16.2 (4 tipos) + roundtrip | v1.2.5 |
 | **DCAG/DCCT** (CAG / Ctrl. Centralizado) | Alta | Associação a CDU §46.13/§46.15 (Nc Mc[U]) + roundtrip | v1.2.6 |
 | **DCAR** (cargas funcionais) | Média | Params ZIP §46.14 validados; seleção (Cap. 42) preservada bruta³ | v1.3.1 |
+| **DMTC/DLTC** (OLTC) | Alta | Controle de tap §14.1 + associação §46.40 (colunas fixas) + roundtrip | v1.3.3 |
 | **Formato `.plt` binário** | ❌ Não implementado | Estrutura de bytes desconhecida | — |
 
 > ¹ **DVSI e DCNV:** conjunto e ordem dos campos validados contra o manual
@@ -322,6 +323,7 @@ Para transparência sobre validação (v1.0.0):
 | **BlocoDCST** | Curvas de saturação de máquina síncrona §16.2 (4 tipos) | v1.2.5 | ✅ |
 | **BlocoDCAG, BlocoDCCT** | Associação CAG/Controle Centralizado a CDU §46.13/§46.15 | v1.2.6 | ✅ |
 | **BlocoDCAR** | Cargas estáticas funcionais (modelo ZIP) §46.14 | v1.3.1 | ✅ |
+| **BlocoDMTC, BlocoDLTC** | Transformadores OLTC: controle de tap + associação §14.1/§46.40 | v1.3.3 | ✅ |
 | **BlocoSVC, TCSC, STATCOM** (DCER/DCSC/DVSI) | FACTS — associação de controles (CER/CSC) e conversores VSI; validados §46 + roundtrip | v0.4.3 (Alta em v1.1.1) | ✅ |
 | **BlocoHVDC** (DCNV) | Conversores CA-CC de elos LCC + associação; validado §46.21 + roundtrip | v0.4.3 (Alta em v1.1.2) | ✅ |
 | **BlocoDELO** (DELO) | Associação de elos CC aos modelos de polo; validado §46.27 + roundtrip | v1.1.2 | ✅ |
@@ -361,7 +363,8 @@ pytest tests/ -v
 
 | Versão | Status | Destaques |
 |--------|--------|----------|
-| **v1.3.2** | ⭐ **Atual (Estável)** | **Bancos shunt: evento MDSH (§12.1) + plotagem QSHT/QBSH/NUBSH (§12.2), 239 testes** |
+| **v1.3.3** | ⭐ **Atual (Estável)** | **Transformadores OLTC: controle DMTC (§14.1) + associação DLTC (§46.40), 241 testes** |
+| v1.3.2 | Estável | Bancos shunt: evento MDSH (§12.1) + plotagem QSHT/QBSH/NUBSH (§12.2) |
 | v1.3.1 | Estável | DCAR: cargas estáticas funcionais (modelo ZIP) §46.14 |
 | v1.2.6 | Estável | CAG (DCAG) + Controle Centralizado (DCCT) §46.13/§46.15 — fecha a etapa v1.2 |
 | v1.2.5 | Estável | DCST: curvas de saturação de máquina §16.2 (4 tipos) + roundtrip |
@@ -383,7 +386,7 @@ pytest tests/ -v
 | v0.6.0 | Estável | FACTS, HVDC, CDU, pós-processamento, LeitorSAV |
 | v0.4.x–0.5.x | Arquivada | MVP: blocos, parser, ensaios, DMAQ posicional |
 
-**Recomendação:** Use **v1.3.2** para novos projetos. Todas as versões estão disponíveis no repositório como referência histórica.
+**Recomendação:** Use **v1.3.3** para novos projetos. Todas as versões estão disponíveis no repositório como referência histórica.
 
 ---
 

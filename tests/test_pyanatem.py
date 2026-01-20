@@ -1023,6 +1023,55 @@ def test_devt_mdsh_modificacao_shunt(tmp_path):
     assert mdsh[0].nb1 == 5 and mdsh[0].tini == 1.0 and mdsh[0].p1 == 50.0
 
 
+# ===========================================================================
+# v1.3.3 – Transformadores OLTC: controle DMTC (§14.1) + associação DLTC (§46.40)
+# ===========================================================================
+
+
+def test_dmtc_md01_nomeado():
+    """DMTC MD01 (§14.1): No + Bm1/Bm2/TR/TM/TB/T/Vlm."""
+    from pyanatem import BlocoDMTC
+
+    b = BlocoDMTC()
+    b.adicionar_md01(
+        no=1, bm1=0.015, bm2=0.010, tr=3.0, tm=2.0, tb=0.0, t=0.05, vlm=0.8
+    )
+    t = b.serializar()
+    assert "DMTC MD01" in t and "0.015" in t and "0.8" in t
+    assert t.rstrip().endswith("999999")
+
+
+def test_roundtrip_dltc_dmtc(tmp_path):
+    """DLTC/DMTC: OLTC com controle de tensão + OLTC defasador (Tmn/Tmx/Kbs brancos)."""
+    from pyanatem import CasoAnatem
+
+    caso = CasoAnatem()
+    caso.darq.sav = "rede.sav"
+    caso.dmtc.adicionar_md01(
+        no=1, bm1=0.015, bm2=0.010, tr=3.0, tm=2.0, tb=0.0, t=0.05, vlm=0.8
+    )
+    # OLTC de tensão: circuito 4-2, controle 1, tap 0.9–1.1, 40 passos, barra 20 (dir. -)
+    caso.dltc.adicionar(de=4, pa=2, mt=1, nc=1, nst=40, tmn=0.9, tmx=1.1, kbs=-20)
+    # OLTC defasador via CDU 5300: Tmn/Tmx/Kbs em branco, Nst=1
+    caso.dltc.adicionar(de=1, pa=2, mt=5300, nc=1, nst=1, mt_usuario=True)
+    p = tmp_path / "oltc.stb"
+    caso.exportar(p)
+
+    conteudo = p.read_text(encoding="latin-1")
+    assert "DMTC MD01" in conteudo and "DLTC" in conteudo and "5300U" in conteudo
+
+    lido = CasoAnatem.ler(p)
+    assert len(lido.dmtc._modelos) == 1
+    assert lido.dmtc._modelos[0].parametros[0] == 0.015
+    assert len(lido.dltc._oltcs) == 2
+    o1, o2 = lido.dltc._oltcs
+    assert (o1.de, o1.pa, o1.nc, o1.mt, o1.nst) == (4, 2, 1, 1, 40)
+    assert (o1.tmn, o1.tmx, o1.kbs) == (0.9, 1.1, -20)
+    assert (o2.de, o2.pa, o2.mt, o2.mt_usuario) == (1, 2, 5300, True)
+    assert o2.tmn is None and o2.tmx is None and o2.kbs is None  # defasador
+    assert lido.dltc.serializar() == caso.dltc.serializar()
+
+
 def test_dmdg_md01_serializa_campos_basicos():
     """MD01: No, L'd, Ra, H, D, MVA presentes na saída."""
     b = BlocoDMDG()

@@ -1654,6 +1654,159 @@ class BlocoDCAR(BlocoBase):
 
 
 # ---------------------------------------------------------------------------
+# Transformadores OLTC (comutação sob carga) — Cap. 14 / §46.40
+#
+# DMTC  §14.1 — modelo predefinido de controle de tap (No + parâmetros)
+# DLTC  §46.40 — dados adicionais do OLTC + associação ao modelo de controle
+#
+# O transformador em si é um Circuito CA definido no ANAREDE (com Tap mín/máx);
+# DMTC define o controle de tap e DLTC o associa ao circuito.
+# ---------------------------------------------------------------------------
+
+
+@dataclass
+class BlocoDMTC(_BlocoModeloMDxx):
+    """Modelos predefinidos de controle de tap de OLTC (DMTC, §14.1).
+
+    Cobre os modelos via parâmetros posicionais; o MD01 tem construtor nomeado.
+    A associação ao transformador é feita via DLTC (campo Mt).
+
+    Confiança: Alta — estrutura e MD01 validados contra §14.1; roundtrip
+    garantido pelo ParserSTB.
+    """
+
+    keyword: str = field(default="DMTC", init=False, repr=False)
+
+    def adicionar_md01(
+        self,
+        no: int,
+        bm1: float,
+        bm2: float,
+        tr: float,
+        tm: float,
+        tb: float,
+        t: float,
+        vlm: float = 0.0,
+    ) -> "BlocoDMTC":
+        """Controle de tap MD01 (§14.1), com campos nomeados e validados.
+
+        Campos (na ordem da régua): Bm1/Bm2 (bandas mortas), TR (tempo de ajuste
+        do relé), TM/TB/T (constantes de tempo), Vlm (tensão abaixo da qual o
+        controle de tap é congelado; 0 = não congela).
+        """
+        return self.adicionar("MD01", no, bm1, bm2, tr, tm, tb, t, vlm)
+
+
+# Colunas do OLTC (DLTC §46.40). Tmn/Tmx/Kbs são opcionais → colunas fixas
+# (espelhadas por ParserSTB._ler_dltc).
+_DLTC_COLS = (
+    ("de", 6),
+    ("pa", 6),
+    ("nc", 4),
+    ("mt", 7),
+    ("tmn", 8),
+    ("tmx", 8),
+    ("nst", 5),
+    ("kbs", 7),
+)
+
+
+@dataclass
+class _AssocOLTC:
+    """Dados adicionais de um OLTC e associação ao seu controle (DLTC §46.40)."""
+
+    de: int  # barra DE do circuito (ANAREDE/DLIN)
+    pa: int  # barra PARA do circuito
+    mt: int  # nº do modelo de controle (DMTC ou CDU)
+    nc: int = 1  # nº do circuito paralelo
+    nst: int = 1  # nº de intervalos de discretização do tap (>0)
+    mt_usuario: bool = False  # 'U' se Mt definido por CDU
+    tmn: Optional[float] = None  # tap mínimo [pu] (branco → ANAREDE)
+    tmx: Optional[float] = None  # tap máximo [pu] (branco → ANAREDE)
+    kbs: Optional[int] = None  # barra controlada (sinal indica direção)
+
+    def serializar(self) -> str:
+        return (
+            _col_int(self.de, 6)
+            + _col_int(self.pa, 6)
+            + _col_int(self.nc, 4)
+            + _col_modelo(self.mt, self.mt_usuario, 7)
+            + _col_float(self.tmn, 8)
+            + _col_float(self.tmx, 8)
+            + _col_int(self.nst, 5)
+            + _col_int(self.kbs, 7)
+        )
+
+
+@dataclass
+class BlocoDLTC(BlocoBase):
+    """Dados de Transformadores OLTC e associação ao controle (DLTC, §46.40).
+
+    O transformador é um Circuito CA definido no ANAREDE; este código informa os
+    dados adicionais do OLTC (faixa e discretização do tap, barra controlada) e
+    associa ao modelo de controle (DMTC ou CDU). Campos Tmn/Tmx/Kbs opcionais
+    (branco → valor do ANAREDE); para defasador puro, deixe-os em branco e Nst=1.
+
+    Confiança: Alta — campos e ordem validados contra §46.40 (Listagem 46.38);
+    serialização em colunas fixas com roundtrip garantido.
+    """
+
+    keyword: str = field(default="DLTC", init=False, repr=False)
+    _oltcs: list = field(default_factory=list)
+
+    def tem_dados(self) -> bool:
+        return bool(self._oltcs)
+
+    def adicionar(
+        self,
+        de: int,
+        pa: int,
+        mt: int,
+        nc: int = 1,
+        nst: int = 1,
+        mt_usuario: bool = False,
+        tmn: Optional[float] = None,
+        tmx: Optional[float] = None,
+        kbs: Optional[int] = None,
+    ) -> "BlocoDLTC":
+        """Associa um transformador OLTC (circuito De-Pa-Nc) ao controle Mt."""
+        self._oltcs.append(
+            _AssocOLTC(
+                de=de,
+                pa=pa,
+                mt=mt,
+                nc=nc,
+                nst=nst,
+                mt_usuario=mt_usuario,
+                tmn=tmn,
+                tmx=tmx,
+                kbs=kbs,
+            )
+        )
+        return self
+
+    def _guia(self) -> str:
+        rotulos = {
+            "de": "( De)",
+            "pa": "( Pa)",
+            "nc": "Nc",
+            "mt": "(Mt)u",
+            "tmn": "(Tmn)",
+            "tmx": "(Tmx)",
+            "nst": "Nst",
+            "kbs": "(Kbs)",
+        }
+        return "".join(f"{rotulos[nome]:>{w}}" for nome, w in _DLTC_COLS) + "\n"
+
+    def serializar(self) -> str:
+        linhas = [self._cabecalho(), self._guia()]
+        for o in self._oltcs:
+            linhas.append(o.serializar() + "\n")
+        linhas.append(self._terminador())
+        return "".join(linhas)
+
+
+# ---------------------------------------------------------------------------
 # FACTS – blocos de associação e de conversores
 #
 # DCER  §46.18 — associação de compensador estático (CER/SVC) a modelos

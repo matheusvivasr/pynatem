@@ -2,6 +2,23 @@
 
 Todas as mudanças notáveis estão documentadas aqui.
 
+## [1.3.3] — 2026-07-10 — Transformadores OLTC (DMTC + DLTC)
+
+> Terceiro patch da etapa **v1.3**.
+
+### Added
+
+- **`BlocoDMTC`** (§14.1) — modelo predefinido de controle de tap de OLTC.
+  Genérico posicional + `adicionar_md01(no, bm1, bm2, tr, tm, tb, t, vlm)`.
+- **`BlocoDLTC`** (§46.40) — dados adicionais do OLTC + associação ao controle
+  (`De Pa Nc Mt[u] Tmn Tmx Nst Kbs`). Serialização em colunas fixas (Tmn/Tmx/Kbs
+  opcionais → branco assume valor do ANAREDE; defasador puro deixa-os em branco
+  com Nst=1). Roundtrip garantido.
+- Expostos em `CasoAnatem.dmtc`/`.dltc`; DMTC antes de DLTC no deck. Parser lê
+  `DMTC MDxx` (genérico) e `DLTC` (colunas fixas).
+- 2 testes novos (DMTC MD01 + roundtrip DLTC com OLTC de tensão e defasador).
+  Total: 241 testes.
+
 ## [1.3.2] — 2026-07-10 — Bancos Shunt: evento MDSH + plotagem
 
 > Segundo patch da etapa **v1.3**. Escopo corrigido: **não existe código `DBSH`**
