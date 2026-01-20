@@ -2,6 +2,26 @@
 
 Todas as mudanças notáveis estão documentadas aqui.
 
+## [1.3.2] — 2026-07-10 — Bancos Shunt: evento MDSH + plotagem
+
+> Segundo patch da etapa **v1.3**. Escopo corrigido: **não existe código `DBSH`**
+> — os bancos shunt são dados do ANAREDE (importados do fluxo de potência). No
+> lado ANATEM o que existe são eventos e variáveis de plotagem.
+
+### Added
+
+- **Evento MDSH** (§12.1) em `BlocoDEVT.modificacao_shunt(barra, tini, valor)` —
+  modificação de shunt equivalente (variação absoluta). Reconhecido pelo parser.
+- **Plotagem de shunt** (§12.2) em `BlocoDPLT`: `reativo_shunt` (QSHT, shunt
+  equivalente), `shunt_individualizado` (QBSH), `unidades_shunt` (NUBSH).
+- 2 testes novos (plotagem shunt + roundtrip do evento MDSH). Total: 239 testes.
+
+### Notas
+
+- A meta original "Bancos Shunt (DBSH)" do roadmap partia de premissa falsa (não
+  há tal código). Entregue o que é real: evento MDSH + plotagem. A definição do
+  banco em si é feita no ANAREDE (ver LeitorSAV).
+
 ## [1.3.1] — 2026-07-10 — Cargas estáticas funcionais (DCAR)
 
 > Primeiro patch da etapa **v1.3 (Cargas, Shunt, OLTC e Circuitos)**.

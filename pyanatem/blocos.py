@@ -340,6 +340,16 @@ class BlocoDEVT(BlocoBase):
         self._eventos.append(_Evento(codigo="FCSH", nb1=barra, tini=tini))
         return self
 
+    def modificacao_shunt(self, barra: int, tini: float, valor: float) -> "BlocoDEVT":
+        """Modificação de shunt equivalente em barra CA (MDSH, §12.1).
+
+        ``valor`` é a variação absoluta (Abs) do shunt equivalente. Para o caso
+        individualizado (grupo/nº de unidades) ou variação percentual, use
+        ``linha_bruta()`` com a régua completa do DEVT.
+        """
+        self._eventos.append(_Evento(codigo="MDSH", nb1=barra, tini=tini, p1=valor))
+        return self
+
     def step_referencia(
         self, barra: int, unidade: int, tini: float, delta: float, tipo: str = "ALTG"
     ) -> "BlocoDEVT":
@@ -460,6 +470,20 @@ class BlocoDPLT(BlocoBase):
     def reativo_carga(self, barra: int) -> "BlocoDPLT":
         """Potência reativa de carga [pu]."""
         return self._add("QCAG", barra)
+
+    # -- Bancos shunt (§12.2, régua El=barra [+ Gr=grupo]) ------------------
+
+    def reativo_shunt(self, barra: int) -> "BlocoDPLT":
+        """Potência reativa do shunt equivalente da barra [Mvar] (§12.2.1: QSHT)."""
+        return self._add("QSHT", barra)
+
+    def shunt_individualizado(self, barra: int, grupo: int = 0) -> "BlocoDPLT":
+        """Valor do banco shunt individualizado [Mvar] (§12.2.2: QBSH)."""
+        return self._add("QBSH", barra, grupo)
+
+    def unidades_shunt(self, barra: int, grupo: int = 0) -> "BlocoDPLT":
+        """Nº de unidades em operação no banco shunt individualizado (§12.2.2: NUBSH)."""
+        return self._add("NUBSH", barra, grupo)
 
     # -- Transformadores OLTC (§13.3.1, régua El=DE, Pa=PARA, Nc) ------------
 

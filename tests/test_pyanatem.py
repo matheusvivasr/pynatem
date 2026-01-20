@@ -989,6 +989,40 @@ def test_roundtrip_dcar(tmp_path):
     assert lido.dcar.serializar() == caso.dcar.serializar()
 
 
+# ===========================================================================
+# v1.3.2 – Bancos Shunt: plotagem (§12.2) e evento MDSH (§12.1)
+# ===========================================================================
+
+
+def test_dplt_shunt():
+    """Plotagem de shunt (§12.2): QSHT (equivalente), QBSH/NUBSH (individualizado)."""
+    d = BlocoDPLT()
+    d.reativo_shunt(5)
+    d.shunt_individualizado(5, grupo=1)
+    d.unidades_shunt(5, grupo=1)
+    t = d.serializar()
+    assert "QSHT" in t and "QBSH" in t and "NUBSH" in t
+
+
+def test_devt_mdsh_modificacao_shunt(tmp_path):
+    """Evento MDSH (§12.1): modificação de shunt equivalente + roundtrip."""
+    from pyanatem import CasoAnatem
+
+    caso = CasoAnatem()
+    caso.darq.sav = "rede.sav"
+    caso.dsim.tfim = 10.0
+    caso.devt.modificacao_shunt(barra=5, tini=1.0, valor=50.0)
+    t = caso.devt.serializar()
+    assert "MDSH" in t and "5" in t
+
+    p = tmp_path / "mdsh.stb"
+    caso.exportar(p)
+    lido = CasoAnatem.ler(p)
+    mdsh = [e for e in lido.devt._eventos if e.codigo == "MDSH"]
+    assert len(mdsh) == 1
+    assert mdsh[0].nb1 == 5 and mdsh[0].tini == 1.0 and mdsh[0].p1 == 50.0
+
+
 def test_dmdg_md01_serializa_campos_basicos():
     """MD01: No, L'd, Ra, H, D, MVA presentes na saída."""
     b = BlocoDMDG()

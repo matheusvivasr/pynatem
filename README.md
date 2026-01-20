@@ -7,19 +7,19 @@
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![Type hints](https://img.shields.io/badge/type%20hints-full-brightgreen.svg)](pyanatem/)
 
-**v1.3.1 — Estável** ⭐
+**v1.3.2 — Estável** ⭐
 
 Biblioteca Python para **geração, manipulação, parsing e execução automatizada** de arquivos de caso do simulador de estabilidade eletromecânica transitória **ANATEM** (CEPEL).
 
 O pyanatem representa um arquivo `.stb` como um grafo de blocos serializáveis (padrão *AST + Serializer*): cada bloco é um objeto Python que sabe se serializar no texto posicional exato esperado pelo ANATEM, e o parser reconstrói a mesma árvore a partir de um `.stb` existente, garantindo *roundtrip*.
 
-> **Versão:** 1.3.1 — **Estável** (base v1.0.0)  
-> **Status:** API estável, 237 testes; v1.1 e v1.2 concluídas ✅ · etapa v1.3 (equipamentos de rede) em andamento  
+> **Versão:** 1.3.2 — **Estável** (base v1.0.0)  
+> **Status:** API estável, 239 testes; v1.1 e v1.2 concluídas ✅ · etapa v1.3 (equipamentos de rede) em andamento  
 > Referência técnica: Manual ANATEM 12.10 (CEPEL)  
 
 ---
 
-## Estado Atual (v1.3.1)
+## Estado Atual (v1.3.2)
 
 ✅ **Estável: API testada e documentada; endurecendo a confiabilidade (etapa v1.1)**
 
@@ -38,7 +38,7 @@ O pyanatem representa um arquivo `.stb` como um grafo de blocos serializáveis (
 | **1.0** | API estável, +200 testes, docs teóricas | ✅ v1.0.0 ⭐ |
 | **1.1** | Confiabilidade Máxima (Inventário B zerado) | ✅ v1.1.5 (FACTS + HVDC + SAV + CURVA + DPLT) |
 | **1.2** | Máquina Síncrona Completa (reguladores/PSS/modelos/CAG/CCT) | ✅ v1.2.6 (DRGT+DRGV+DEST+DCST+CAG+CCT) |
-| **1.3** | Cargas, Shunt, OLTC e Circuitos | 🔨 v1.3.1 (DCAR cargas) |
+| **1.3** | Cargas, Shunt, OLTC e Circuitos | 🔨 v1.3.2 (DCAR cargas + shunt MDSH/plotagem) |
 
 ### Destaques v1.0.0
 
@@ -361,7 +361,8 @@ pytest tests/ -v
 
 | Versão | Status | Destaques |
 |--------|--------|----------|
-| **v1.3.1** | ⭐ **Atual (Estável)** | **DCAR: cargas estáticas funcionais (modelo ZIP) §46.14, 237 testes** |
+| **v1.3.2** | ⭐ **Atual (Estável)** | **Bancos shunt: evento MDSH (§12.1) + plotagem QSHT/QBSH/NUBSH (§12.2), 239 testes** |
+| v1.3.1 | Estável | DCAR: cargas estáticas funcionais (modelo ZIP) §46.14 |
 | v1.2.6 | Estável | CAG (DCAG) + Controle Centralizado (DCCT) §46.13/§46.15 — fecha a etapa v1.2 |
 | v1.2.5 | Estável | DCST: curvas de saturação de máquina §16.2 (4 tipos) + roundtrip |
 | v1.2.3 | Estável | DEST: estabilizadores (PSS) §16.5 (MD01–MD12 genérico + MD01 nomeado) |
@@ -382,7 +383,7 @@ pytest tests/ -v
 | v0.6.0 | Estável | FACTS, HVDC, CDU, pós-processamento, LeitorSAV |
 | v0.4.x–0.5.x | Arquivada | MVP: blocos, parser, ensaios, DMAQ posicional |
 
-**Recomendação:** Use **v1.3.1** para novos projetos. Todas as versões estão disponíveis no repositório como referência histórica.
+**Recomendação:** Use **v1.3.2** para novos projetos. Todas as versões estão disponíveis no repositório como referência histórica.
 
 ---
 

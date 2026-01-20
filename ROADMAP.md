@@ -1,6 +1,6 @@
 # Roadmap — pyanatem
 
-## Status atual: **v1.3.1** ✅ (estável, lançável) — v1.1 e v1.2 concluídas; v1.3 em andamento
+## Status atual: **v1.3.2** ✅ (estável, lançável) — v1.1 e v1.2 concluídas; v1.3 em andamento
 
 Esquema de versão **v1 (SemVer)**. O ciclo `0.x` foi encerrado em v1.0.0
 (lançamento oficial estável). A partir daí:
@@ -58,7 +58,7 @@ os modelos MDxx + construtor nomeado para o modelo mais comum.*
 | Patch | Meta | Status |
 |-------|------|--------|
 | **v1.3.1** | Cargas estáticas funcionais (DCAR §46.14, modelo ZIP) | ✅ **Concluído** (2026-07-10) |
-| v1.3.2 | Bancos Shunt (DBSH) + eventos + relés | ⏳ |
+| **v1.3.2** | Bancos Shunt — evento MDSH (§12.1) + plotagem QSHT/QBSH/NUBSH (§12.2). *Não há código DBSH; banco é dado do ANAREDE.* | ✅ **Concluído** (2026-07-10) |
 | v1.3.3 | Transformadores OLTC (DLTC) built-in + associação | ⏳ |
 | v1.3.4 | Circuitos CA — fluxo agregado + eventos completos | ⏳ |
 
