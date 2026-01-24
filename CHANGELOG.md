@@ -2,6 +2,27 @@
 
 Todas as mudanças notáveis estão documentadas aqui.
 
+## [1.3.4] — 2026-07-10 — Fluxo Agregado de Intercâmbio (DFLA) — fecha a etapa v1.3 🎉
+
+> Último patch da etapa **v1.3 (Cargas, Shunt, OLTC e Circuitos)**.
+
+### Added
+
+- **`BlocoDFLA`** (§13.1) — Fluxo Agregado de Intercâmbio. Bloco aninhado que
+  agrega os fluxos de vários circuitos numa "área" (`NA ID` + circuitos
+  `De Pa NC [Ex]`, encerrada por `FIMFLA`). API: `adicionar_area(na, ident)` →
+  `area.adicionar_circuito(de, pa, nc, ex)`. Roundtrip garantido.
+- Exposto em `CasoAnatem.dfla`; parser lê o bloco aninhado com `FIMFLA`.
+- 2 testes novos (serialização + roundtrip de 2 áreas com Ex). Total: 243.
+
+### Notas
+
+- Escopo corrigido: **não há código `DCIR`** — o circuito CA é dado do ANAREDE.
+  No lado ANATEM, os eventos de circuito já estão no `BlocoDEVT` (curto/abertura)
+  e a plotagem em `BlocoDPLT` (FLXP/FLXQ/FLXC). O novo é o **DFLA**.
+- Isto **conclui a etapa v1.3**: cargas (DCAR), shunt (MDSH/plotagem), OLTC
+  (DMTC/DLTC) e fluxo agregado de circuitos (DFLA).
+
 ## [1.3.3] — 2026-07-10 — Transformadores OLTC (DMTC + DLTC)
 
 > Terceiro patch da etapa **v1.3**.

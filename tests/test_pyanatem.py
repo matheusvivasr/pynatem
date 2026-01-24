@@ -1072,6 +1072,52 @@ def test_roundtrip_dltc_dmtc(tmp_path):
     assert lido.dltc.serializar() == caso.dltc.serializar()
 
 
+# ===========================================================================
+# v1.3.4 – Circuitos CA: Fluxo Agregado de Intercâmbio (DFLA §13.1)
+# ===========================================================================
+
+
+def test_dfla_serializa():
+    """DFLA (§13.1): área + circuitos, encerrada por FIMFLA."""
+    from pyanatem import BlocoDFLA
+
+    b = BlocoDFLA()
+    area = b.adicionar_area(na=1, ident="SUDESTE")
+    area.adicionar_circuito(de=100, pa=200, nc=1)
+    area.adicionar_circuito(de=100, pa=300, nc=1, ex=300)
+    t = b.serializar()
+    assert "DFLA" in t and "SUDESTE" in t and "FIMFLA" in t
+    assert t.rstrip().endswith("999999")
+
+
+def test_roundtrip_dfla(tmp_path):
+    """DFLA: export → ler preserva áreas, circuitos e Ex (2 áreas)."""
+    from pyanatem import CasoAnatem
+
+    caso = CasoAnatem()
+    caso.darq.sav = "rede.sav"
+    a1 = caso.dfla.adicionar_area(na=1, ident="SUDESTE")
+    a1.adicionar_circuito(de=100, pa=200, nc=1)
+    a1.adicionar_circuito(de=100, pa=300, nc=1, ex=-300)  # sinal invertido
+    a2 = caso.dfla.adicionar_area(na=2, ident="SUL")
+    a2.adicionar_circuito(de=400, pa=500, nc=2)
+    p = tmp_path / "dfla.stb"
+    caso.exportar(p)
+
+    lido = CasoAnatem.ler(p)
+    assert len(lido.dfla._areas) == 2
+    ar1, ar2 = lido.dfla._areas
+    assert (ar1.na, ar1.ident, len(ar1.circuitos)) == (1, "SUDESTE", 2)
+    assert (ar1.circuitos[0].de, ar1.circuitos[0].pa, ar1.circuitos[0].nc) == (
+        100,
+        200,
+        1,
+    )
+    assert ar1.circuitos[1].ex == -300  # extremidade com sinal preservada
+    assert (ar2.na, ar2.ident, ar2.circuitos[0].nc) == (2, "SUL", 2)
+    assert lido.dfla.serializar() == caso.dfla.serializar()
+
+
 def test_dmdg_md01_serializa_campos_basicos():
     """MD01: No, L'd, Ra, H, D, MVA presentes na saída."""
     b = BlocoDMDG()

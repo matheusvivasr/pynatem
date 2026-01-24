@@ -7,19 +7,19 @@
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![Type hints](https://img.shields.io/badge/type%20hints-full-brightgreen.svg)](pyanatem/)
 
-**v1.3.3 — Estável** ⭐
+**v1.3.4 — Estável** ⭐
 
 Biblioteca Python para **geração, manipulação, parsing e execução automatizada** de arquivos de caso do simulador de estabilidade eletromecânica transitória **ANATEM** (CEPEL).
 
 O pyanatem representa um arquivo `.stb` como um grafo de blocos serializáveis (padrão *AST + Serializer*): cada bloco é um objeto Python que sabe se serializar no texto posicional exato esperado pelo ANATEM, e o parser reconstrói a mesma árvore a partir de um `.stb` existente, garantindo *roundtrip*.
 
-> **Versão:** 1.3.3 — **Estável** (base v1.0.0)  
-> **Status:** API estável, 241 testes; v1.1 e v1.2 concluídas ✅ · etapa v1.3 (equipamentos de rede) em andamento  
+> **Versão:** 1.3.4 — **Estável** (base v1.0.0)  
+> **Status:** API estável, 243 testes; etapas v1.1, v1.2 e v1.3 concluídas ✅  
 > Referência técnica: Manual ANATEM 12.10 (CEPEL)  
 
 ---
 
-## Estado Atual (v1.3.3)
+## Estado Atual (v1.3.4)
 
 ✅ **Estável: API testada e documentada; endurecendo a confiabilidade (etapa v1.1)**
 
@@ -38,7 +38,7 @@ O pyanatem representa um arquivo `.stb` como um grafo de blocos serializáveis (
 | **1.0** | API estável, +200 testes, docs teóricas | ✅ v1.0.0 ⭐ |
 | **1.1** | Confiabilidade Máxima (Inventário B zerado) | ✅ v1.1.5 (FACTS + HVDC + SAV + CURVA + DPLT) |
 | **1.2** | Máquina Síncrona Completa (reguladores/PSS/modelos/CAG/CCT) | ✅ v1.2.6 (DRGT+DRGV+DEST+DCST+CAG+CCT) |
-| **1.3** | Cargas, Shunt, OLTC e Circuitos | 🔨 v1.3.3 (DCAR + shunt + OLTC DMTC/DLTC) |
+| **1.3** | Cargas, Shunt, OLTC e Circuitos | ✅ v1.3.4 (DCAR + shunt + OLTC + DFLA) |
 
 ### Destaques v1.0.0
 
@@ -269,6 +269,7 @@ Para transparência sobre validação (v1.0.0):
 | **DCAG/DCCT** (CAG / Ctrl. Centralizado) | Alta | Associação a CDU §46.13/§46.15 (Nc Mc[U]) + roundtrip | v1.2.6 |
 | **DCAR** (cargas funcionais) | Média | Params ZIP §46.14 validados; seleção (Cap. 42) preservada bruta³ | v1.3.1 |
 | **DMTC/DLTC** (OLTC) | Alta | Controle de tap §14.1 + associação §46.40 (colunas fixas) + roundtrip | v1.3.3 |
+| **DFLA** (fluxo agregado) | Alta | Áreas de intercâmbio §13.1 (aninhado, FIMFLA) + roundtrip | v1.3.4 |
 | **Formato `.plt` binário** | ❌ Não implementado | Estrutura de bytes desconhecida | — |
 
 > ¹ **DVSI e DCNV:** conjunto e ordem dos campos validados contra o manual
@@ -324,6 +325,7 @@ Para transparência sobre validação (v1.0.0):
 | **BlocoDCAG, BlocoDCCT** | Associação CAG/Controle Centralizado a CDU §46.13/§46.15 | v1.2.6 | ✅ |
 | **BlocoDCAR** | Cargas estáticas funcionais (modelo ZIP) §46.14 | v1.3.1 | ✅ |
 | **BlocoDMTC, BlocoDLTC** | Transformadores OLTC: controle de tap + associação §14.1/§46.40 | v1.3.3 | ✅ |
+| **BlocoDFLA** | Fluxo Agregado de Intercâmbio (áreas de circuitos) §13.1 | v1.3.4 | ✅ |
 | **BlocoSVC, TCSC, STATCOM** (DCER/DCSC/DVSI) | FACTS — associação de controles (CER/CSC) e conversores VSI; validados §46 + roundtrip | v0.4.3 (Alta em v1.1.1) | ✅ |
 | **BlocoHVDC** (DCNV) | Conversores CA-CC de elos LCC + associação; validado §46.21 + roundtrip | v0.4.3 (Alta em v1.1.2) | ✅ |
 | **BlocoDELO** (DELO) | Associação de elos CC aos modelos de polo; validado §46.27 + roundtrip | v1.1.2 | ✅ |
@@ -363,7 +365,8 @@ pytest tests/ -v
 
 | Versão | Status | Destaques |
 |--------|--------|----------|
-| **v1.3.3** | ⭐ **Atual (Estável)** | **Transformadores OLTC: controle DMTC (§14.1) + associação DLTC (§46.40), 241 testes** |
+| **v1.3.4** | ⭐ **Atual (Estável)** | **DFLA: fluxo agregado de intercâmbio §13.1 — fecha a etapa v1.3, 243 testes** |
+| v1.3.3 | Estável | Transformadores OLTC: controle DMTC (§14.1) + associação DLTC (§46.40) |
 | v1.3.2 | Estável | Bancos shunt: evento MDSH (§12.1) + plotagem QSHT/QBSH/NUBSH (§12.2) |
 | v1.3.1 | Estável | DCAR: cargas estáticas funcionais (modelo ZIP) §46.14 |
 | v1.2.6 | Estável | CAG (DCAG) + Controle Centralizado (DCCT) §46.13/§46.15 — fecha a etapa v1.2 |
@@ -386,7 +389,7 @@ pytest tests/ -v
 | v0.6.0 | Estável | FACTS, HVDC, CDU, pós-processamento, LeitorSAV |
 | v0.4.x–0.5.x | Arquivada | MVP: blocos, parser, ensaios, DMAQ posicional |
 
-**Recomendação:** Use **v1.3.3** para novos projetos. Todas as versões estão disponíveis no repositório como referência histórica.
+**Recomendação:** Use **v1.3.4** para novos projetos. Todas as versões estão disponíveis no repositório como referência histórica.
 
 ---
 

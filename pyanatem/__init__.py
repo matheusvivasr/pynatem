@@ -22,6 +22,7 @@ from .blocos import (
     BlocoDCAR,
     BlocoDMTC,
     BlocoDLTC,
+    BlocoDFLA,
     BlocoSVC,
     BlocoTCSC,
     BlocoSTATCOM,
@@ -63,6 +64,7 @@ __all__ = [
     "BlocoDCAR",
     "BlocoDMTC",
     "BlocoDLTC",
+    "BlocoDFLA",
     "BlocoSVC",
     "BlocoTCSC",
     "BlocoSTATCOM",
@@ -82,4 +84,4 @@ __all__ = [
     "ResultadoSAV",
 ]
 
-__version__ = "1.3.3"
+__version__ = "1.3.4"

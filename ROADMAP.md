@@ -1,6 +1,6 @@
 # Roadmap — pyanatem
 
-## Status atual: **v1.3.3** ✅ (estável, lançável) — v1.1 e v1.2 concluídas; v1.3 em andamento
+## Status atual: **v1.3.4** ✅ (estável, lançável) — etapas v1.1, v1.2 e v1.3 concluídas 🎉
 
 Esquema de versão **v1 (SemVer)**. O ciclo `0.x` foi encerrado em v1.0.0
 (lançamento oficial estável). A partir daí:
@@ -51,7 +51,7 @@ os modelos MDxx + construtor nomeado para o modelo mais comum.*
 
 ---
 
-## v1.3.0 — Cargas, Shunt, OLTC e Circuitos 🥉 *(em andamento)*
+## v1.3.0 — Cargas, Shunt, OLTC e Circuitos 🥉 ✅ **CONCLUÍDA**
 
 *Equipamentos de rede presentes em quase todo caso.*
 
@@ -60,7 +60,7 @@ os modelos MDxx + construtor nomeado para o modelo mais comum.*
 | **v1.3.1** | Cargas estáticas funcionais (DCAR §46.14, modelo ZIP) | ✅ **Concluído** (2026-07-10) |
 | **v1.3.2** | Bancos Shunt — evento MDSH (§12.1) + plotagem QSHT/QBSH/NUBSH (§12.2). *Não há código DBSH; banco é dado do ANAREDE.* | ✅ **Concluído** (2026-07-10) |
 | **v1.3.3** | Transformadores OLTC — controle DMTC (§14.1) + associação DLTC (§46.40) | ✅ **Concluído** (2026-07-10) |
-| v1.3.4 | Circuitos CA — fluxo agregado + eventos completos | ⏳ |
+| **v1.3.4** | Circuitos CA — Fluxo Agregado de Intercâmbio (DFLA §13.1). *Não há código DCIR; circuito é dado do ANAREDE, eventos no DEVT.* | ✅ **Concluído** (2026-07-10) |
 
 ---
 

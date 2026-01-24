@@ -1807,6 +1807,86 @@ class BlocoDLTC(BlocoBase):
 
 
 # ---------------------------------------------------------------------------
+# Circuitos CA — Fluxo Agregado de Intercâmbio (DFLA, §13.1)
+#
+# O circuito CA em si é dado do ANAREDE (não há código próprio no ANATEM); seus
+# eventos usam o DEVT e a plotagem usa FLXP/FLXQ/FLXC. O DFLA agrega os fluxos
+# de vários circuitos numa "área" para monitoração/plotagem do intercâmbio.
+# ---------------------------------------------------------------------------
+
+
+@dataclass
+class _CircuitoIntercambio:
+    """Um circuito CA que compõe uma área de fluxo agregado (DFLA §13.1)."""
+
+    de: int  # barra DE (ANAREDE)
+    pa: int  # barra PARA (ANAREDE)
+    nc: int = 1  # nº do circuito
+    ex: Optional[int] = None  # extremidade de medição (default=De; sinal inverte)
+
+    def serializar(self) -> str:
+        campos = [f"{self.de:>6}", f"{self.pa:>6}", f"{self.nc:>3}"]
+        if self.ex is not None:
+            campos.append(f"{self.ex:>7}")
+        return "".join(campos)
+
+
+@dataclass
+class _AreaFluxo:
+    """Área de fluxo agregado de intercâmbio (DFLA §13.1)."""
+
+    na: int  # nº de identificação da área (distinto da área do ANAREDE)
+    ident: str = ""  # identificação alfanumérica
+    circuitos: list = field(default_factory=list)
+
+    def adicionar_circuito(
+        self, de: int, pa: int, nc: int = 1, ex: Optional[int] = None
+    ) -> "_AreaFluxo":
+        """Adiciona um circuito à área (encadeável)."""
+        self.circuitos.append(_CircuitoIntercambio(de=de, pa=pa, nc=nc, ex=ex))
+        return self
+
+
+@dataclass
+class BlocoDFLA(BlocoBase):
+    """Fluxo Agregado de Intercâmbio (DFLA, §13.1).
+
+    Agrega os fluxos de vários circuitos CA numa "área" para monitoração e
+    plotagem do intercâmbio. Bloco aninhado: por área, uma linha ``NA ID`` e
+    a lista de circuitos (``De Pa NC [Ex]``), encerrada por ``FIMFLA``.
+
+    Confiança: Alta — estrutura validada contra §13.1; roundtrip garantido.
+    """
+
+    keyword: str = field(default="DFLA", init=False, repr=False)
+    _areas: list = field(default_factory=list)
+
+    def tem_dados(self) -> bool:
+        return bool(self._areas)
+
+    def adicionar_area(self, na: int, ident: str = "") -> _AreaFluxo:
+        """Cria uma área de fluxo agregado e a retorna (para adicionar circuitos).
+
+        Args:
+            na: número de identificação da área (distinto da área do ANAREDE).
+            ident: identificação alfanumérica (opcional).
+        """
+        area = _AreaFluxo(na=na, ident=ident)
+        self._areas.append(area)
+        return area
+
+    def serializar(self) -> str:
+        linhas = [self._cabecalho()]
+        for area in self._areas:
+            linhas.append(f"{area.na:>5}  {area.ident}".rstrip() + "\n")
+            for c in area.circuitos:
+                linhas.append(c.serializar() + "\n")
+            linhas.append("FIMFLA\n")
+        linhas.append(self._terminador())
+        return "".join(linhas)
+
+
+# ---------------------------------------------------------------------------
 # FACTS – blocos de associação e de conversores
 #
 # DCER  §46.18 — associação de compensador estático (CER/SVC) a modelos

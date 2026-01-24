@@ -21,6 +21,7 @@ Suporte:
     DCAR  – cargas funcionais (§46.14): params ZIP; seleção preservada bruta (v1.3.1)
     DMTC  – controle de tap de OLTC (§14.1): MDxx genérico (v1.3.3)
     DLTC  – dados/associação de OLTC (§46.40): colunas fixas De..Kbs (v1.3.3)
+    DFLA  – fluxo agregado de intercâmbio (§13.1): áreas + circuitos, FIMFLA (v1.3.4)
     DCER  – associação CER/SVC (§46.18): Nb Gr Mc[u] [Me[u]] (v1.1.1)
     DCSC  – associação CSC/TCSC (§46.22): De Pa Nc Mc[u] [Me[u]] (v1.1.1)
     DVSI  – conversores FACTS VSI (§46.64): 15 campos em colunas fixas (v1.1.1)
@@ -162,6 +163,8 @@ class ParserSTB:
                 i = ParserSTB._ler_modelo_mdxx(linhas, i, caso, "dmtc")
             elif kw == "DLTC":
                 i = ParserSTB._ler_dltc(linhas, i + 1, caso)
+            elif kw == "DFLA":
+                i = ParserSTB._ler_dfla(linhas, i + 1, caso)
             elif kw == "DCST":
                 i = ParserSTB._ler_dcst(linhas, i + 1, caso)
             elif kw.startswith("DCAR"):
@@ -698,6 +701,46 @@ class ParserSTB:
                 nc = int(partes[0])
                 mc, usuario = _sep_flag_u(partes[1])
                 bloco.adicionar(nc, mc, usuario=usuario)
+            except (ValueError, IndexError):
+                pass
+            i += 1
+        return i
+
+    @staticmethod
+    def _ler_dfla(linhas, inicio, caso) -> int:
+        """Lê o bloco DFLA (§13.1) — fluxo agregado de intercâmbio.
+
+        Aninhado: por área, uma linha ``NA ID`` seguida de circuitos
+        ``De Pa NC [Ex]``, encerrada por ``FIMFLA``.
+        """
+        i = inicio
+        area = None
+        while i < len(linhas):
+            linha = _strip_comment(linhas[i])
+            if _e_terminador(linha) or _e_fim(linha):
+                return i + 1
+            stripped = linha.strip()
+            if not stripped:
+                i += 1
+                continue
+            if stripped.upper() == "FIMFLA":
+                area = None
+                i += 1
+                continue
+            partes = stripped.split()
+            try:
+                if area is None:
+                    # primeira régua: NA ID
+                    na = int(partes[0])
+                    ident = " ".join(partes[1:]) if len(partes) > 1 else ""
+                    area = caso.dfla.adicionar_area(na=na, ident=ident)
+                else:
+                    # segunda régua: De Pa NC [Ex]
+                    de = int(partes[0])
+                    pa = int(partes[1])
+                    nc = int(partes[2]) if len(partes) > 2 else 1
+                    ex = int(partes[3]) if len(partes) > 3 else None
+                    area.adicionar_circuito(de=de, pa=pa, nc=nc, ex=ex)
             except (ValueError, IndexError):
                 pass
             i += 1
