@@ -2,6 +2,19 @@
 
 Todas as mudanças notáveis estão documentadas aqui.
 
+## [1.3.5] — 2026-07-10 — Corrige ordem Tempo/El no DEVT (bug sistêmico)
+
+### Fixed
+
+- **`BlocoDEVT` / `_Evento`** — a régua do manual (Listagem 46.29) define
+  `(Tp) ( Tempo)( El )...`, mas serialização e parser faziam `El` antes de
+  `Tempo`. Corrigido em `_Evento.serializar()` e nos 3 ramos de `_ler_devt()`
+  (simples, com-circuito, máquina). Agora compatível com `.stb` reais do ANATEM.
+- Parser DEVT: adicionados tipos de evento `ABCI`, `FECI`, `MDCI` ao set de
+  reconhecimento de eventos com circuito (eram caídos como linha bruta).
+- Teste novo `test_devt_ordem_tempo_el_manual` valida contra o exemplo literal
+  do manual (`APCB .05 2`, `RMCB .25 2`, `ABCI .25 2 3`). Total: 244 testes.
+
 ## [1.3.4] — 2026-07-10 — Fluxo Agregado de Intercâmbio (DFLA) — fecha a etapa v1.3 🎉
 
 > Último patch da etapa **v1.3 (Cargas, Shunt, OLTC e Circuitos)**.

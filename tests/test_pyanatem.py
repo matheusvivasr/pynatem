@@ -428,9 +428,9 @@ DSIM
 0.0 10.0 0.01
 999999
 DEVT
-APCB      5      1.0000      0.0000      0.0000
-RMCB      5      1.1000      0.0000      0.0000
-ABLN     10     20    1      2.0000
+APCB      1.0000      5      0.0000      0.0000
+RMCB      1.1000      5      0.0000      0.0000
+ABLN      2.0000     10     20    1
 999999
 DPLT
 999999
@@ -443,6 +443,36 @@ FIM
         caso = CasoAnatem.ler(p)
         codigos = [e.codigo for e in caso.devt._eventos]
         assert codigos.count("APCB") == 1 and "RMCB" in codigos and "ABLN" in codigos
+
+
+def test_devt_ordem_tempo_el_manual():
+    """Régua DEVT (Listagem 46.29): Tp Tempo El — não El Tempo."""
+    stb = """\
+DARQ
+SIST rede.sav
+999999
+DSIM
+0.0 10.0 0.01
+999999
+DEVT
+APCB .05 2
+RMCB .25 2
+ABCI .25 2 3
+999999
+DPLT
+999999
+EXSI
+FIM
+"""
+    with tempfile.TemporaryDirectory() as tmp:
+        p = Path(tmp) / "manual.stb"
+        p.write_text(stb, encoding="latin-1")
+        caso = CasoAnatem.ler(p)
+        ev = caso.devt._eventos
+        assert ev[0].codigo == "APCB" and ev[0].tini == 0.05 and ev[0].nb1 == 2
+        assert ev[1].codigo == "RMCB" and ev[1].tini == 0.25 and ev[1].nb1 == 2
+        assert ev[2].codigo == "ABCI" and ev[2].tini == 0.25 and ev[2].nb1 == 2
+        assert ev[2].nb2 == 3
 
 
 def test_roundtrip_darq_multiplos_cdu():

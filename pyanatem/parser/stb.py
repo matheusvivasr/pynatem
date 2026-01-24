@@ -106,7 +106,7 @@ _DARQ_MAPA_SIMPLES = {
     "DATO": "rela",  # alias legado
 }
 
-_DEVT_COM_CIRCUITO = {"APCC", "RMCC", "ABLN", "FCLN"}
+_DEVT_COM_CIRCUITO = {"APCC", "RMCC", "ABLN", "FCLN", "ABCI", "FECI", "MDCI"}
 _DEVT_SIMPLES = {"APCB", "RMCB", "ABSH", "FCSH", "MDSH"}
 _DEVT_MAQUINA = {"ALTG"}
 
@@ -284,8 +284,8 @@ class ParserSTB:
             cod = partes[0].upper() if partes else ""
 
             if cod in _DEVT_SIMPLES:
-                nb1 = _safe_int(partes[1]) if len(partes) > 1 else 0
-                tini = _safe_float(partes[2]) if len(partes) > 2 else 0.0
+                tini = _safe_float(partes[1]) if len(partes) > 1 else 0.0
+                nb1 = _safe_int(partes[2]) if len(partes) > 2 else 0
                 r = _safe_float(partes[3]) if len(partes) > 3 else 0.0
                 x = _safe_float(partes[4]) if len(partes) > 4 else 0.0
                 caso.devt._eventos.append(
@@ -293,10 +293,10 @@ class ParserSTB:
                 )
 
             elif cod in _DEVT_COM_CIRCUITO:
-                nb1 = _safe_int(partes[1]) if len(partes) > 1 else 0
-                nb2 = _safe_int(partes[2]) if len(partes) > 2 else 0
-                nc = _safe_int(partes[3]) if len(partes) > 3 else 1
-                tini = _safe_float(partes[4]) if len(partes) > 4 else 0.0
+                tini = _safe_float(partes[1]) if len(partes) > 1 else 0.0
+                nb1 = _safe_int(partes[2]) if len(partes) > 2 else 0
+                nb2 = _safe_int(partes[3]) if len(partes) > 3 else 0
+                nc = _safe_int(partes[4]) if len(partes) > 4 else 1
                 p1 = _safe_float(partes[5]) if len(partes) > 5 else 0.0
                 p2 = _safe_float(partes[6]) if len(partes) > 6 else 0.0
                 caso.devt._eventos.append(
@@ -306,9 +306,9 @@ class ParserSTB:
                 )
 
             elif cod in _DEVT_MAQUINA:
-                nb1 = _safe_int(partes[1]) if len(partes) > 1 else 0
-                nb2 = _safe_int(partes[2]) if len(partes) > 2 else 1
-                tini = _safe_float(partes[3]) if len(partes) > 3 else 0.0
+                tini = _safe_float(partes[1]) if len(partes) > 1 else 0.0
+                nb1 = _safe_int(partes[2]) if len(partes) > 2 else 0
+                nb2 = _safe_int(partes[3]) if len(partes) > 3 else 1
                 p1 = _safe_float(partes[4]) if len(partes) > 4 else 0.0
                 caso.devt._eventos.append(
                     _Evento(codigo=cod, nb1=nb1, nb2=nb2, tini=tini, p1=p1)

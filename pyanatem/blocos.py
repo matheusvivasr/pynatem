@@ -257,13 +257,13 @@ class _Evento:
         cod = f"{self.codigo:<4}"
         if self.nb2 or self.nc:
             return (
-                f"{cod}  {self.nb1:>5}  {self.nb2:>5}  {self.nc:>3}"
-                f"  {self.tini:>10.4f}  {self.p1:>10.4f}  {self.p2:>10.4f}"
+                f"{cod}  {self.tini:>10.4f}  {self.nb1:>5}  {self.nb2:>5}  {self.nc:>3}"
+                f"  {self.p1:>10.4f}  {self.p2:>10.4f}"
             )
         else:
             return (
-                f"{cod}  {self.nb1:>5}"
-                f"  {self.tini:>10.4f}  {self.p1:>10.4f}  {self.p2:>10.4f}"
+                f"{cod}  {self.tini:>10.4f}  {self.nb1:>5}"
+                f"  {self.p1:>10.4f}  {self.p2:>10.4f}"
             )
 
 
