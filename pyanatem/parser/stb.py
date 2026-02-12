@@ -165,6 +165,8 @@ class ParserSTB:
                 i = ParserSTB._ler_dltc(linhas, i + 1, caso)
             elif kw == "DFLA":
                 i = ParserSTB._ler_dfla(linhas, i + 1, caso)
+            elif kw == "DMOT":
+                i = ParserSTB._ler_dmot(linhas, i + 1, caso)
             elif kw == "DCST":
                 i = ParserSTB._ler_dcst(linhas, i + 1, caso)
             elif kw.startswith("DCAR"):
@@ -843,6 +845,55 @@ class ParserSTB:
                 p2 = _safe_float(partes[3]) if len(partes) > 3 else 0.0
                 p3 = _safe_float(partes[4]) if len(partes) > 4 else 0.0
                 caso.dcst.adicionar(nc, tipo, p1, p2, p3)
+            except (ValueError, IndexError):
+                pass
+            i += 1
+        return i
+
+    @staticmethod
+    def _ler_dmot(linhas, inicio, caso) -> int:
+        """Lê o bloco DMOT (§15) — máquinas de indução convencional (v1.5.1).
+
+        Formato livre: duas réguas possíveis.
+        - Tipo 1 (M=1):   ``Nb Gr H K0 K1 K2 EXP [M]``  (7 campos, M=1)
+        - Tipo 2 (M=2):   ``Nb Gr H K0 K1 K2 EXP Rr Xr Xs Xm Xp Tr0 [M]`` (13 campos, M=2)
+        """
+        i = inicio
+        while i < len(linhas):
+            linha = _strip_comment(linhas[i])
+            if _e_terminador(linha) or _e_fim(linha):
+                return i + 1
+            stripped = linha.strip()
+            if not stripped:
+                i += 1
+                continue
+
+            partes = stripped.split()
+            try:
+                nb = int(partes[0])
+                gr = int(partes[1])
+                h = _safe_float(partes[2])
+                k0 = _safe_float(partes[3]) if len(partes) > 3 else 0.0
+                k1 = _safe_float(partes[4]) if len(partes) > 4 else 0.0
+                k2 = _safe_float(partes[5]) if len(partes) > 5 else 0.0
+                exp = _safe_float(partes[6]) if len(partes) > 6 else 0.0
+
+                # Detectar tipo pela quantidade de campos
+                if len(partes) >= 13:
+                    # Tipo 2 com parâmetros do rotor
+                    rr = _safe_float(partes[7]) if len(partes) > 7 else 0.0
+                    xr = _safe_float(partes[8]) if len(partes) > 8 else 0.0
+                    xs = _safe_float(partes[9]) if len(partes) > 9 else 0.0
+                    xm = _safe_float(partes[10]) if len(partes) > 10 else 0.0
+                    xp = _safe_float(partes[11]) if len(partes) > 11 else 0.0
+                    tr0 = _safe_float(partes[12]) if len(partes) > 12 else 0.0
+                    caso.dmot.adicionar_tipo2(
+                        nb, gr, h, k0, k1, k2, exp, rr, xr, xs, xm, xp, tr0
+                    )
+                else:
+                    # Tipo 1 (padrão, sem dinâmica rotórica)
+                    caso.dmot.adicionar_tipo1(nb, gr, h, k0, k1, k2, exp)
+
             except (ValueError, IndexError):
                 pass
             i += 1

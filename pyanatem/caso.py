@@ -46,6 +46,7 @@ from .blocos import (
     BlocoDMTC,
     BlocoDLTC,
     BlocoDFLA,
+    BlocoDMOT,
     BlocoEXSI,
     BlocoSVC,
     BlocoTCSC,
@@ -109,6 +110,7 @@ class CasoAnatem:
         self.dmtc = BlocoDMTC()
         self.dltc = BlocoDLTC()
         self.dfla = BlocoDFLA()
+        self.dmot = BlocoDMOT()
         self.svc = BlocoSVC()
         self.tcsc = BlocoTCSC()
         self.statcom = BlocoSTATCOM()
@@ -288,6 +290,10 @@ class CasoAnatem:
         # Fluxo agregado de intercâmbio (áreas de circuitos)
         if self.dfla.tem_dados():
             partes.append(self.dfla.serializar())
+
+        # Máquinas de indução convencional
+        if self.dmot.tem_dados():
+            partes.append(self.dmot.serializar())
 
         # Blocos FACTS/HVDC — emitidos entre DMAQ e DEVT quando populados
         if self.svc.tem_dados():

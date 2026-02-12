@@ -2422,3 +2422,187 @@ class BlocoDELO(BlocoBase):
             linhas.append(e.serializar() + "\n")
         linhas.append(self._terminador())
         return "".join(linhas)
+
+
+# ---------------------------------------------------------------------------
+# DMOT – Máquinas de Indução Convencional (§15, v1.5.1)
+# ---------------------------------------------------------------------------
+
+
+@dataclass
+class _MotorTipo1:
+    """Motor de indução tipo 1 (sem efeito transitório no rotor, §15.1.1)."""
+
+    nb: int  # barra terminal
+    gr: int  # grupo
+    h: float  # inércia [s]
+    k0: float = 0.0  # parâmetro curva torque
+    k1: float = 0.0
+    k2: float = 0.0
+    exp: float = 0.0  # η
+    m: int = 1  # tipo (fixo em 1)
+
+    def serializar(self) -> str:
+        return (
+            f"{self.nb:>5}{self.gr:>5}{self.h:>10.4f}{self.k0:>10.4f}"
+            f"{self.k1:>10.4f}{self.k2:>10.4f}{self.exp:>10.4f}{self.m:>5}"
+        )
+
+
+@dataclass
+class _MotorTipo2:
+    """Motor de indução tipo 2 (com efeito transitório no rotor, §15.1.1)."""
+
+    nb: int  # barra terminal
+    gr: int  # grupo
+    h: float  # inércia [s]
+    k0: float = 0.0  # parâmetro curva torque
+    k1: float = 0.0
+    k2: float = 0.0
+    exp: float = 0.0  # η
+    rr: float = 0.0  # resistência rotor [pu]
+    xr: float = 0.0  # reatância transitória rotor [pu]
+    xs: float = 0.0  # reatância de dispersão estator [pu]
+    xm: float = 0.0  # reatância magnetizante [pu]
+    xp: float = 0.0  # reatância transitória [pu]
+    tr0: float = 0.0  # constante tempo rotor [s]
+    m: int = 2  # tipo (fixo em 2)
+
+    def serializar(self) -> str:
+        return (
+            f"{self.nb:>5}{self.gr:>5}{self.h:>10.4f}{self.k0:>10.4f}"
+            f"{self.k1:>10.4f}{self.k2:>10.4f}{self.exp:>10.4f}{self.rr:>10.4f}"
+            f"{self.xr:>10.4f}{self.xs:>10.4f}{self.xm:>10.4f}{self.xp:>10.4f}"
+            f"{self.tr0:>10.4f}{self.m:>5}"
+        )
+
+
+@dataclass
+class BlocoDMOT(BlocoBase):
+    """Modelos predefinidos de máquina de indução convencional (DMOT, §15).
+
+    Suporta 2 modelos:
+
+    - **Tipo 1 (M=1)**: Sem efeito transitório no rotor. Params: Nb, Gr, H,
+      K0, K1, K2, EXP. Simples, adequado para cargas constantes.
+    - **Tipo 2 (M=2)**: Com efeito transitório no rotor. Params: Nb, Gr, H,
+      K0, K1, K2, EXP, Rr, Xr, Xs, Xm, Xp, Tr0. Mais detalhado, para dinâmica
+      transiente.
+
+    Nota: Máquinas devem estar previamente definidas no ANAREDE (fluxo de potência).
+    Os parâmetros aqui são complementares. Máquinas não modeladas viram impedâncias
+    constantes automaticamente.
+
+    Confiança: **Média** — estrutura validada contra §15 do manual; parâmetros
+    de curva de torque (K0–EXP) para motores são tratados como opacos (validação
+    completa fica para roadmap A43, linguagem de seleção).
+
+    Uso::
+
+        dmot = BlocoDMOT()
+
+        # Motor tipo 1 (sem dinâmica rotórica)
+        dmot.adicionar_tipo1(nb=3, gr=1, h=2.5)
+
+        # Motor tipo 2 (com dinâmica rotórica)
+        dmot.adicionar_tipo2(
+            nb=4, gr=1, h=3.0, k0=1.0, k1=0.5, k2=0.1, exp=2.0,
+            rr=0.02, xr=0.15, xs=0.10, xm=3.0, xp=0.20, tr0=0.8
+        )
+    """
+
+    keyword: str = field(default="DMOT", init=False, repr=False)
+    _tipo1: List[_MotorTipo1] = field(default_factory=list)
+    _tipo2: List[_MotorTipo2] = field(default_factory=list)
+
+    def tem_dados(self) -> bool:
+        return bool(self._tipo1 or self._tipo2)
+
+    def adicionar_tipo1(
+        self,
+        nb: int,
+        gr: int,
+        h: float,
+        k0: float = 0.0,
+        k1: float = 0.0,
+        k2: float = 0.0,
+        exp: float = 0.0,
+    ) -> "BlocoDMOT":
+        """Adiciona motor tipo 1 (sem efeito transitório no rotor, M=1).
+
+        Args:
+            nb:   barra terminal da máquina de indução.
+            gr:   grupo (múltiplos grupos por barra).
+            h:    constante de inércia [s].
+            k0–k2, exp: parâmetros da curva Torque×velocidade (motores).
+                        Default 0 (carga constante).
+
+        Returns:
+            self (encadeável).
+        """
+        self._tipo1.append(_MotorTipo1(nb=nb, gr=gr, h=h, k0=k0, k1=k1, k2=k2, exp=exp))
+        return self
+
+    def adicionar_tipo2(
+        self,
+        nb: int,
+        gr: int,
+        h: float,
+        k0: float = 0.0,
+        k1: float = 0.0,
+        k2: float = 0.0,
+        exp: float = 0.0,
+        rr: float = 0.0,
+        xr: float = 0.0,
+        xs: float = 0.0,
+        xm: float = 0.0,
+        xp: float = 0.0,
+        tr0: float = 0.0,
+    ) -> "BlocoDMOT":
+        """Adiciona motor tipo 2 (com efeito transitório no rotor, M=2).
+
+        Args:
+            nb:   barra terminal.
+            gr:   grupo.
+            h:    inércia [s].
+            k0–k2, exp: parâmetros da curva Torque×velocidade.
+            rr:   resistência do rotor [pu].
+            xr:   reatância transitória do rotor [pu].
+            xs:   reatância de dispersão do estator [pu].
+            xm:   reatância magnetizante [pu].
+            xp:   reatância transitória [pu].
+            tr0:  constante de tempo do rotor a circuito aberto [s].
+
+        Returns:
+            self (encadeável).
+        """
+        self._tipo2.append(
+            _MotorTipo2(
+                nb=nb,
+                gr=gr,
+                h=h,
+                k0=k0,
+                k1=k1,
+                k2=k2,
+                exp=exp,
+                rr=rr,
+                xr=xr,
+                xs=xs,
+                xm=xm,
+                xp=xp,
+                tr0=tr0,
+            )
+        )
+        return self
+
+    def _guia(self) -> str:
+        return "( Nb)( Gr)      H        K0        K1        K2       EXP  M   ( Rr  Xr  Xs  Xm  Xp Tr0)  M\n"
+
+    def serializar(self) -> str:
+        linhas = [self._cabecalho(), self._guia()]
+        for m in self._tipo1:
+            linhas.append(m.serializar() + "\n")
+        for m in self._tipo2:
+            linhas.append(m.serializar() + "\n")
+        linhas.append(self._terminador())
+        return "".join(linhas)

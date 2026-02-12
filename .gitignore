@@ -22,6 +22,7 @@ markdowns_reference/
 markdown_*/
 .versions/*/markdowns_referencia/
 *.pdf
+**/treinamentoWP
 
 # Internal working notes / session scratch — not part of the public package
 API_AUDIT.md

@@ -3828,3 +3828,88 @@ FIM
 
         # Validar que foi parseado (título deve estar presente)
         assert caso.titulo == "Caso de teste latin-1"
+
+
+# ===========================================================================
+# v1.5.1 – Máquinas de Indução Convencional (DMOT) — §15
+# ===========================================================================
+
+
+def test_dmot_tipo1_serializacao():
+    """DMOT Tipo 1 (sem dinâmica rotórica) — serialização básica."""
+    from pyanatem import BlocoDMOT
+
+    b = BlocoDMOT()
+    b.adicionar_tipo1(nb=3, gr=1, h=2.5, k0=0.5, k1=0.2, k2=0.1, exp=1.5)
+    t = b.serializar()
+
+    assert "DMOT" in t
+    assert "3" in t and "1" in t and "2.5000" in t
+    assert "1" in t  # tipo M=1
+
+
+def test_dmot_tipo2_serializacao():
+    """DMOT Tipo 2 (com dinâmica rotórica) — serialização com parâmetros rotor."""
+    from pyanatem import BlocoDMOT
+
+    b = BlocoDMOT()
+    b.adicionar_tipo2(
+        nb=4, gr=2, h=3.0, k0=1.0, k1=0.5, k2=0.1, exp=2.0,
+        rr=0.02, xr=0.15, xs=0.10, xm=3.0, xp=0.20, tr0=0.8
+    )
+    t = b.serializar()
+
+    assert "DMOT" in t
+    assert "4" in t and "2" in t and "3.0000" in t
+    assert "2" in t  # tipo M=2
+    assert "0.0200" in t  # Rr
+
+
+def test_dmot_roundtrip():
+    """DMOT Tipo 1 e 2 — roundtrip com arquivo STB."""
+    import tempfile
+    from pathlib import Path
+
+    stb = """\
+DARQ
+SIST rede.sav
+999999
+DSIM
+0.0 10.0 0.01
+999999
+DMOT
+3 1 2.5000 0.5000 0.2000 0.1000 1.5000 1
+4 2 3.0000 1.0000 0.5000 0.1000 2.0000 0.0200 0.1500 0.1000 3.0000 0.2000 0.8000 2
+999999
+DPLT
+999999
+EXSI
+FIM
+"""
+    with tempfile.TemporaryDirectory() as tmp:
+        p = Path(tmp) / "dmot.stb"
+        p.write_text(stb, encoding="latin-1")
+        caso = CasoAnatem.ler(p)
+
+        # Verificar que foram parseados
+        assert len(caso.dmot._tipo1) == 1
+        assert len(caso.dmot._tipo2) == 1
+
+        # Validar tipo 1
+        t1 = caso.dmot._tipo1[0]
+        assert t1.nb == 3 and t1.gr == 1 and t1.h == 2.5
+        assert t1.k0 == 0.5 and t1.k1 == 0.2 and t1.k2 == 0.1
+
+        # Validar tipo 2
+        t2 = caso.dmot._tipo2[0]
+        assert t2.nb == 4 and t2.gr == 2 and t2.h == 3.0
+        assert t2.rr == 0.02 and t2.xr == 0.15 and t2.tr0 == 0.8
+
+        # Roundtrip: exportar e ler novamente
+        p2 = Path(tmp) / "dmot_roundtrip.stb"
+        caso.exportar(p2)
+        caso2 = CasoAnatem.ler(p2)
+        assert len(caso2.dmot._tipo1) == 1
+        assert len(caso2.dmot._tipo2) == 1
+        assert caso2.dmot._tipo1[0].nb == 3
+        assert caso2.dmot._tipo2[0].tr0 == 0.8
