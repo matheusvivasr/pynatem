@@ -171,6 +171,8 @@ class ParserSTB:
                 i = ParserSTB._ler_dcst(linhas, i + 1, caso)
             elif kw.startswith("DCAR"):
                 i = ParserSTB._ler_dcar(linhas, i, caso)
+            elif kw.startswith("DGER"):
+                i = ParserSTB._ler_dger(linhas, i, caso)
             elif kw == "DCAG":
                 i = ParserSTB._ler_assoc_cdu(linhas, i + 1, caso, "dcag")
             elif kw == "DCCT":
@@ -819,6 +821,30 @@ class ParserSTB:
                 i += 1
                 continue
             caso.dcar.adicionar_bruto(stripped)
+            i += 1
+        return i
+
+    @staticmethod
+    def _ler_dger(linhas, inicio, caso) -> int:
+        """Lê o bloco DGER (§17.1) — geração funcional ZIP (v1.5.2).
+
+        A linha ``inicio`` é 'DGER [opções]'. Cada linha de dados usa linguagem
+        de seleção (Cap. 42), preservada como texto bruto para roundtrip fiel.
+        Idêntico a DCAR, mas para geração.
+        """
+        header = _strip_comment(linhas[inicio]).strip().split()
+        caso.dger.opcoes = " ".join(header[1:]) if len(header) > 1 else ""
+
+        i = inicio + 1
+        while i < len(linhas):
+            linha = _strip_comment(linhas[i])
+            if _e_terminador(linha) or _e_fim(linha):
+                return i + 1
+            stripped = linha.strip()
+            if not stripped or stripped.startswith("("):
+                i += 1
+                continue
+            caso.dger.adicionar_bruto(stripped)
             i += 1
         return i
 

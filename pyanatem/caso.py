@@ -43,6 +43,7 @@ from .blocos import (
     BlocoDCAG,
     BlocoDCCT,
     BlocoDCAR,
+    BlocoDGER,
     BlocoDMTC,
     BlocoDLTC,
     BlocoDFLA,
@@ -107,6 +108,7 @@ class CasoAnatem:
         self.dcag = BlocoDCAG()
         self.dcct = BlocoDCCT()
         self.dcar = BlocoDCAR()
+        self.dger = BlocoDGER()
         self.dmtc = BlocoDMTC()
         self.dltc = BlocoDLTC()
         self.dfla = BlocoDFLA()
@@ -277,9 +279,11 @@ class CasoAnatem:
         if self.dcct.tem_dados():
             partes.append(self.dcct.serializar())
 
-        # Cargas funcionais (modelo ZIP por tensão)
+        # Cargas e geração funcionais (modelo ZIP por tensão)
         if self.dcar.tem_dados():
             partes.append(self.dcar.serializar())
+        if self.dger.tem_dados():
+            partes.append(self.dger.serializar())
 
         # Transformadores OLTC: modelo de controle (DMTC) + associação (DLTC)
         if self.dmtc.tem_dados():

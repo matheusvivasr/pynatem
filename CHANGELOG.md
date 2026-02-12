@@ -2,6 +2,28 @@
 
 Todas as mudanças notáveis estão documentadas aqui.
 
+## [1.5.1] — 2026-07-10 — Máquinas de Indução Convencional (DMOT) — inicia etapa v1.5 🚀
+
+> Primeira implementação da etapa **v1.5 (Geração Renovável)**.
+
+### Added
+
+- **`BlocoDMOT`** (§15) — Máquinas de indução convencional (motores, geradores síncronos
+  eólicos). 2 modelos predefinidos:
+  - **Tipo 1 (M=1)**: Sem dinâmica rotórica. Params: Nb, Gr, H, K0–K2, EXP.
+  - **Tipo 2 (M=2)**: Com dinâmica rotórica. Adiciona Rr, Xr, Xs, Xm, Xp, Tr0.
+- Parser STB `_ler_dmot` — reconhece ambos tipos pela quantidade de campos.
+- 3 testes novos (serialização tipo1, tipo2, roundtrip). Total: 247 testes.
+
+### Notas
+
+- Curva de torque de carga (K0–K2, EXP) tratada como opaca (parsing completo é
+  Cap. 42, seleção → v1.9.2).
+- Máquinas devem estar previamente definidas no ANAREDE (fluxo de potência);
+  DMOT fornece parâmetros de dinâmica complementares. Máquinas não modeladas
+  viram impedâncias constantes automaticamente.
+- Confiabilidade: **Média** (estrutura OK, curva opaca).
+
 ## [1.3.5] — 2026-07-10 — Corrige ordem Tempo/El no DEVT (bug sistêmico)
 
 ### Fixed

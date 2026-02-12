@@ -3913,3 +3913,56 @@ FIM
         assert len(caso2.dmot._tipo2) == 1
         assert caso2.dmot._tipo1[0].nb == 3
         assert caso2.dmot._tipo2[0].tr0 == 0.8
+
+
+# ===========================================================================
+# v1.5.2 – Geração Funcional ZIP (DGER) — §17.1
+# ===========================================================================
+
+
+def test_dger_serializacao():
+    """DGER (Geração ZIP Funcional) — serialização básica."""
+    from pyanatem import BlocoDGER
+
+    b = BlocoDGER()
+    b.adicionar("BARR 1 A BARR 9998", a=50, b=50, c=100, d=0)
+    t = b.serializar()
+
+    assert "DGER" in t
+    assert "BARR" in t and "50.0" in t
+
+
+def test_dger_roundtrip():
+    """DGER — roundtrip com arquivo STB."""
+    import tempfile
+    from pathlib import Path
+
+    stb = """\
+DARQ
+SIST rede.sav
+999999
+DSIM
+0.0 10.0 0.01
+999999
+DGER IMPR
+BARR 1 A BARR 9998 0 0 100.0 0 100.0 100.0 100.0 100.0
+999999
+DPLT
+999999
+EXSI
+FIM
+"""
+    with tempfile.TemporaryDirectory() as tmp:
+        p = Path(tmp) / "dger.stb"
+        p.write_text(stb, encoding="latin-1")
+        caso = CasoAnatem.ler(p)
+
+        # Verificar que foi parseado (preservado como texto bruto)
+        assert len(caso.dger._geracoes) == 1
+        assert "BARR" in caso.dger._geracoes[0].texto_bruto
+
+        # Roundtrip
+        p2 = Path(tmp) / "dger_roundtrip.stb"
+        caso.exportar(p2)
+        caso2 = CasoAnatem.ler(p2)
+        assert len(caso2.dger._geracoes) == 1

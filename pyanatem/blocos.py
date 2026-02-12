@@ -1654,6 +1654,112 @@ class BlocoDCAR(BlocoBase):
 
 
 # ---------------------------------------------------------------------------
+# Geração Funcional ZIP — Cap. 17 / §46 (v1.5.2)
+#
+# DGER  — Geração ZIP funcional (modelo simétrico a DCAR, mas para geração)
+# Comportamento: P = A·V + B·V² ; Q = C·V + D·V²
+# Seleção de barras via linguagem de seleção (Cap. 42, tratada como opaca)
+# ---------------------------------------------------------------------------
+
+
+@dataclass
+class _GeracaoFuncional:
+    """Descrição de um modelo de geração funcional ZIP (DGER, §17.1)."""
+
+    selecao: str = ""  # "BARR 1 A BARR 9998" etc. (linguagem de seleção)
+    a: float = 0.0  # ativa ~ V [%]
+    b: float = 0.0  # ativa ~ V² [%]
+    c: float = 0.0  # reativa ~ V [%]
+    d: float = 0.0  # reativa ~ V² [%]
+    vbp: float = 100.0  # tensão base ativa [%]
+    vdp: float = 100.0  # tensão limite ativa [%]
+    vbq: float = 100.0  # tensão base reativa [%]
+    vdq: float = 100.0  # tensão limite reativa [%]
+    texto_bruto: str = ""  # fallback para roundtrip exato
+
+    def serializar(self) -> str:
+        if self.texto_bruto:
+            return self.texto_bruto
+        return (
+            f"{self.selecao:<30} {self.a:>6.1f} {self.b:>6.1f} {self.c:>6.1f} "
+            f"{self.d:>6.1f} {self.vbp:>6.1f} {self.vdp:>6.1f} {self.vbq:>6.1f} {self.vdq:>6.1f}"
+        )
+
+
+@dataclass
+class BlocoDGER(BlocoBase):
+    """Geração Funcional ZIP (DGER, §17.1, Cap. 17 / v1.5.2).
+
+    Modelo simétrico a DCAR, mas para geração. Define o comportamento de
+    gerações que não têm modelo dinâmico explícito. Gerações sem modelo
+    DGER são automaticamente convertidas em impedância constante.
+
+    Confiança: Média — os parâmetros ZIP (A/B/C/D) e tensões são estruturados,
+    mas a linguagem de seleção de barras (Cap. 42) é tratada como string opaca
+    (parsing completo fica para roadmap A43/v1.9.2).
+
+    Uso::
+
+        dger = BlocoDGER()
+        dger.adicionar("BARR 1 A BARR 9998", a=50, b=50, c=100, d=0)
+    """
+
+    keyword: str = field(default="DGER", init=False, repr=False)
+    opcoes: str = ""  # opções na linha de cabeçalho (ex.: "IMPR")
+    _geracoes: list = field(default_factory=list)
+
+    def tem_dados(self) -> bool:
+        return bool(self._geracoes)
+
+    def adicionar(
+        self,
+        selecao: str,
+        a: float = 0.0,
+        b: float = 0.0,
+        c: float = 0.0,
+        d: float = 0.0,
+        vbp: float = 100.0,
+        vdp: float = 100.0,
+        vbq: float = 100.0,
+        vdq: float = 100.0,
+    ) -> "BlocoDGER":
+        """Adiciona um modelo de geração funcional (ZIP).
+
+        Args:
+            selecao: expressão de seleção de barras (linguagem Cap. 42).
+            a, b: parcelas ativas que variam com V e V² [%].
+            c, d: parcelas reativas que variam com V e V² [%].
+            vbp, vdp: tensões base e limite para ativa [%].
+            vbq, vdq: tensões base e limite para reativa [%].
+        """
+        self._geracoes.append(
+            _GeracaoFuncional(
+                selecao=selecao, a=a, b=b, c=c, d=d,
+                vbp=vbp, vdp=vdp, vbq=vbq, vdq=vdq
+            )
+        )
+        return self
+
+    def adicionar_bruto(self, texto: str) -> "BlocoDGER":
+        """Adiciona uma linha DGER no formato literal (escape hatch)."""
+        self._geracoes.append(_GeracaoFuncional(texto_bruto=texto))
+        return self
+
+    def _cabecalho(self) -> str:
+        return f"{self.keyword} {self.opcoes}\n".replace(" \n", "\n")
+
+    def serializar(self) -> str:
+        linhas = [
+            self._cabecalho(),
+            "(tp) ( no) C (tp) ( no) C (tp) ( no) C (tp) ( no) (A) (B) (C) (D) (VbP) (VdP) (VbQ) (VdQ)\n",
+        ]
+        for g in self._geracoes:
+            linhas.append(g.serializar() + "\n")
+        linhas.append(self._terminador())
+        return "".join(linhas)
+
+
+# ---------------------------------------------------------------------------
 # Transformadores OLTC (comutação sob carga) — Cap. 14 / §46.40
 #
 # DMTC  §14.1 — modelo predefinido de controle de tap (No + parâmetros)
