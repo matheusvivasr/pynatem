@@ -3966,3 +3966,21 @@ FIM
         caso.exportar(p2)
         caso2 = CasoAnatem.ler(p2)
         assert len(caso2.dger._geracoes) == 1
+
+
+# ===========================================================================
+# v1.5.3 – Geradores Eólicos DFIG (DDFM) — §19.2
+# ===========================================================================
+
+
+def test_ddfm_serializacao():
+    """DDFM (Associação DFIG) — serialização básica."""
+    from pyanatem import BlocoDDFM
+
+    b = BlocoDDFM()
+    b.adicionar(nb=6073, gr=10, p=100, q=100, und=66, mg=17, mt=90146, mc=90145,
+                xvd=21.50, nbc=2, slip=2.0, r=0, i=0)
+    t = b.serializar()
+
+    assert "DDFM" in t
+    assert "6073" in t and "100.0" in t

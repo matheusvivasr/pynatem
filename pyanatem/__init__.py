@@ -30,6 +30,7 @@ from .blocos import (
     BlocoSTATCOM,
     BlocoHVDC,
     BlocoDELO,
+    BlocoDDFM,
 )
 from .posprocessamento import (
     LeitorPLT,
@@ -74,6 +75,7 @@ __all__ = [
     "BlocoSTATCOM",
     "BlocoHVDC",
     "BlocoDELO",
+    "BlocoDDFM",
     "LeitorPLT",
     "ResultadoPLT",
     "LeitorRelatorio",

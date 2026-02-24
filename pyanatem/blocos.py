@@ -2011,6 +2011,13 @@ def _sep_u(numero: int, usuario: bool) -> str:
     return f"{numero}{'U' if usuario else ''}"
 
 
+def _sep_u_float(valor: float, usuario: bool) -> str:
+    """Formata ``<valor>[U]`` para floats — U marca CDU vs. parâmetro."""
+    if usuario:
+        return f"{int(valor)}U"
+    return f"{valor:.2f}"
+
+
 @dataclass
 class _AssocCER:
     """Associação de um grupo de CER/SVC a seus modelos (código DCER, §46.18).
@@ -2581,6 +2588,138 @@ class _MotorTipo2:
             f"{self.xr:>10.4f}{self.xs:>10.4f}{self.xm:>10.4f}{self.xp:>10.4f}"
             f"{self.tr0:>10.4f}{self.m:>5}"
         )
+
+
+# ---------------------------------------------------------------------------
+# Geradores Eólicos DFIG — Cap. 19 / §46 (v1.5.3)
+#
+# DDFM  — Associação de gerador DFIG aos seus modelos (máquina, turbina, controle)
+# Régua: Nb Gr P% Q% Und Mg Mt[u] Mc[u] Xvd Nbc Slip[u] R I
+# ---------------------------------------------------------------------------
+
+
+@dataclass
+class _AssocDFIG:
+    """Associação de gerador eólico DFIG (DDFM, §19.2)."""
+
+    nb: int  # barra terminal
+    gr: int  # grupo
+    p: float  # participação ativa [%]
+    q: float  # participação reativa [%]
+    und: int  # número unidades
+    mg: int  # modelo máquina indução
+    mt: int  # modelo turbina
+    mc: int  # modelo controle
+    mt_usuario: bool = False
+    mc_usuario: bool = False
+    xvd: float = 0.0  # reatância do sistema [pu]
+    nbc: int = 0  # número barras controle
+    slip: float = 0.0  # escorregamento inicial
+    slip_usuario: bool = False  # se slip é número CDU
+    r: int = 0  # flag resposta rápida
+    i: int = 0  # flag RMSB
+
+    def serializar(self) -> str:
+        partes = [
+            f"{self.nb:>5}", f"{self.gr:>3}", f"{self.p:>6.1f}", f"{self.q:>6.1f}",
+            f"{self.und:>4}", f"{self.mg:>4}",
+            f"{_sep_u(self.mt, self.mt_usuario):>6}",
+            f"{_sep_u(self.mc, self.mc_usuario):>6}",
+            f"{self.xvd:>7.2f}", f"{self.nbc:>4}",
+            f"{_sep_u_float(self.slip, self.slip_usuario):>8}",
+            f"{self.r:>2}", f"{self.i:>2}"
+        ]
+        return "".join(partes)
+
+
+@dataclass
+class BlocoDDFM(BlocoBase):
+    """Associação de geradores eólicos DFIG (DDFM, §19.2, Cap. 19 / v1.5.3).
+
+    Conecta um gerador DFIG (máquina de indução com dupla alimentação, rotor
+    bobinado) aos seus modelos de máquina, turbina e controle.
+
+    Campos:
+        Nb:   barra terminal.
+        Gr:   grupo (múltiplos grupos por barra).
+        P/Q:  participação de potência ativa/reativa [%].
+        Und:  número de unidades.
+        Mg:   modelo de máquina (DMDF).
+        Mt:   modelo de turbina (predefinido ou CDU).
+        Mc:   modelo de controle (CDU).
+        Xvd:  reatância do sistema [pu].
+        Nbc:  número de barras para cálculo de controle.
+        Slip: escorregamento inicial (ou número CDU para cálculo).
+        R/I:  flags de comportamento.
+
+    Confiança: Média — estrutura validada contra §19.2; associação entre
+    modelos é tratada sem validação cruzada.
+
+    Uso::
+
+        ddfm = BlocoDDFM()
+        ddfm.adicionar(nb=6073, gr=10, p=100, q=100, und=66, mg=17, mt=90146,
+                      mc=90145, xvd=21.50, nbc=2, slip=2, r=0, i=0)
+    """
+
+    keyword: str = field(default="DDFM", init=False, repr=False)
+    _dfigs: List[_AssocDFIG] = field(default_factory=list)
+
+    def tem_dados(self) -> bool:
+        return bool(self._dfigs)
+
+    def adicionar(
+        self,
+        nb: int,
+        gr: int,
+        p: float,
+        q: float,
+        und: int,
+        mg: int,
+        mt: int,
+        mc: int,
+        mt_usuario: bool = False,
+        mc_usuario: bool = False,
+        xvd: float = 0.0,
+        nbc: int = 0,
+        slip: float = 0.0,
+        slip_usuario: bool = False,
+        r: int = 0,
+        i: int = 0,
+    ) -> "BlocoDDFM":
+        """Adiciona uma associação DFIG.
+
+        Args:
+            nb, gr, p, q, und: identificação e participação.
+            mg, mt, mc: modelos (máquina, turbina, controle).
+            mt_usuario, mc_usuario: se modelos são CDU (flag 'u').
+            xvd: reatância [pu].
+            nbc: barras de controle.
+            slip: escorregamento ou número CDU para inicialização.
+            slip_usuario: se slip é número CDU (flag 'u').
+            r, i: flags.
+
+        Returns:
+            self (encadeável).
+        """
+        self._dfigs.append(
+            _AssocDFIG(
+                nb=nb, gr=gr, p=p, q=q, und=und, mg=mg, mt=mt, mc=mc,
+                mt_usuario=mt_usuario, mc_usuario=mc_usuario,
+                xvd=xvd, nbc=nbc, slip=slip, slip_usuario=slip_usuario, r=r, i=i
+            )
+        )
+        return self
+
+    def _guia(self) -> str:
+        return "( Nb) Gr  (P) (Q)Und  Mg ( Mt )u( Mc )u(Xvd )(Nbc) ( Slip )u R I\n"
+
+    def serializar(self) -> str:
+        linhas = [self._cabecalho(), self._guia()]
+        for d in self._dfigs:
+            linhas.append(d.serializar() + "\n")
+        linhas.append(self._terminador())
+        return "".join(linhas)
 
 
 @dataclass

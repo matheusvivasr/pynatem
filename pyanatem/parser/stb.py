@@ -191,6 +191,8 @@ class ParserSTB:
                 i = ParserSTB._ler_dcnv(linhas, i + 1, caso)
             elif kw == "DELO":
                 i = ParserSTB._ler_delo(linhas, i + 1, caso)
+            elif kw == "DDFM":
+                i = ParserSTB._ler_ddfm(linhas, i + 1, caso)
             else:
                 i = ParserSTB._pular_bloco(linhas, i + 1)
 
@@ -1134,6 +1136,48 @@ class ParserSTB:
                     mm, mm_u = _sep_flag_u(partes[2])
                 caso.delo.adicionar(
                     ne=ne, mp=mp, mm=mm, mp_usuario=mp_u, mm_usuario=mm_u
+                )
+            except (ValueError, IndexError):
+                pass
+            i += 1
+        return i
+
+    @staticmethod
+    def _ler_ddfm(linhas, inicio, caso) -> int:
+        """Lê o bloco DDFM (§19.2) — associação de geradores eólicos DFIG (v1.5.3).
+
+        Formato livre: Nb Gr P Q Und Mg Mt[u] Mc[u] Xvd Nbc Slip[u] R I
+        """
+        i = inicio
+        while i < len(linhas):
+            linha = _strip_comment(linhas[i])
+            if _e_terminador(linha) or _e_fim(linha):
+                return i + 1
+            stripped = linha.strip()
+            if not stripped:
+                i += 1
+                continue
+            partes = stripped.split()
+            try:
+                nb = int(partes[0])
+                gr = int(partes[1])
+                p = _safe_float(partes[2]) if len(partes) > 2 else 0.0
+                q = _safe_float(partes[3]) if len(partes) > 3 else 0.0
+                und = int(partes[4]) if len(partes) > 4 else 1
+                mg = int(partes[5]) if len(partes) > 5 else 0
+                mt, mt_u = _sep_flag_u(partes[6]) if len(partes) > 6 else (0, False)
+                mc, mc_u = _sep_flag_u(partes[7]) if len(partes) > 7 else (0, False)
+                xvd = _safe_float(partes[8]) if len(partes) > 8 else 0.0
+                nbc = int(partes[9]) if len(partes) > 9 else 0
+                slip, slip_u = _sep_flag_u(partes[10]) if len(partes) > 10 else (0, False)
+                slip = float(slip)
+                r = int(partes[11]) if len(partes) > 11 else 0
+                i_val = int(partes[12]) if len(partes) > 12 else 0
+
+                caso.ddfm.adicionar(
+                    nb=nb, gr=gr, p=p, q=q, und=und, mg=mg, mt=mt, mc=mc,
+                    mt_usuario=mt_u, mc_usuario=mc_u, xvd=xvd, nbc=nbc,
+                    slip=slip, slip_usuario=slip_u, r=r, i=i_val
                 )
             except (ValueError, IndexError):
                 pass

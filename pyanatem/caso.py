@@ -54,6 +54,7 @@ from .blocos import (
     BlocoSTATCOM,
     BlocoHVDC,
     BlocoDELO,
+    BlocoDDFM,
 )
 
 
@@ -118,6 +119,7 @@ class CasoAnatem:
         self.statcom = BlocoSTATCOM()
         self.hvdc = BlocoHVDC()
         self.delo = BlocoDELO()
+        self.ddfm = BlocoDDFM()
         self.devt = BlocoDEVT()
         self.dplt = BlocoDPLT()
         self.dsim = BlocoDSIM()
@@ -310,6 +312,10 @@ class CasoAnatem:
             partes.append(self.hvdc.serializar())
         if self.delo.tem_dados():
             partes.append(self.delo.serializar())
+
+        # Geradores eólicos DFIG
+        if self.ddfm.tem_dados():
+            partes.append(self.ddfm.serializar())
 
         partes.append(self.devt.serializar())
         partes.append(self.dplt.serializar())
