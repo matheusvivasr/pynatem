@@ -3984,3 +3984,39 @@ def test_ddfm_serializacao():
 
     assert "DDFM" in t
     assert "6073" in t and "100.0" in t
+
+
+def test_ddfm_roundtrip():
+    """DDFM — roundtrip com arquivo STB."""
+    import tempfile
+    from pathlib import Path
+
+    stb = """\
+DARQ
+SIST rede.sav
+999999
+DSIM
+0.0 10.0 0.01
+999999
+DDFM
+6073 10 100.0 100.0 66 17 90146 90145 21.50 2 2.00 0 0
+999999
+DPLT
+999999
+EXSI
+FIM
+"""
+    with tempfile.TemporaryDirectory() as tmp:
+        p = Path(tmp) / "ddfm.stb"
+        p.write_text(stb, encoding="latin-1")
+        caso = CasoAnatem.ler(p)
+
+        assert len(caso.ddfm._dfigs) == 1
+        d = caso.ddfm._dfigs[0]
+        assert d.nb == 6073 and d.gr == 10 and d.und == 66
+
+        # Roundtrip
+        p2 = Path(tmp) / "ddfm_roundtrip.stb"
+        caso.exportar(p2)
+        caso2 = CasoAnatem.ler(p2)
+        assert len(caso2.ddfm._dfigs) == 1

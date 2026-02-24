@@ -1169,8 +1169,14 @@ class ParserSTB:
                 mc, mc_u = _sep_flag_u(partes[7]) if len(partes) > 7 else (0, False)
                 xvd = _safe_float(partes[8]) if len(partes) > 8 else 0.0
                 nbc = int(partes[9]) if len(partes) > 9 else 0
-                slip, slip_u = _sep_flag_u(partes[10]) if len(partes) > 10 else (0, False)
-                slip = float(slip)
+                # Slip pode ser float (escorregamento) ou int com 'u' (CDU)
+                slip_val = partes[10] if len(partes) > 10 else "0"
+                if slip_val.endswith("U") or slip_val.endswith("u"):
+                    slip = float(slip_val[:-1])
+                    slip_u = True
+                else:
+                    slip = _safe_float(slip_val)
+                    slip_u = False
                 r = int(partes[11]) if len(partes) > 11 else 0
                 i_val = int(partes[12]) if len(partes) > 12 else 0
 
