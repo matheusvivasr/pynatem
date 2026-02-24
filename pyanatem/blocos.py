@@ -2851,3 +2851,131 @@ class BlocoDMOT(BlocoBase):
             linhas.append(m.serializar() + "\n")
         linhas.append(self._terminador())
         return "".join(linhas)
+
+
+@dataclass
+class _AssocGSE:
+    """Associação de gerador eólico síncrono (DGSE, §20.2)."""
+
+    nb: int
+    gr: int
+    p: float
+    q: float
+    und: int
+    mg: int
+    mt: int
+    mv: int
+    mc1: int
+    mc2: int
+    freq: float = 0.0
+    vtr0: float = 0.0
+    vcap0: float = 0.0
+    mt_usuario: bool = False
+    mv_usuario: bool = False
+    mc1_usuario: bool = False
+    mc2_usuario: bool = False
+
+    def serializar(self) -> str:
+        partes = [
+            f"{self.nb:>5}", f"{self.gr:>3}", f"{self.p:>6.0f}", f"{self.q:>6.0f}",
+            f"{self.und:>4}", f"{self.mg:>5}",
+            f"{_sep_u(self.mt, self.mt_usuario):>6}",
+            f"{_sep_u(self.mv, self.mv_usuario):>6}",
+            f"{_sep_u(self.mc1, self.mc1_usuario):>6}",
+            f"{_sep_u(self.mc2, self.mc2_usuario):>6}",
+            f"{self.freq:>6.0f}", f"{self.vtr0:>6.2f}", f"{self.vcap0:>6.2f}"
+        ]
+        return "".join(partes)
+
+
+@dataclass
+class BlocoDGSE(BlocoBase):
+    """Associação de geradores eólicos síncronos (DGSE, §20.2, Cap. 20 / v1.5.4).
+
+    Conecta um gerador síncrono eólico (GSE, máquina síncrona com velocidade
+    variável) aos seus modelos de máquina, turbina, controle de tensão (chopper),
+    e inversor de tensão (VSI).
+
+    Campos:
+        Nb:     barra terminal.
+        Gr:     grupo (múltiplos grupos por barra).
+        P/Q:    participação de potência ativa/reativa [%].
+        Und:    número de unidades.
+        Mg:     modelo de máquina (DMGE).
+        Mt:     modelo de regulador de tensão (DRGT ou CDU).
+        Mv:     modelo de turbina eólica (CDU).
+        Mc1:    modelo de chopper (regulador CC, CDU).
+        Mc2:    modelo de inversor de tensão (VSI, CDU).
+        Freq:   frequência inicial [Hz].
+        Vtr0:   tensão inicial máquina síncrona [pu].
+        Vcap0:  tensão inicial capacitor CC [pu].
+
+    Confiança: Alta — estrutura validada contra §20.2 (Listagem 46.34).
+
+    Uso::
+
+        dgse = BlocoDGSE()
+        dgse.adicionar(nb=100, gr=10, p=100, q=100, und=1, mg=1525,
+                      mt=2000, mv=102, mc1=104, mc2=106,
+                      freq=60, vtr0=1.0, vcap0=1.0,
+                      mv_usuario=True, mc1_usuario=True, mc2_usuario=True)
+    """
+
+    keyword: str = field(default="DGSE", init=False, repr=False)
+    _gses: List[_AssocGSE] = field(default_factory=list)
+
+    def tem_dados(self) -> bool:
+        return bool(self._gses)
+
+    def adicionar(
+        self,
+        nb: int,
+        gr: int,
+        p: float,
+        q: float,
+        und: int,
+        mg: int,
+        mt: int,
+        mv: int,
+        mc1: int,
+        mc2: int,
+        freq: float = 0.0,
+        vtr0: float = 0.0,
+        vcap0: float = 0.0,
+        mt_usuario: bool = False,
+        mv_usuario: bool = False,
+        mc1_usuario: bool = False,
+        mc2_usuario: bool = False,
+    ) -> "BlocoDGSE":
+        """Adiciona uma associação GSE.
+
+        Args:
+            nb, gr, p, q, und: identificação e participação [%].
+            mg, mt, mv, mc1, mc2: modelos (máquina, regulador, turbina, chopper, inversor).
+            mt_usuario, mv_usuario, mc1_usuario, mc2_usuario: se modelos são CDU (flag 'u').
+            freq: frequência inicial [Hz].
+            vtr0: tensão máquina síncrona [pu].
+            vcap0: tensão capacitor CC [pu].
+
+        Returns:
+            self (encadeável).
+        """
+        self._gses.append(
+            _AssocGSE(
+                nb=nb, gr=gr, p=p, q=q, und=und, mg=mg, mt=mt, mv=mv, mc1=mc1, mc2=mc2,
+                freq=freq, vtr0=vtr0, vcap0=vcap0,
+                mt_usuario=mt_usuario, mv_usuario=mv_usuario,
+                mc1_usuario=mc1_usuario, mc2_usuario=mc2_usuario
+            )
+        )
+        return self
+
+    def _guia(self) -> str:
+        return "( Nb) Gr (P) (Q)Und  Mg ( Mt )u( Mv )u(Mc1)u(Mc2)u(Freq)(Vtr0 )(Vcap0)\n"
+
+    def serializar(self) -> str:
+        linhas = [self._cabecalho(), self._guia()]
+        for g in self._gses:
+            linhas.append(g.serializar() + "\n")
+        linhas.append(self._terminador())
+        return "".join(linhas)

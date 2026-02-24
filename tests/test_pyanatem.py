@@ -4020,3 +4020,54 @@ FIM
         caso.exportar(p2)
         caso2 = CasoAnatem.ler(p2)
         assert len(caso2.ddfm._dfigs) == 1
+
+
+def test_dgse_serializacao():
+    """DGSE (Associação GSE) — serialização básica."""
+    from pyanatem import BlocoDGSE
+
+    b = BlocoDGSE()
+    b.adicionar(nb=100, gr=10, p=100, q=100, und=1, mg=1525,
+                mt=2000, mv=102, mc1=104, mc2=106,
+                freq=60, vtr0=1.0, vcap0=1.0,
+                mv_usuario=True, mc1_usuario=True, mc2_usuario=True)
+    t = b.serializar()
+
+    assert "DGSE" in t
+    assert "100" in t and "1525" in t
+
+
+def test_dgse_roundtrip():
+    """DGSE — roundtrip com arquivo STB."""
+    import tempfile
+    from pathlib import Path
+
+    stb = """\
+DARQ
+SIST rede.sav
+999999
+DSIM
+0.0 10.0 0.01
+999999
+DGSE
+100 10 100 100 1 1525 2000 102U 104U 106U 60 1.0 1.0
+999999
+DPLT
+999999
+EXSI
+FIM
+"""
+    with tempfile.TemporaryDirectory() as tmp:
+        p = Path(tmp) / "dgse.stb"
+        p.write_text(stb, encoding="latin-1")
+        caso = CasoAnatem.ler(p)
+
+        assert len(caso.dgse._gses) == 1
+        g = caso.dgse._gses[0]
+        assert g.nb == 100 and g.gr == 10 and g.mg == 1525
+
+        # Roundtrip
+        p2 = Path(tmp) / "dgse_roundtrip.stb"
+        caso.exportar(p2)
+        caso2 = CasoAnatem.ler(p2)
+        assert len(caso2.dgse._gses) == 1

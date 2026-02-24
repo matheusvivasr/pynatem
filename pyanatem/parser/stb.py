@@ -167,6 +167,8 @@ class ParserSTB:
                 i = ParserSTB._ler_dfla(linhas, i + 1, caso)
             elif kw == "DMOT":
                 i = ParserSTB._ler_dmot(linhas, i + 1, caso)
+            elif kw == "DGSE":
+                i = ParserSTB._ler_dgse(linhas, i + 1, caso)
             elif kw == "DCST":
                 i = ParserSTB._ler_dcst(linhas, i + 1, caso)
             elif kw.startswith("DCAR"):
@@ -1184,6 +1186,47 @@ class ParserSTB:
                     nb=nb, gr=gr, p=p, q=q, und=und, mg=mg, mt=mt, mc=mc,
                     mt_usuario=mt_u, mc_usuario=mc_u, xvd=xvd, nbc=nbc,
                     slip=slip, slip_usuario=slip_u, r=r, i=i_val
+                )
+            except (ValueError, IndexError):
+                pass
+            i += 1
+        return i
+
+    @staticmethod
+    def _ler_dgse(linhas, inicio, caso) -> int:
+        """Lê o bloco DGSE (§20.2) — associação de geradores síncronos eólicos (v1.5.4).
+
+        Formato livre: Nb Gr P Q Und Mg Mt[u] Mv[u] Mc1[u] Mc2[u] Freq Vtr0 Vcap0
+        """
+        i = inicio
+        while i < len(linhas):
+            linha = _strip_comment(linhas[i])
+            if _e_terminador(linha) or _e_fim(linha):
+                return i + 1
+            stripped = linha.strip()
+            if not stripped:
+                i += 1
+                continue
+            partes = stripped.split()
+            try:
+                nb = int(partes[0])
+                gr = int(partes[1])
+                p = _safe_float(partes[2]) if len(partes) > 2 else 100.0
+                q = _safe_float(partes[3]) if len(partes) > 3 else 100.0
+                und = int(partes[4]) if len(partes) > 4 else 1
+                mg = int(partes[5]) if len(partes) > 5 else 0
+                mt, mt_u = _sep_flag_u(partes[6]) if len(partes) > 6 else (0, False)
+                mv, mv_u = _sep_flag_u(partes[7]) if len(partes) > 7 else (0, False)
+                mc1, mc1_u = _sep_flag_u(partes[8]) if len(partes) > 8 else (0, False)
+                mc2, mc2_u = _sep_flag_u(partes[9]) if len(partes) > 9 else (0, False)
+                freq = _safe_float(partes[10]) if len(partes) > 10 else 0.0
+                vtr0 = _safe_float(partes[11]) if len(partes) > 11 else 0.0
+                vcap0 = _safe_float(partes[12]) if len(partes) > 12 else 0.0
+
+                caso.dgse.adicionar(
+                    nb=nb, gr=gr, p=p, q=q, und=und, mg=mg, mt=mt, mv=mv, mc1=mc1, mc2=mc2,
+                    freq=freq, vtr0=vtr0, vcap0=vcap0,
+                    mt_usuario=mt_u, mv_usuario=mv_u, mc1_usuario=mc1_u, mc2_usuario=mc2_u
                 )
             except (ValueError, IndexError):
                 pass

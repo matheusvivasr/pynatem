@@ -48,6 +48,7 @@ from .blocos import (
     BlocoDLTC,
     BlocoDFLA,
     BlocoDMOT,
+    BlocoDGSE,
     BlocoEXSI,
     BlocoSVC,
     BlocoTCSC,
@@ -114,6 +115,7 @@ class CasoAnatem:
         self.dltc = BlocoDLTC()
         self.dfla = BlocoDFLA()
         self.dmot = BlocoDMOT()
+        self.dgse = BlocoDGSE()
         self.svc = BlocoSVC()
         self.tcsc = BlocoTCSC()
         self.statcom = BlocoSTATCOM()
@@ -300,6 +302,10 @@ class CasoAnatem:
         # Máquinas de indução convencional
         if self.dmot.tem_dados():
             partes.append(self.dmot.serializar())
+
+        # Geradores síncronos eólicos
+        if self.dgse.tem_dados():
+            partes.append(self.dgse.serializar())
 
         # Blocos FACTS/HVDC — emitidos entre DMAQ e DEVT quando populados
         if self.svc.tem_dados():
