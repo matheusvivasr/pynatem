@@ -4121,3 +4121,53 @@ FIM
         caso.exportar(p2)
         caso2 = CasoAnatem.ler(p2)
         assert len(caso2.dfnt._fontes) == 2
+
+
+def test_dmel_serializacao():
+    """DMEL (Modelo Elo CC) — serialização básica."""
+    from pyanatem import BlocoDMEL
+
+    b = BlocoDMEL()
+    b.adicionar_md01(no=10, tipo='C', tbp=0.0)
+    b.adicionar_md01(no=20, tipo='P', tbp=0.5)
+    t = b.serializar()
+
+    assert "DMEL" in t
+    assert "10" in t and "C" in t
+
+
+def test_dmel_roundtrip():
+    """DMEL — roundtrip com arquivo STB."""
+    import tempfile
+    from pathlib import Path
+
+    stb = """\
+DARQ
+SIST rede.sav
+999999
+DSIM
+0.0 10.0 0.01
+999999
+DMEL
+0010 C
+0020 P 0.5
+999999
+DPLT
+999999
+EXSI
+FIM
+"""
+    with tempfile.TemporaryDirectory() as tmp:
+        p = Path(tmp) / "dmel.stb"
+        p.write_text(stb, encoding="latin-1")
+        caso = CasoAnatem.ler(p)
+
+        assert len(caso.dmel._modelos) == 2
+        m = caso.dmel._modelos[0]
+        assert m.no == 10 and m.tipo == "C"
+
+        # Roundtrip
+        p2 = Path(tmp) / "dmel_roundtrip.stb"
+        caso.exportar(p2)
+        caso2 = CasoAnatem.ler(p2)
+        assert len(caso2.dmel._modelos) == 2

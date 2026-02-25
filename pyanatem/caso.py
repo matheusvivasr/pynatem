@@ -50,6 +50,7 @@ from .blocos import (
     BlocoDMOT,
     BlocoDGSE,
     BlocoDFNT,
+    BlocoDMEL,
     BlocoEXSI,
     BlocoSVC,
     BlocoTCSC,
@@ -104,6 +105,7 @@ class CasoAnatem:
         self.darq = BlocoDARQ()
         self.dcst = BlocoDCST()
         self.dmdg = BlocoDMDG()
+        self.dmel = BlocoDMEL()
         self.drgt = BlocoDRGT()
         self.drgv = BlocoDRGV()
         self.dest = BlocoDEST()
@@ -267,6 +269,9 @@ class CasoAnatem:
 
         if self.dmdg.tem_dados():
             partes.append(self.dmdg.serializar())
+
+        if self.dmel.tem_dados():
+            partes.append(self.dmel.serializar())
 
         # Modelos predefinidos de controle (antes do DMAQ, que os associa)
         if self.drgt.tem_dados():

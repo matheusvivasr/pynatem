@@ -3090,3 +3090,71 @@ class BlocoDFNT(BlocoBase):
             linhas.append(f.serializar() + "\n")
         linhas.append(self._terminador())
         return "".join(linhas)
+
+
+@dataclass
+class _ModeloElo:
+    """Modelo predefinido de elo CC (DMEL MD01, §46.47)."""
+
+    no: int
+    tipo: str
+    tbp: float = 0.0
+
+    def serializar(self) -> str:
+        partes = [f"{self.no:>5}", f"{self.tipo:>2}"]
+        if self.tbp != 0.0:
+            partes.append(f"{self.tbp:>6.2f}")
+        return "".join(partes)
+
+
+@dataclass
+class BlocoDMEL(BlocoBase):
+    """Modelos predefinidos de elo CC (DMEL MD01, §46.47 / v1.6.1).
+
+    Define modelos de polos para elos HVDC LCC com controle de corrente
+    ou potência. Apenas MD01 suportado (2 modelos predefinidos: 0010/C, 0020/P).
+
+    Campos:
+        No:   identificador modelo (ex: 0010, 0020).
+        C:    tipo (C=corrente, P=potência).
+        Tbp:  constante tempo balanceador [s] (opcional).
+
+    Confiança: Alta — estrutura simples, validada contra §46.47 (Listagem 46.45).
+
+    Uso::
+
+        dmel = BlocoDMEL()
+        dmel.adicionar_md01(no=0010, tipo='C', tbp=0.0)
+        dmel.adicionar_md01(no=0020, tipo='P', tbp=0.0)
+    """
+
+    keyword: str = field(default="DMEL", init=False, repr=False)
+    opcoes: str = field(default="MD01", init=False)
+    _modelos: List[_ModeloElo] = field(default_factory=list)
+
+    def tem_dados(self) -> bool:
+        return bool(self._modelos)
+
+    def adicionar_md01(self, no: int, tipo: str, tbp: float = 0.0) -> "BlocoDMEL":
+        """Adiciona modelo MD01 de elo CC.
+
+        Args:
+            no: número identificador.
+            tipo: 'C' (corrente) ou 'P' (potência).
+            tbp: constante tempo balanceador [s].
+
+        Returns:
+            self (encadeável).
+        """
+        self._modelos.append(_ModeloElo(no=no, tipo=tipo.upper(), tbp=tbp))
+        return self
+
+    def _guia(self) -> str:
+        return "( No) C (Tbp)\n"
+
+    def serializar(self) -> str:
+        linhas = [self._cabecalho(), self._guia()]
+        for m in self._modelos:
+            linhas.append(m.serializar() + "\n")
+        linhas.append(self._terminador())
+        return "".join(linhas)
