@@ -2979,3 +2979,114 @@ class BlocoDGSE(BlocoBase):
             linhas.append(g.serializar() + "\n")
         linhas.append(self._terminador())
         return "".join(linhas)
+
+
+@dataclass
+class _FonteShuntCDU:
+    """Fonte shunt controlada por CDU (DFNT, §21)."""
+
+    nb: int
+    gr: int
+    tipo: str
+    fp: float
+    fq: float
+    und: int
+    mc: int
+    mc_usuario: bool
+    r_ou_g: float
+    x_ou_b: float
+    sbas: float = 0.0
+
+    def serializar(self) -> str:
+        partes = [
+            f"{self.nb:>5}", f"{self.gr:>3}", f"{self.tipo:>2}",
+            f"{self.fp:>7.0f}", f"{self.fq:>7.0f}", f"{self.und:>4}",
+            f"{_sep_u(self.mc, self.mc_usuario):>6}",
+            f"{self.r_ou_g:>6.2f}", f"{self.x_ou_b:>6.2f}",
+            f"{self.sbas:>6.1f}" if self.sbas != 0.0 else ""
+        ]
+        return "".join(partes)
+
+
+@dataclass
+class BlocoDFNT(BlocoBase):
+    """Fonte shunt controlada por CDU (DFNT, §21 / Cap. 21, v1.5.5).
+
+    Modela parcela de geração como fonte shunt (tensão ou corrente) controlada
+    por CDU. Permite injeção de potência ativa/reativa com impedância equivalente.
+
+    Campos:
+        Nb:   barra CA.
+        Gr:   grupo de geração.
+        T:    tipo (V=tensão/Thévenin, I=corrente/Norton).
+        FP%:  fator potência ativa [%].
+        FQ%:  fator potência reativa [%].
+        Und:  número de unidades (1 default).
+        Mc:   modelo de controle (CDU).
+        R/G:  resistência (V) ou condutância (I) [%].
+        X/B:  reatância (V) ou susceptância (I) [%].
+        Sbas: base potência [MVA].
+
+    Confiança: Alta — estrutura validada contra §21 (Listagem 46.32).
+
+    Uso::
+
+        dfnt = BlocoDFNT()
+        dfnt.adicionar(nb=10, gr=10, tipo='I', fp=100, fq=100, und=5,
+                      mc=101, r_ou_g=1.2, x_ou_b=4.0, sbas=0.0,
+                      mc_usuario=True)
+    """
+
+    keyword: str = field(default="DFNT", init=False, repr=False)
+    _fontes: List[_FonteShuntCDU] = field(default_factory=list)
+
+    def tem_dados(self) -> bool:
+        return bool(self._fontes)
+
+    def adicionar(
+        self,
+        nb: int,
+        gr: int,
+        tipo: str,
+        fp: float,
+        fq: float,
+        und: int,
+        mc: int,
+        r_ou_g: float,
+        x_ou_b: float,
+        sbas: float = 0.0,
+        mc_usuario: bool = False,
+    ) -> "BlocoDFNT":
+        """Adiciona uma fonte shunt controlada.
+
+        Args:
+            nb, gr: identificação barra e grupo.
+            tipo: 'V' (tensão/Thévenin) ou 'I' (corrente/Norton).
+            fp, fq: percentual potência ativa/reativa [%].
+            und: número de unidades.
+            mc: número modelo CDU.
+            r_ou_g: resistência [%] (V) ou condutância (I).
+            x_ou_b: reatância [%] (V) ou susceptância (I).
+            sbas: base potência [MVA].
+            mc_usuario: se modelo é CDU (flag 'u').
+
+        Returns:
+            self (encadeável).
+        """
+        self._fontes.append(
+            _FonteShuntCDU(
+                nb=nb, gr=gr, tipo=tipo.upper(), fp=fp, fq=fq, und=und, mc=mc,
+                mc_usuario=mc_usuario, r_ou_g=r_ou_g, x_ou_b=x_ou_b, sbas=sbas
+            )
+        )
+        return self
+
+    def _guia(self) -> str:
+        return "( Nb) Gr T (FP%)(FQ%)Und( Mc )u (R/G) (X/B) (Sbas)\n"
+
+    def serializar(self) -> str:
+        linhas = [self._cabecalho(), self._guia()]
+        for f in self._fontes:
+            linhas.append(f.serializar() + "\n")
+        linhas.append(self._terminador())
+        return "".join(linhas)

@@ -4071,3 +4071,53 @@ FIM
         caso.exportar(p2)
         caso2 = CasoAnatem.ler(p2)
         assert len(caso2.dgse._gses) == 1
+
+
+def test_dfnt_serializacao():
+    """DFNT (Fonte Shunt CDU) — serialização básica."""
+    from pyanatem import BlocoDFNT
+
+    b = BlocoDFNT()
+    b.adicionar(nb=10, gr=10, tipo='I', fp=100, fq=100, und=5,
+                mc=101, r_ou_g=1.2, x_ou_b=4.0, sbas=0.0, mc_usuario=True)
+    t = b.serializar()
+
+    assert "DFNT" in t
+    assert "10" in t and "101" in t
+
+
+def test_dfnt_roundtrip():
+    """DFNT — roundtrip com arquivo STB."""
+    import tempfile
+    from pathlib import Path
+
+    stb = """\
+DARQ
+SIST rede.sav
+999999
+DSIM
+0.0 10.0 0.01
+999999
+DFNT
+10 10 I 100 100 5 101U 1.2 4.0
+20 10 I 100 100 2 201U 1.9 3.0
+999999
+DPLT
+999999
+EXSI
+FIM
+"""
+    with tempfile.TemporaryDirectory() as tmp:
+        p = Path(tmp) / "dfnt.stb"
+        p.write_text(stb, encoding="latin-1")
+        caso = CasoAnatem.ler(p)
+
+        assert len(caso.dfnt._fontes) == 2
+        f = caso.dfnt._fontes[0]
+        assert f.nb == 10 and f.gr == 10 and f.tipo == "I"
+
+        # Roundtrip
+        p2 = Path(tmp) / "dfnt_roundtrip.stb"
+        caso.exportar(p2)
+        caso2 = CasoAnatem.ler(p2)
+        assert len(caso2.dfnt._fontes) == 2

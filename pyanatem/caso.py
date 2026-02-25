@@ -49,6 +49,7 @@ from .blocos import (
     BlocoDFLA,
     BlocoDMOT,
     BlocoDGSE,
+    BlocoDFNT,
     BlocoEXSI,
     BlocoSVC,
     BlocoTCSC,
@@ -116,6 +117,7 @@ class CasoAnatem:
         self.dfla = BlocoDFLA()
         self.dmot = BlocoDMOT()
         self.dgse = BlocoDGSE()
+        self.dfnt = BlocoDFNT()
         self.svc = BlocoSVC()
         self.tcsc = BlocoTCSC()
         self.statcom = BlocoSTATCOM()
@@ -288,6 +290,10 @@ class CasoAnatem:
             partes.append(self.dcar.serializar())
         if self.dger.tem_dados():
             partes.append(self.dger.serializar())
+
+        # Fonte shunt controlada por CDU
+        if self.dfnt.tem_dados():
+            partes.append(self.dfnt.serializar())
 
         # Transformadores OLTC: modelo de controle (DMTC) + associação (DLTC)
         if self.dmtc.tem_dados():

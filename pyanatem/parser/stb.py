@@ -175,6 +175,8 @@ class ParserSTB:
                 i = ParserSTB._ler_dcar(linhas, i, caso)
             elif kw.startswith("DGER"):
                 i = ParserSTB._ler_dger(linhas, i, caso)
+            elif kw == "DFNT":
+                i = ParserSTB._ler_dfnt(linhas, i + 1, caso)
             elif kw == "DCAG":
                 i = ParserSTB._ler_assoc_cdu(linhas, i + 1, caso, "dcag")
             elif kw == "DCCT":
@@ -924,6 +926,43 @@ class ParserSTB:
                     # Tipo 1 (padrão, sem dinâmica rotórica)
                     caso.dmot.adicionar_tipo1(nb, gr, h, k0, k1, k2, exp)
 
+            except (ValueError, IndexError):
+                pass
+            i += 1
+        return i
+
+    @staticmethod
+    def _ler_dfnt(linhas, inicio, caso) -> int:
+        """Lê o bloco DFNT (§21/46.34) — fonte shunt controlada por CDU (v1.5.5).
+
+        Formato livre: Nb Gr T FP% FQ% Und Mc[u] R/G X/B [Sbas]
+        """
+        i = inicio
+        while i < len(linhas):
+            linha = _strip_comment(linhas[i])
+            if _e_terminador(linha) or _e_fim(linha):
+                return i + 1
+            stripped = linha.strip()
+            if not stripped:
+                i += 1
+                continue
+            partes = stripped.split()
+            try:
+                nb = int(partes[0])
+                gr = int(partes[1])
+                tipo = partes[2].upper() if len(partes) > 2 else "V"
+                fp = _safe_float(partes[3]) if len(partes) > 3 else 100.0
+                fq = _safe_float(partes[4]) if len(partes) > 4 else 100.0
+                und = int(partes[5]) if len(partes) > 5 else 1
+                mc, mc_u = _sep_flag_u(partes[6]) if len(partes) > 6 else (0, False)
+                r_ou_g = _safe_float(partes[7]) if len(partes) > 7 else 0.0
+                x_ou_b = _safe_float(partes[8]) if len(partes) > 8 else 0.0
+                sbas = _safe_float(partes[9]) if len(partes) > 9 else 0.0
+
+                caso.dfnt.adicionar(
+                    nb=nb, gr=gr, tipo=tipo, fp=fp, fq=fq, und=und, mc=mc,
+                    r_ou_g=r_ou_g, x_ou_b=x_ou_b, sbas=sbas, mc_usuario=mc_u
+                )
             except (ValueError, IndexError):
                 pass
             i += 1
