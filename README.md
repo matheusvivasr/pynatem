@@ -1,20 +1,20 @@
 # pyanatem
 
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
-[![Tests](https://img.shields.io/badge/tests-206%20passing-green.svg)](tests/)
+[![Tests](https://img.shields.io/badge/tests-257%20passing-green.svg)](tests/)
 [![Coverage](https://img.shields.io/badge/coverage-87%25-green.svg)](tests/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![Type hints](https://img.shields.io/badge/type%20hints-full-brightgreen.svg)](pyanatem/)
 
-**v1.3.4 — Estável** ⭐
+**v1.5.5 — Geração Renovável Completa** ⭐ | **v1.6.1 em progresso (DMCV pendente)**
 
 Biblioteca Python para **geração, manipulação, parsing e execução automatizada** de arquivos de caso do simulador de estabilidade eletromecânica transitória **ANATEM** (CEPEL).
 
 O pyanatem representa um arquivo `.stb` como um grafo de blocos serializáveis (padrão *AST + Serializer*): cada bloco é um objeto Python que sabe se serializar no texto posicional exato esperado pelo ANATEM, e o parser reconstrói a mesma árvore a partir de um `.stb` existente, garantindo *roundtrip*.
 
-> **Versão:** 1.3.4 — **Estável** (base v1.0.0)  
-> **Status:** API estável, 243 testes; etapas v1.1, v1.2 e v1.3 concluídas ✅  
+> **Versão:** 1.5.5 — **Geração Renovável Completa** (base v1.0.0)  
+> **Status:** 257 testes; etapas v1.1, v1.2, v1.3, v1.5 concluídas ✅ | v1.6.1 (DMEL ✅, DMCV em progresso) 🚀  
 > Referência técnica: Manual ANATEM 12.10 (CEPEL)  
 
 ---
@@ -39,19 +39,21 @@ O pyanatem representa um arquivo `.stb` como um grafo de blocos serializáveis (
 | **1.1** | Confiabilidade Máxima (Inventário B zerado) | ✅ v1.1.5 (FACTS + HVDC + SAV + CURVA + DPLT) |
 | **1.2** | Máquina Síncrona Completa (reguladores/PSS/modelos/CAG/CCT) | ✅ v1.2.6 (DRGT+DRGV+DEST+DCST+CAG+CCT) |
 | **1.3** | Cargas, Shunt, OLTC e Circuitos | ✅ v1.3.4 (DCAR + shunt + OLTC + DFLA) |
+| **1.5** | Geração Renovável (DMOT/DGSE/DDFM/DFNT) | ✅ v1.5.5 (DMOT + DGSE + DDFM parser fix + DFNT) |
+| **1.6.1** | Elos LCC (DMEL + DMCV) | 🟡 v1.6.1 (DMEL ✅, DMCV ⏳) |
 
-### Destaques v1.0.0
+### Destaques v1.5.5
 
-- ✅ **206 testes** (roundtrip, encoding, blocos, parser, CDU, validação, pós-processamento)
+- ✅ **257 testes** (roundtrip, encoding, blocos, parser, CDU, validação, renovável)
 - ✅ **87%+ cobertura** de código
-- ✅ **Zero breaking changes** — retrocompatível v0.6 → v1.0
+- ✅ **v1.1–v1.5 concluídas** — FACTS/HVDC/Máquina Síncrona/Cargas/Geração Renovável
 - ✅ **Encoding latin-1 garantido** — sem corrupção silenciosa, erro explícito
-- ✅ **Parser CDU finalizado** — desambiguação por tipo (Cap. 29), IMPORT/EXPORT/INPUT/OUTPUT/SERIET validados
+- ✅ **Parser CDU finalizado** — desambiguação por tipo (Cap. 29), IMPORT/EXPORT/INPUT/OUTPUT validados
+- ✅ **Geração Renovável (v1.5)** — DMOT (indução convencional), DGSE (síncrona eólica), DDFM (DFIG), DFNT (fonte shunt CDU)
 - ✅ **CI/CD automático** — GitHub Actions (Python 3.9–3.12), Codecov, black, mypy
-- ✅ **Documentação completa** — teórica ([TEORIA.md](TEORIA.md)), prática ([tutorial](docs/tutorial.md)), 7 exemplos
-- ✅ **20+ classes públicas** com type hints, API estável
+- ✅ **30+ classes públicas** com type hints, API estável
 
-**Em andamento:** v1.1 — Confiabilidade Máxima (validar FACTS/HVDC/SAV/RELINV contra o manual → Alta). Veja [ROADMAP.md](ROADMAP.md).
+**Em andamento:** v1.6 — FACTS & HVDC Completos (DMEL ✅, DMCV ⏳, DCLI, CER/CSC, VSI/VSC-HVDC). Veja [ROADMAP.md](ROADMAP.md).
 
 ---
 

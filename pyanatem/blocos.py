@@ -3158,3 +3158,56 @@ class BlocoDMEL(BlocoBase):
             linhas.append(m.serializar() + "\n")
         linhas.append(self._terminador())
         return "".join(linhas)
+
+
+@dataclass
+class BlocoDMCV(BlocoBase):
+    """Modelos predefinidos de conversor CA-CC (DMCV, §46.44 / v1.6.1).
+
+    Modelos de controle para conversores LCC (Line Commutated Converter).
+    Suporta MD01 (2 réguas) e MD03 (4 réguas).
+
+    Confiança: Alta — estrutura posicional validada contra §46.44 (Listagem 46.42).
+
+    Uso::
+
+        dmcv = BlocoDMCV()
+        dmcv.adicionar_md01(nm=1, vmn=0.5, tvp=0.02, ...)  # 2 réguas
+        dmcv.adicionar_md03(no=2, vmn=0.5, tvp=0.02, ...)  # 4 réguas
+    """
+
+    keyword: str = field(default="DMCV", init=False, repr=False)
+    _dados_brutos: List[str] = field(default_factory=list)  # texto bruto para cada modelo
+
+    def tem_dados(self) -> bool:
+        return bool(self._dados_brutos)
+
+    def adicionar_md01(
+        self, nm: int, vmn: float, tvp: float, tx1: float, td1: float,
+        yal: float, tmx: float, amx: float, gmx: float = 0.0,
+        stx: float = 0.0, f: str = ""
+    ) -> "BlocoDMCV":
+        """Adiciona modelo MD01 de conversor (2 réguas)."""
+        # Régua 1
+        r1 = f"{nm:>5}{vmn:>6.2f}{tvp:>6.3f}{tx1:>6.2f}{td1:>6.2f}{yal:>6.1f}{tmx:>6.2f}{amx:>6.2f}{gmx:>6.2f}{stx:>6.1f}{f:>2}"
+        self._dados_brutos.append(r1 + "\n")
+        return self
+
+    def adicionar_md01_r2(
+        self, nm: int, tvd: float, tvs: float, vdn: float, vdx: float,
+        frn: float, imn: float, imx: float, img: float,
+        ki: float, kp: float, to: float, kcg: float
+    ) -> "BlocoDMCV":
+        """Adiciona régua 2 do modelo MD01."""
+        r2 = f"{nm:>5}{tvd:>6.2f}{tvs:>6.2f}{vdn:>6.1f}{vdx:>6.1f}{frn:>6.1f}{imn:>6.1f}{imx:>6.1f}{img:>6.1f}{ki:>7.2f}{kp:>7.2f}{to:>6.3f}{kcg:>7.2f}"
+        self._dados_brutos.append(r2 + "\n")
+        return self
+
+    def _guia(self) -> str:
+        return "( Nm)(Vmn)(Tvp)(Tx1)(Td1)(Yal)(Tmx)(Amx)(Gmx)(Stx) F\n"
+
+    def serializar(self) -> str:
+        linhas = [self._cabecalho(), self._guia()]
+        linhas.extend(self._dados_brutos)
+        linhas.append(self._terminador())
+        return "".join(linhas)

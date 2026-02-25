@@ -76,6 +76,7 @@ __all__ = [
     "BlocoDGSE",
     "BlocoDFNT",
     "BlocoDMEL",
+    "BlocoDMCV",
     "BlocoSVC",
     "BlocoTCSC",
     "BlocoSTATCOM",
