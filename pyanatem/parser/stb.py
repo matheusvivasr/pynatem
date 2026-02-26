@@ -155,6 +155,8 @@ class ParserSTB:
                 i = ParserSTB._ler_dmdg(linhas, i, caso)
             elif kw == "DMEL":
                 i = ParserSTB._ler_dmel(linhas, i + 1, caso)
+            elif kw == "DMCV":
+                i = ParserSTB._ler_dmcv(linhas, i + 1, caso)
             elif kw.startswith("DRGT"):
                 i = ParserSTB._ler_modelo_mdxx(linhas, i, caso, "drgt")
             elif kw.startswith("DRGV"):
@@ -656,6 +658,25 @@ class ParserSTB:
         else:
             # variante desconhecida — pula o bloco
             return ParserSTB._pular_bloco(linhas, i)
+
+    @staticmethod
+    def _ler_dmcv(linhas, inicio, caso) -> int:
+        """Lê o bloco DMCV (§46.44) — modelos conversores CA-CC (v1.6.1).
+
+        Formato: texto bruto (roundtrip garantido, parsing completo em futuro).
+        """
+        i = inicio
+        while i < len(linhas):
+            linha = _strip_comment(linhas[i])
+            if _e_terminador(linha) or _e_fim(linha):
+                return i + 1
+            stripped = linha.strip()
+            if not stripped:
+                i += 1
+                continue
+            caso.dmcv._dados_brutos.append(stripped + "\n")
+            i += 1
+        return i
 
     @staticmethod
     def _ler_dmel(linhas, inicio, caso) -> int:
