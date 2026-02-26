@@ -51,6 +51,7 @@ from .blocos import (
     BlocoDGSE,
     BlocoDFNT,
     BlocoDMEL,
+    BlocoDCLI,
     BlocoDMCV,
     BlocoEXSI,
     BlocoSVC,
@@ -107,6 +108,7 @@ class CasoAnatem:
         self.dcst = BlocoDCST()
         self.dmdg = BlocoDMDG()
         self.dmel = BlocoDMEL()
+        self.dcli = BlocoDCLI()
         self.dmcv = BlocoDMCV()
         self.drgt = BlocoDRGT()
         self.drgv = BlocoDRGV()
@@ -274,6 +276,9 @@ class CasoAnatem:
 
         if self.dmel.tem_dados():
             partes.append(self.dmel.serializar())
+
+        if self.dcli.tem_dados():
+            partes.append(self.dcli.serializar())
 
         if self.dmcv.tem_dados():
             partes.append(self.dmcv.serializar())

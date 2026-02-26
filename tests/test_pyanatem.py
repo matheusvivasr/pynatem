@@ -4171,3 +4171,56 @@ FIM
         caso.exportar(p2)
         caso2 = CasoAnatem.ler(p2)
         assert len(caso2.dmel._modelos) == 2
+
+
+def test_dcli_serializacao():
+    """DCLI (Linha CC) — serialização básica."""
+    from pyanatem import BlocoDCLI
+
+    b = BlocoDCLI()
+    b.adicionar(de=1, pa=2, l=0.1)
+    b.adicionar(de=3, pa=4, l=0.05, c=5.0)
+    t = b.serializar()
+
+    assert "DCLI" in t
+    assert "1" in t and "2" in t
+    assert "0.10" in t
+
+
+def test_dcli_roundtrip():
+    """DCLI — roundtrip com arquivo STB."""
+    import tempfile
+    from pathlib import Path
+
+    stb = """\
+DARQ
+SIST rede.sav
+999999
+DSIM
+0.0 10.0 0.01
+999999
+DCLI
+    1    2 1  0.10
+    3    4 1  0.05  5.00
+999999
+DPLT
+999999
+EXSI
+FIM
+"""
+    with tempfile.TemporaryDirectory() as tmp:
+        p = Path(tmp) / "dcli.stb"
+        p.write_text(stb, encoding="latin-1")
+        caso = CasoAnatem.ler(p)
+
+        assert len(caso.dcli._linhas) == 2
+        l1 = caso.dcli._linhas[0]
+        assert l1.de == 1 and l1.pa == 2 and l1.l == 0.10
+        l2 = caso.dcli._linhas[1]
+        assert l2.c == 5.00
+
+        # Roundtrip
+        p2 = Path(tmp) / "dcli_roundtrip.stb"
+        caso.exportar(p2)
+        caso2 = CasoAnatem.ler(p2)
+        assert len(caso2.dcli._linhas) == 2

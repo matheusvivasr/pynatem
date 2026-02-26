@@ -3161,6 +3161,79 @@ class BlocoDMEL(BlocoBase):
 
 
 @dataclass
+class _LinhaCC:
+    """Linha CC com indutância e capacitância (DCLI, §46.19)."""
+
+    de: int
+    pa: int
+    nc: int = 1
+    l: float = 0.0
+    c: float = 0.0
+
+    def serializar(self) -> str:
+        partes = [f"{self.de:>5}", f"{self.pa:>5}", f"{self.nc:>3}"]
+        if self.l != 0.0 or self.c != 0.0:
+            partes.append(f"{self.l:>6.2f}")
+        if self.c != 0.0:
+            partes.append(f"{self.c:>6.2f}")
+        return "".join(partes)
+
+
+@dataclass
+class BlocoDCLI(BlocoBase):
+    """Indutâncias e capacitâncias de linhas CC (DCLI, §46.19 / v1.6.2).
+
+    Define parâmetros de linhas CC (transmissão por elo HVDC).
+
+    Campos:
+        De:  barra CC origem.
+        Pa:  barra CC destino.
+        Nc:  circuito (default 1).
+        L:   indutância [mH].
+        C:   capacitância [μF] (opcional, para cabos).
+
+    Confiança: Alta — estrutura plana simples, validada §46.19 (Listagem 46.17).
+
+    Uso::
+
+        dcli = BlocoDCLI()
+        dcli.adicionar(de=1, pa=2, l=0.1)  # linhas aéreas (sem C)
+        dcli.adicionar(de=3, pa=4, l=0.05, c=5.0)  # cabo (com C)
+    """
+
+    keyword: str = field(default="DCLI", init=False, repr=False)
+    _linhas: List[_LinhaCC] = field(default_factory=list)
+
+    def tem_dados(self) -> bool:
+        return bool(self._linhas)
+
+    def adicionar(self, de: int, pa: int, nc: int = 1, l: float = 0.0, c: float = 0.0) -> "BlocoDCLI":
+        """Adiciona linha CC.
+
+        Args:
+            de, pa: barras CC.
+            nc: circuito (default 1).
+            l: indutância [mH].
+            c: capacitância [μF] (default 0, omitido se zero).
+
+        Returns:
+            self (encadeável).
+        """
+        self._linhas.append(_LinhaCC(de=de, pa=pa, nc=nc, l=l, c=c))
+        return self
+
+    def _guia(self) -> str:
+        return "(De) (Pa)Nc ( L )( C )\n"
+
+    def serializar(self) -> str:
+        linhas = [self._cabecalho(), self._guia()]
+        for linha in self._linhas:
+            linhas.append(linha.serializar() + "\n")
+        linhas.append(self._terminador())
+        return "".join(linhas)
+
+
+@dataclass
 class BlocoDMCV(BlocoBase):
     """Modelos predefinidos de conversor CA-CC (DMCV, §46.44 / v1.6.1).
 

@@ -155,6 +155,8 @@ class ParserSTB:
                 i = ParserSTB._ler_dmdg(linhas, i, caso)
             elif kw == "DMEL":
                 i = ParserSTB._ler_dmel(linhas, i + 1, caso)
+            elif kw == "DCLI":
+                i = ParserSTB._ler_dcli(linhas, i + 1, caso)
             elif kw == "DMCV":
                 i = ParserSTB._ler_dmcv(linhas, i + 1, caso)
             elif kw.startswith("DRGT"):
@@ -658,6 +660,35 @@ class ParserSTB:
         else:
             # variante desconhecida — pula o bloco
             return ParserSTB._pular_bloco(linhas, i)
+
+    @staticmethod
+    def _ler_dcli(linhas, inicio, caso) -> int:
+        """Lê o bloco DCLI (§46.19) — linhas CC com L, C (v1.6.2).
+
+        Formato (Listagem 46.17):
+            (De) (Pa)(Nc)( L )( C )
+        """
+        i = inicio
+        while i < len(linhas):
+            linha = _strip_comment(linhas[i])
+            if _e_terminador(linha) or _e_fim(linha):
+                return i + 1
+            stripped = linha.strip()
+            if not stripped:
+                i += 1
+                continue
+            partes = stripped.split()
+            if len(partes) < 2:
+                i += 1
+                continue
+            de = int(partes[0])
+            pa = int(partes[1])
+            nc = int(partes[2]) if len(partes) > 2 else 1
+            l = float(partes[3]) if len(partes) > 3 else 0.0
+            c = float(partes[4]) if len(partes) > 4 else 0.0
+            caso.dcli.adicionar(de=de, pa=pa, nc=nc, l=l, c=c)
+            i += 1
+        return i
 
     @staticmethod
     def _ler_dmcv(linhas, inicio, caso) -> int:
