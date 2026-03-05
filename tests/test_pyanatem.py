@@ -2391,6 +2391,46 @@ def test_hvdc_populado_aparece_no_deck():
     assert "DCNV" in stb
 
 
+def test_statcom_roundtrip(tmp_path):
+    """STATCOM (VSI): export → ler preserva conversores com modelos de controle."""
+    from pyanatem import CasoAnatem
+
+    caso = CasoAnatem()
+    caso.darq.sav = "rede.sav"
+    caso.dsim.tfim = 10.0
+    caso.statcom.adicionar(
+        nv=1, de=200, np=1, cnvk=200.0, vb=1.0, xv=0.1, vst=1.0, st=0.1, ne=0, pa=300, nx=1
+    )
+    p = tmp_path / "statcom.stb"
+    caso.exportar(p)
+
+    conteudo = p.read_text(encoding="latin-1")
+    assert "DVSI" in conteudo
+    assert "200" in conteudo
+
+    lido = CasoAnatem.ler(p)
+    assert lido.statcom.tem_dados()
+
+
+def test_hvdc_roundtrip(tmp_path):
+    """HVDC (LCC): export → ler preserva conversores com modelos de controle."""
+    from pyanatem import CasoAnatem
+
+    caso = CasoAnatem()
+    caso.darq.sav = "rede.sav"
+    caso.dsim.tfim = 10.0
+    caso.hvdc.adicionar(no=25, mc=100, mc_usuario=True, gkb=5.0)
+    p = tmp_path / "hvdc.stb"
+    caso.exportar(p)
+
+    conteudo = p.read_text(encoding="latin-1")
+    assert "DCNV" in conteudo
+    assert "25" in conteudo
+
+    lido = CasoAnatem.ler(p)
+    assert lido.hvdc.tem_dados()
+
+
 def test_facts_blocos_vazios_nao_aparecem_no_deck():
     """deck() omite cabeçalhos de blocos FACTS/HVDC quando vazios."""
     from pyanatem import CasoAnatem
