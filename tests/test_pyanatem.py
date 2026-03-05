@@ -2315,6 +2315,50 @@ def test_tcsc_populado_aparece_no_deck():
     assert "DCSC" in stb
 
 
+def test_svc_roundtrip(tmp_path):
+    """SVC/CER: export → ler preserva equipamentos com modelos de controle."""
+    from pyanatem import CasoAnatem
+
+    caso = CasoAnatem()
+    caso.darq.sav = "rede.sav"
+    caso.dsim.tfim = 10.0
+    caso.svc.adicionar(nb=50, gr=1, mc=800)
+    caso.svc.adicionar(nb=60, gr=1, mc=900, me=200)
+    p = tmp_path / "svc.stb"
+    caso.exportar(p)
+
+    conteudo = p.read_text(encoding="latin-1")
+    assert "DCER" in conteudo
+    assert "50" in conteudo
+
+    lido = CasoAnatem.ler(p)
+    assert len(lido.svc._equipamentos) == 2
+    eq = lido.svc._equipamentos[0]
+    assert eq.nb == 50 and eq.gr == 1 and eq.mc == 800
+
+
+def test_tcsc_roundtrip(tmp_path):
+    """TCSC/CSC: export → ler preserva equipamentos com modelos + circuitos paralelos."""
+    from pyanatem import CasoAnatem
+
+    caso = CasoAnatem()
+    caso.darq.sav = "rede.sav"
+    caso.dsim.tfim = 10.0
+    caso.tcsc.adicionar(de=10, pa=20, mc=800, nc=1)
+    caso.tcsc.adicionar(de=30, pa=40, mc=900, nc=2, me=200)
+    p = tmp_path / "tcsc.stb"
+    caso.exportar(p)
+
+    conteudo = p.read_text(encoding="latin-1")
+    assert "DCSC" in conteudo
+    assert "10" in conteudo
+
+    lido = CasoAnatem.ler(p)
+    assert len(lido.tcsc._equipamentos) == 2
+    eq = lido.tcsc._equipamentos[0]
+    assert eq.de == 10 and eq.pa == 20 and eq.nc == 1
+
+
 def test_statcom_populado_aparece_no_deck():
     """deck() emite bloco STATCOM (DVSI) quando populado."""
     from pyanatem import CasoAnatem
