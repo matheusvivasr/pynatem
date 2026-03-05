@@ -2,9 +2,9 @@
 
 on:
   push:
-    branches: [ main, vivas ]
+    branches: [ vivas ]
   pull_request:
-    branches: [ main ]
+    branches: [ vivas ]
 
 jobs:
   test:
@@ -69,7 +69,7 @@ jobs:
         pip install flake8 black isort
 
     - name: Check code formatting (black)
-      run: black --check pyanatem/ tests/
+      run: black --check --target-version py311 pyanatem/ tests/
 
     - name: Check import sorting (isort)
       run: isort --check-only pyanatem/ tests/

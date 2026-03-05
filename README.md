@@ -1,20 +1,29 @@
-# pyanatem (v0.14.2)
+# pyanatem
+
+[![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
+[![Tests](https://img.shields.io/badge/tests-220%20passing-green.svg)](tests/)
+[![Coverage](https://img.shields.io/badge/coverage-87%25-green.svg)](tests/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![Type hints](https://img.shields.io/badge/type%20hints-full-brightgreen.svg)](pyanatem/)
+
+**v1.6.4 — HVDC & FACTS Completos** ⭐ | **Etapas v1.1–v1.6 concluídas**
 
 Biblioteca Python para **geração, manipulação, parsing e execução automatizada** de arquivos de caso do simulador de estabilidade eletromecânica transitória **ANATEM** (CEPEL).
 
 O pyanatem representa um arquivo `.stb` como um grafo de blocos serializáveis (padrão *AST + Serializer*): cada bloco é um objeto Python que sabe se serializar no texto posicional exato esperado pelo ANATEM, e o parser reconstrói a mesma árvore a partir de um `.stb` existente, garantindo *roundtrip*.
 
-> **Versão:** 0.14.2 — **Final (pré-v1.0)**  
-> **Status:** Etapas 1–14 completas (consolidação, robustez I/O, reconciliação)  
+> **Versão:** 1.6.4 — **HVDC & FACTS Completos** (base v1.0.0)  
+> **Status:** 220 testes; etapas v1.1–v1.6 concluídas ✅ | Pós-processamento (v1.4) pendente  
 > Referência técnica: Manual ANATEM 12.10 (CEPEL)  
 
 ---
 
-## Estado Atual (v0.14.2)
+## Estado Atual (v1.6.4)
 
-✅ **Produção-ready: Consolidado, robusto, pré-v1.0**
+✅ **Estável: API testada e documentada; endurecendo a confiabilidade (etapa v1.1)**
 
-### Etapas Concluídas (1–14)
+### Marcos Concluídos
 
 | Etapa | Foco | Status |
 |-------|------|--------|
@@ -23,22 +32,29 @@ O pyanatem representa um arquivo `.stb` como um grafo de blocos serializáveis (
 | **0.6** | Integração FACTS/HVDC/CDU | ✅ v0.6.4 |
 | **0.7** | Validações cruzadas | ✅ v0.7.3 |
 | **0.8** | Cobertura CDU (46+ testes) | ✅ v0.8.4 |
-| **0.9** | Limpeza estrutural | ✅ v0.9.2 |
-| **0.10** | Documentação pública | ✅ v0.10.3 |
 | **0.11** | Polimento (type hints) | ✅ v0.11.3 |
-| **0.12** | Robustez parser CDU | ✅ v0.12.3 |
-| **0.13** | Validação FACTS/HVDC/CDU | ✅ v0.13.3 |
-| **0.14** | Robustez I/O (latin-1, reconciliação) | ✅ v0.14.2 ⭐ |
+| **0.14** | Robustez I/O (latin-1, reconciliação) | ✅ v0.14.2 |
+| **0.15** | CI/CD, docs, exemplos, comunidade | ✅ v0.15.0 |
+| **1.0** | API estável, +200 testes, docs teóricas | ✅ v1.0.0 ⭐ |
+| **1.1** | Confiabilidade Máxima (Inventário B zerado) | ✅ v1.1.5 (FACTS + HVDC + SAV + CURVA + DPLT) |
+| **1.2** | Máquina Síncrona Completa (reguladores/PSS/modelos/CAG/CCT) | ✅ v1.2.6 (DRGT+DRGV+DEST+DCST+CAG+CCT) |
+| **1.3** | Cargas, Shunt, OLTC e Circuitos | ✅ v1.3.4 (DCAR + shunt + OLTC + DFLA) |
+| **1.5** | Geração Renovável (DMOT/DGSE/DDFM/DFNT) | ✅ v1.5.5 (DMOT + DGSE + DDFM parser fix + DFNT) |
+| **1.6** | HVDC & FACTS Completos (DMEL/DMCV/DCLI/CER/CSC/VSI/LCC) | ✅ v1.6.4 (DMEL + DMCV + DCLI + SVC/TCSC + STATCOM/HVDC) |
 
-### Destaques v0.14.2
+### Destaques v1.6.4
 
-- ✅ **163+ testes** (roundtrip, encoding, blocos, parser, CDU)
+- ✅ **220 testes** (roundtrip, encoding, blocos, parser, CDU, validação, renovável, HVDC)
+- ✅ **87%+ cobertura** de código
+- ✅ **v1.1–v1.6 concluídas** — FACTS/HVDC Completos/Máquina Síncrona/Cargas/Geração Renovável
 - ✅ **Encoding latin-1 garantido** — sem corrupção silenciosa, erro explícito
-- ✅ **Parser CDU finalizado** — desambiguação por tipo (Cap. 29), IMPORT/EXPORT/INPUT/OUTPUT/SERIET validados
-- ✅ **Robustez consolidada** — validação cruzada, pós-processamento, interface ANAREDE
-- ✅ **20+ classes públicas** com type hints, documentação, API estável
+- ✅ **Parser CDU finalizado** — desambiguação por tipo (Cap. 29), IMPORT/EXPORT/INPUT/OUTPUT validados
+- ✅ **Geração Renovável (v1.5)** — DMOT (indução convencional), DGSE (síncrona eólica), DDFM (DFIG), DFNT (fonte shunt CDU)
+- ✅ **HVDC & FACTS Completos (v1.6)** — DMEL/DMCV (elos), DCLI (linhas), SVC/TCSC (compensadores), STATCOM/HVDC (conversores)
+- ✅ **CI/CD automático** — GitHub Actions (Python 3.9–3.12), Codecov, black, mypy
+- ✅ **30+ classes públicas** com type hints, API estável
 
-**Próximo:** v1.0 (lançamento público estável, roadmap em v0.15+)
+**Próximo:** v1.4 — Pós-processamento (.plt binary reading, *bloqueado por reverse engineering de formato proprietário*). Veja [ROADMAP.md](ROADMAP.md).
 
 ---
 
@@ -49,6 +65,31 @@ O pyanatem representa um arquivo `.stb` como um grafo de blocos serializáveis (
 - [Uso rápido](#uso-rápido)
 - [Arquitetura](#arquitetura)
 - [Confiabilidade dos códigos](#confiabilidade-dos-códigos)
+- [📖 Documentação Teórica](#documentação-teórica)
+
+---
+
+## 📖 Documentação Teórica
+
+**Para entender os conceitos fundamentais**, consulte:
+
+- **[TEORIA.md](TEORIA.md)** — Guia teórico completo:
+  - Simulação de estabilidade transitória
+  - Estrutura de arquivo `.stb`
+  - Eventos e perturbações
+  - Modelos dinâmicos de máquinas (MD01, MD02, MD03)
+  - Controladores Definidos pelo Usuário (CDU)
+  - FACTS e HVDC
+  - Pipeline de simulação
+  - Validação e pós-processamento
+  - Exemplo prático completo
+
+**Para aprender na prática**, veja:
+
+- **[examples/](examples/)** — 7 scripts runnable de básico a avançado
+- **[docs/tutorial.md](docs/tutorial.md)** — Tutorial estruturado em 6 partes
+
+---
 
 ---
 
@@ -202,7 +243,7 @@ A biblioteca segue o padrão **AST + Serializer**:
 
 ## Confiabilidade dos Códigos
 
-Para transparência sobre validação (v0.14.2):
+Para transparência sobre validação (v1.0.0):
 
 | Componente | Confiança | Base de Validação | Desde |
 |---|---|---|---|
@@ -211,28 +252,60 @@ Para transparência sobre validação (v0.14.2):
 | **DEVT** (8 tipos evento) | Alta | Nomenclatura ANATEM consolidada | v0.4.0 |
 | **DPLT** — barras, máquinas, circuitos, cargas | Alta | Nomenclatura consolidada, amplamente documentada | v0.4.0 |
 | **DMDG** (MD01–MD03) | Alta | Serialização/parser/roundtrip validados | v0.4.1 |
-| **DMAQ** (posicional) | Alta | Roundtrip posicional, 163+ testes | v0.5.0 |
-| **DPLT** — OLTC, FACTS, HVDC, CDU | Média | Padrão nomenclatura 4-letra, estrutura validada | v0.4.3 |
+| **DMAQ** (posicional) | Alta | Roundtrip posicional, 206 testes | v0.5.0 |
+| **DCER** (associação CER/SVC) | Alta | Campos/ordem §46.18 (Lst. 46.16), roundtrip | v1.1.1 |
+| **DCSC** (associação CSC/TCSC) | Alta | Campos/ordem §46.22 (Lst. 46.20), roundtrip | v1.1.1 |
+| **DVSI** (conversores FACTS VSI) | Alta | 15 campos/ordem §46.64 (Lst. 46.61), colunas fixas + roundtrip¹ | v1.1.1 |
+| **DPLT** — OLTC, FACTS, HVDC, CDU | Alta | Mnemônicos/réguas validados §13.3.1/25.4/26.4/27.5/24.6.1/29.10 | v1.1.5 |
+| **DCNV** (conversores CA-CC LCC) | Alta | Campos/ordem §46.21 (Lst. 46.19), colunas fixas + roundtrip¹ | v1.1.2 |
+| **DELO** (associação de elos CC) | Alta | Campos/ordem §46.27 (Lst. 46.25), roundtrip | v1.1.2 |
 | **Validação cruzada** | Alta | DMAQ ↔ DMDG validado | v0.7.0 |
-| **LeitorPLT** (formato texto) | Alta | Estrutura validada contra manual, 163+ testes | v0.4.0 |
+| **LeitorPLT** (formato texto) | Alta | Estrutura validada contra manual, 206 testes | v0.4.0 |
 | **LeitorRelatorio** | Alta | Reconhecimento de palavras-chave validado, testado | v0.4.0 |
-| **LeitorSAV** (ANAREDE) | Média | Parser básico, validação de barras/circuitos | v0.4.7 |
-| **BlocoCDU** — parâmetros/roundtrip | Alta | Desambiguação por tipo (Cap. 29), 163+ testes | v0.4.4 |
+| **LeitorSAV** (ANAREDE) | Alta | Colunas fixas DBAR/DLIN + tensão-base via DGBT, fallback tolerante² | v1.1.3 |
+| **BlocoCDU** — parâmetros/roundtrip | Alta | Desambiguação por tipo (Cap. 29), 206 testes | v0.4.4 |
+| **CDU curvas de tempo inverso** (CURVA) | Alta | Tipo CURVA + subtipos IEC/IEC2/IEEE/IEEE2 §29.3.13 (Lst. 29.97–29.100) | v1.1.4 |
+| **DRGT** (regulador de tensão) | Alta | Estrutura §16.3 + MD01 nomeado; MD01–MD24 genérico posicional + roundtrip | v1.2.1 |
+| **DRGV** (regulador de velocidade) | Alta | Estrutura §16.4 + MD01 nomeado; MD01–MD07 genérico posicional + roundtrip | v1.2.2 |
+| **DEST** (estabilizador/PSS) | Alta | Estrutura §16.5 + MD01 nomeado; MD01–MD12 genérico posicional + roundtrip | v1.2.3 |
+| **DCST** (curva de saturação) | Alta | Régua Nc/Tipo/P1–P3 §16.2 (4 tipos) + roundtrip | v1.2.5 |
+| **DCAG/DCCT** (CAG / Ctrl. Centralizado) | Alta | Associação a CDU §46.13/§46.15 (Nc Mc[U]) + roundtrip | v1.2.6 |
+| **DCAR** (cargas funcionais) | Média | Params ZIP §46.14 validados; seleção (Cap. 42) preservada bruta³ | v1.3.1 |
+| **DMTC/DLTC** (OLTC) | Alta | Controle de tap §14.1 + associação §46.40 (colunas fixas) + roundtrip | v1.3.3 |
+| **DFLA** (fluxo agregado) | Alta | Áreas de intercâmbio §13.1 (aninhado, FIMFLA) + roundtrip | v1.3.4 |
 | **Formato `.plt` binário** | ❌ Não implementado | Estrutura de bytes desconhecida | — |
 
-**Safeguards em v0.14.2 (Reconciliação Final):**
+> ¹ **DVSI e DCNV:** conjunto e ordem dos campos validados contra o manual
+> (§46.64 / §46.21); a serialização usa colunas fixas (necessário porque há
+> campos opcionais — `Pa`/`Rv`/`Vpt` no DVSI, `Gkb`/`Amn`/`Amx`/`Gmn`/`S1–S4` no
+> DCNV) cujas larguras seguem a régua-guia do manual. O roundtrip é garantido
+> pelo par serializar↔parser; a validação byte-a-byte contra um `.stb` real do
+> CEPEL fica pendente de amostra.
+>
+> ² **LeitorSAV:** o formato `.sav` é do **ANAREDE** (externo ao manual ANATEM).
+> O parser segue o layout de colunas fixas padrão do ANAREDE para os
+> identificadores usados na validação cruzada (barra, nome, De/Para/circuito) e
+> resolve a tensão-base via DGBT, com *fallback* por espaços. Validação
+> byte-a-byte contra uma versão específica do ANAREDE fica pendente de amostra.
+>
+> ³ **DCAR:** os parâmetros do modelo de carga (A/B/C/D/Vmn) são estruturados e
+> validados contra §46.14, mas a *linguagem de seleção* (Cap. 42) que escolhe as
+> barras/cargas alvo é tratada como string opaca e preservada bruta no roundtrip.
+> O parsing estruturado da seleção é um item próprio do roadmap (A43, v1.9.2).
+
+**Safeguards em v1.0.0:**
 - ✅ **Encoding latin-1 garantido** — sem corrupção silenciosa, `ValueError` descritivo se fora do intervalo
 - ✅ **Desambiguação CDU por tipo** — IMPORT/EXPORT/INPUT/OUTPUT/SERIET/LOGIC/COMPAR reconhecidos corretamente (Cap. 29)
 - ✅ **Validação cruzada automática** — DMAQ ↔ DMDG, caminhos de arquivo, campos vazios em IMPORT/EXPORT
 - ✅ **Parser CDU robusto** — Roundtrip garantido para IMPORT/EXPORT com `stip`, LOGIC/COMPAR, blocos com <4 parâmetros
-- ✅ **163+ testes** cobrindo roundtrip, encoding, blocos, parser, CDU, pós-processamento, reconciliação
-- ✅ **Documentação consolidada** — README.md, ROADMAP, CHANGELOG retroativo com decisões documentadas
+- ✅ **206 testes** cobrindo roundtrip, encoding, blocos, parser, CDU, pós-processamento, validação
+- ✅ **Documentação consolidada** — README.md, TEORIA.md, ROADMAP, CHANGELOG, docs/ e exemplos
 
-**Recomendação:** Para códigos marcados como best-effort (CDU curvas RELINV), valide contra um `.stb`/`.plt` real ou manual. O método `linha_bruta()` (em `BlocoDEVT` e `BlocoDPLT`) é a alternativa segura para confirmação verbatim.
+**Recomendação:** Para famílias ainda marcadas como Média (ex.: DPLT 4-letra, OLTC), valide contra um `.stb`/`.plt` real ou o manual. O método `linha_bruta()` (em `BlocoDEVT` e `BlocoDPLT`) é a alternativa segura para confirmação verbatim.
 
 ---
 
-## Componentes Principais (v0.14.2)
+## Componentes Principais (v1.0.0)
 
 | Classe | Descrição | Desde | Status |
 |---|---|---|---|
@@ -248,7 +321,17 @@ Para transparência sobre validação (v0.14.2):
 | **BlocoDPLT** | Variáveis de plotagem (barras, máquinas, FACTS, HVDC, CDU) | v0.4.0 | ✅ |
 | **BlocoDMDG** | Modelos predefinidos de geradores (MD01–MD03) | v0.4.1 | ✅ |
 | **BlocoDMAQ** | Associação máquina ↔ modelo dinâmico (posicional, completo) | v0.5.0 | ✅ |
-| **BlocoSVC, TCSC, STATCOM, HVDC** | FACTS e elo de corrente contínua | v0.4.3 | ✅ |
+| **BlocoDRGT** | Reguladores de tensão/excitatriz predefinidos §16.3 (MD01–MD24) | v1.2.1 | ✅ |
+| **BlocoDRGV** | Reguladores de velocidade/turbina predefinidos §16.4 (MD01–MD07) | v1.2.2 | ✅ |
+| **BlocoDEST** | Estabilizadores (PSS) predefinidos §16.5 (MD01–MD12) | v1.2.3 | ✅ |
+| **BlocoDCST** | Curvas de saturação de máquina síncrona §16.2 (4 tipos) | v1.2.5 | ✅ |
+| **BlocoDCAG, BlocoDCCT** | Associação CAG/Controle Centralizado a CDU §46.13/§46.15 | v1.2.6 | ✅ |
+| **BlocoDCAR** | Cargas estáticas funcionais (modelo ZIP) §46.14 | v1.3.1 | ✅ |
+| **BlocoDMTC, BlocoDLTC** | Transformadores OLTC: controle de tap + associação §14.1/§46.40 | v1.3.3 | ✅ |
+| **BlocoDFLA** | Fluxo Agregado de Intercâmbio (áreas de circuitos) §13.1 | v1.3.4 | ✅ |
+| **BlocoSVC, TCSC, STATCOM** (DCER/DCSC/DVSI) | FACTS — associação de controles (CER/CSC) e conversores VSI; validados §46 + roundtrip | v0.4.3 (Alta em v1.1.1) | ✅ |
+| **BlocoHVDC** (DCNV) | Conversores CA-CC de elos LCC + associação; validado §46.21 + roundtrip | v0.4.3 (Alta em v1.1.2) | ✅ |
+| **BlocoDELO** (DELO) | Associação de elos CC aos modelos de polo; validado §46.27 + roundtrip | v1.1.2 | ✅ |
 | **BlocoCDU, ParametroCDU** | Bloco de CDU (tipos aritméticos, dinâmicos, lógicos, interface) | v0.4.4 | ✅ |
 | **ControladorCDU** | Container fluente para construir controladores CDU | v0.4.4 | ✅ |
 | **BlocoDCDU** | Bloco DCDU completo (múltiplos controladores) | v0.4.5 | ✅ |
@@ -257,19 +340,27 @@ Para transparência sobre validação (v0.14.2):
 | **LeitorSAV / ResultadoSAV** | Parser `.sav` (ANAREDE), validação cruzada de barras/circuitos | v0.4.7 | ✅ |
 | **ParserSTB** | Parser `.stb`, reconstrói árvore AST, roundtrip garantido | v0.4.0 | ✅ |
 
-**Total: 20+ classes públicas | 163+ testes | Encoding garantido | Type hints completos**
+**Total: 20+ classes públicas | 206 testes | 87%+ cobertura | Encoding garantido | Type hints completos**
 
 ---
 
 ## Testes
 
 ```bash
-# Rodar suite de testes
+# Rodar suite de testes (206 testes)
 pytest tests/ -v
 
-# Com cobertura
-pytest tests/ --cov=pyanatem
+# Com cobertura de código
+pytest tests/ --cov=pyanatem --cov-report=html
+
+# Verificação de qualidade completa
+pip install -e ".[dev]"
+black --check --target-version py311 pyanatem/ tests/
+mypy pyanatem/ --ignore-missing-imports
+pytest tests/ -v
 ```
+
+**Cobertura:** 206 testes cobrindo roundtrip, encoding latin-1, blocos, parser, CDU, validação e pós-processamento.
 
 ---
 
@@ -277,25 +368,70 @@ pytest tests/ --cov=pyanatem
 
 | Versão | Status | Destaques |
 |--------|--------|----------|
-| **v0.14.2** | ⭐ **Atual (Final pré-v1.0)** | **Encoding latin-1 garantido, CDU robusto, 163+ testes, reconciliação completa** |
-| v0.13.x | Estável | Validação FACTS/HVDC/CDU contra manual, 140+ testes |
-| v0.12.x | Estável | Robustez parser CDU (IMPORT/EXPORT, parâmetros/limites) |
+| **v1.3.4** | ⭐ **Atual (Estável)** | **DFLA: fluxo agregado de intercâmbio §13.1 — fecha a etapa v1.3, 243 testes** |
+| v1.3.3 | Estável | Transformadores OLTC: controle DMTC (§14.1) + associação DLTC (§46.40) |
+| v1.3.2 | Estável | Bancos shunt: evento MDSH (§12.1) + plotagem QSHT/QBSH/NUBSH (§12.2) |
+| v1.3.1 | Estável | DCAR: cargas estáticas funcionais (modelo ZIP) §46.14 |
+| v1.2.6 | Estável | CAG (DCAG) + Controle Centralizado (DCCT) §46.13/§46.15 — fecha a etapa v1.2 |
+| v1.2.5 | Estável | DCST: curvas de saturação de máquina §16.2 (4 tipos) + roundtrip |
+| v1.2.3 | Estável | DEST: estabilizadores (PSS) §16.5 (MD01–MD12 genérico + MD01 nomeado) |
+| v1.2.2 | Estável | DRGV: reguladores de velocidade/turbina §16.4 (MD01–MD07 genérico + MD01 nomeado) |
+| v1.2.1 | Estável | DRGT: reguladores de tensão predefinidos §16.3 (MD01–MD24 genérico + MD01 nomeado) |
+| v1.1.5 | Estável | DPLT 4-letra (OLTC/FACTS/HVDC/CDU) validado — fecha a etapa v1.1 (Inventário B zerado) |
+| v1.1.4 | Estável | Curvas de tempo inverso: tipo CURVA + IEC/IEC2/IEEE/IEEE2 (§29.3.13), best-effort→Alta |
+| v1.1.3 | Estável | LeitorSAV robusto (colunas fixas DBAR/DLIN + DGBT), Média→Alta |
+| v1.1.2 | Estável | HVDC DCNV re-modelado + novo DELO, validados §46.21/§46.27 + roundtrip |
+| v1.1.1 | Estável | FACTS DCER/DCSC/DVSI validados contra o manual §46 (Média→Alta) + roundtrip |
+| v1.0.0 | Estável | API estável, 206 testes, 87%+ cobertura, docs teóricas |
+| v0.15.0 | Estável | CI/CD (GitHub Actions), Codecov, mkdocs, 7 exemplos, comunidade |
+| v0.14.2 | Estável | Encoding latin-1 garantido, CDU robusto, reconciliação completa |
+| v0.13.x | Estável | Validação FACTS/HVDC/CDU contra manual |
 | v0.11.3 | Estável | Type hints, polimento final |
-| v0.10.x | Estável | Documentação pública, README consolidado |
-| v0.9.x | Estável | Limpeza estrutural (eventos/, modelos/) |
 | v0.8.x | Estável | Cobertura CDU expandida (46+ testes) |
 | v0.7.x | Estável | Validações cruzadas (DMAQ ↔ DMDG) |
 | v0.6.0 | Estável | FACTS, HVDC, CDU, pós-processamento, LeitorSAV |
-| v0.5.x | Arquivada | Serialização posicional DMAQ |
-| v0.4.x | Arquivada | MVP: blocos, parser, ensaios |
+| v0.4.x–0.5.x | Arquivada | MVP: blocos, parser, ensaios, DMAQ posicional |
 
-**Recomendação:** Use **v0.14.2** para novos projetos. Todas as versões estão disponíveis no repositório como referência histórica.
+**Recomendação:** Use **v1.3.4** para novos projetos. Todas as versões estão disponíveis no repositório como referência histórica.
+
+---
+
+## Contribuir
+
+Contribuições são bem-vindas! Leia [CONTRIBUTING.md](CONTRIBUTING.md) para começar.
+
+**Checklist rápido:**
+- Código segue o style guide (black, isort, flake8)
+- Type hints completos (mypy compatible)
+- Testes passam: `pytest tests/`
+- Documentação atualizada
+- Commit messages descritivas
+
+Veja também o [Código de Conduta](CODE_OF_CONDUCT.md).
+
+---
+
+## Suporte & Comunidade
+
+- 📚 **Documentação:** [docs/](docs/) — guias, tutorial e referência de API
+- 📖 **Teoria:** [TEORIA.md](TEORIA.md) — conceitos de estabilidade transitória
+- 💡 **Exemplos:** [examples/](examples/) — 7 scripts executáveis
+- 🐛 **Reportar bug:** [GitHub Issues](https://github.com/matheusvivasr/pynatem/issues)
+- 📧 **Email:** vivas.matheus@usp.br
 
 ---
 
 ## Licença
 
-MIT
+MIT — veja [LICENSE](LICENSE) para detalhes.
+
+---
+
+## Créditos
+
+**Autor:** Matheus Antonio Vivas Rocha ([@matheusvivasr](https://github.com/matheusvivasr))  
+**Email:** vivas.matheus@usp.br  
+**Instituição:** Universidade de São Paulo (USP)
 
 ---
 

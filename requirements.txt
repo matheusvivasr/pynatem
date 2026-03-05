@@ -1,0 +1,21 @@
+# Core dependencies
+# (No mandatory dependencies - stdlib only)
+
+# Optional: for pandas support
+pandas>=1.0.0;python_version>="3.9"
+
+# Dev dependencies (for testing, linting, docs)
+pytest>=6.0.0
+pytest-cov>=2.10.0
+black[python_versions>=311]>=22.0.0
+isort>=5.0.0
+flake8>=3.9.0
+mypy>=0.910
+mkdocs>=1.1.0
+mkdocs-material>=7.0.0
+
+# Build dependencies
+wheel>=0.36.0
+setuptools>=45.0.0
+build>=0.7.0
+twine>=3.4.0

@@ -24,7 +24,10 @@ def _executar_um(args: tuple) -> "subprocess.CompletedProcess":
     exe, stb, timeout, capturar = args
     cmd = [exe, str(stb)]
     return subprocess.run(
-        cmd, capture_output=capturar, text=True, timeout=timeout,
+        cmd,
+        capture_output=capturar,
+        text=True,
+        timeout=timeout,
         cwd=str(Path(stb).parent),
     )
 
@@ -32,13 +35,17 @@ def _executar_um(args: tuple) -> "subprocess.CompletedProcess":
 class EnsaioAnatem:
     """Gerencia um conjunto de casos derivados de um template STB."""
 
-    def __init__(self, template: Optional[CasoAnatem] = None, anatem_exe: Optional[str] = None):
+    def __init__(
+        self, template: Optional[CasoAnatem] = None, anatem_exe: Optional[str] = None
+    ):
         self._template = template or CasoAnatem()
         self.anatem_exe: Optional[str] = anatem_exe
         self._casos: Dict[str, CasoAnatem] = {}
 
     @classmethod
-    def de_template(cls, caminho: Union[str, Path], anatem_exe: Optional[str] = None) -> "EnsaioAnatem":
+    def de_template(
+        cls, caminho: Union[str, Path], anatem_exe: Optional[str] = None
+    ) -> "EnsaioAnatem":
         """Cria EnsaioAnatem a partir de um STB existente."""
         template = CasoAnatem.ler(caminho)
         return cls(template=template, anatem_exe=anatem_exe)
@@ -77,8 +84,13 @@ class EnsaioAnatem:
             paths.append(p)
         return paths
 
-    def gerar_variacoes(self, modificador: Callable[[CasoAnatem, int], None], n: int,
-                         diretorio: Union[str, Path] = ".", prefixo: str = "caso") -> List[Path]:
+    def gerar_variacoes(
+        self,
+        modificador: Callable[[CasoAnatem, int], None],
+        n: int,
+        diretorio: Union[str, Path] = ".",
+        prefixo: str = "caso",
+    ) -> List[Path]:
         """Gera N variações aplicando uma função modificadora."""
         diretorio = Path(diretorio)
         diretorio.mkdir(parents=True, exist_ok=True)
@@ -93,8 +105,13 @@ class EnsaioAnatem:
             paths.append(p)
         return paths
 
-    def executar(self, caminho_stb: Union[str, Path], anatem_exe: Optional[str] = None,
-                 timeout: Optional[int] = None, capturar_saida: bool = True) -> subprocess.CompletedProcess:
+    def executar(
+        self,
+        caminho_stb: Union[str, Path],
+        anatem_exe: Optional[str] = None,
+        timeout: Optional[int] = None,
+        capturar_saida: bool = True,
+    ) -> subprocess.CompletedProcess:
         """Executa o ANATEM para um único arquivo STB."""
         exe = anatem_exe or self.anatem_exe
         if not exe:
@@ -105,13 +122,20 @@ class EnsaioAnatem:
         caminho_stb = Path(caminho_stb)
         cmd = [exe, str(caminho_stb)]
         return subprocess.run(
-            cmd, capture_output=capturar_saida, text=True, timeout=timeout,
+            cmd,
+            capture_output=capturar_saida,
+            text=True,
+            timeout=timeout,
             cwd=str(caminho_stb.parent),
         )
 
-    def executar_lote(self, arquivos: Union[str, Iterable[Union[str, Path]]],
-                       anatem_exe: Optional[str] = None, timeout: Optional[int] = None,
-                       parar_em_erro: bool = False) -> List[subprocess.CompletedProcess]:
+    def executar_lote(
+        self,
+        arquivos: Union[str, Iterable[Union[str, Path]]],
+        anatem_exe: Optional[str] = None,
+        timeout: Optional[int] = None,
+        parar_em_erro: bool = False,
+    ) -> List[subprocess.CompletedProcess]:
         """Executa o ANATEM para múltiplos STBs sequencialmente."""
         lista = self._resolver_arquivos(arquivos)
         resultados = []
@@ -124,9 +148,13 @@ class EnsaioAnatem:
                 )
         return resultados
 
-    def executar_paralelo(self, arquivos: Union[str, Iterable[Union[str, Path]]],
-                           anatem_exe: Optional[str] = None, timeout: Optional[int] = None,
-                           max_workers: Optional[int] = None) -> List[subprocess.CompletedProcess]:
+    def executar_paralelo(
+        self,
+        arquivos: Union[str, Iterable[Union[str, Path]]],
+        anatem_exe: Optional[str] = None,
+        timeout: Optional[int] = None,
+        max_workers: Optional[int] = None,
+    ) -> List[subprocess.CompletedProcess]:
         """Executa o ANATEM para múltiplos STBs em paralelo (ordem preservada)."""
         exe = anatem_exe or self.anatem_exe
         if not exe:
@@ -144,7 +172,10 @@ class EnsaioAnatem:
                     resultados_map[idx] = fut.result()
                 except Exception as e:
                     resultados_map[idx] = subprocess.CompletedProcess(
-                        args=args[idx][0:2], returncode=-1, stdout="", stderr=str(e),
+                        args=args[idx][0:2],
+                        returncode=-1,
+                        stdout="",
+                        stderr=str(e),
                     )
         return [resultados_map[i] for i in range(len(lista))]
 
@@ -208,19 +239,25 @@ class EnsaioAnatem:
             elif tipo == "abertura_linha":
                 if "t_fech" in cont:
                     caso.abrir_linha_e_fechar(
-                        de=cont["de"], para=cont["para"],
-                        t_aber=cont["t_aber"], t_fech=cont["t_fech"],
+                        de=cont["de"],
+                        para=cont["para"],
+                        t_aber=cont["t_aber"],
+                        t_fech=cont["t_fech"],
                         circ=cont.get("circ", 1),
                     )
                 else:
                     caso.abrir_linha(
-                        de=cont["de"], para=cont["para"],
-                        t_aber=cont["t_aber"], circ=cont.get("circ", 1),
+                        de=cont["de"],
+                        para=cont["para"],
+                        t_aber=cont["t_aber"],
+                        circ=cont.get("circ", 1),
                     )
             elif tipo == "step":
                 caso.devt.step_referencia(
-                    barra=cont["barra"], unidade=cont.get("unidade", 1),
-                    tini=cont["t_ini"], delta=cont["delta"],
+                    barra=cont["barra"],
+                    unidade=cont.get("unidade", 1),
+                    tini=cont["t_ini"],
+                    delta=cont["delta"],
                 )
             # tipo desconhecido: caso gerado sem eventos adicionais
 
@@ -254,6 +291,7 @@ class EnsaioAnatem:
             ``passou`` (bool — atende todos os critérios).
         """
         from .posprocessamento import LeitorRelatorio
+
         criterios = criterios or {}
         resultados = []
 
@@ -271,14 +309,16 @@ class EnsaioAnatem:
                 proc = self.executar(path, anatem_exe=anatem_exe, timeout=timeout)
                 returncode = proc.returncode
             except Exception as e:
-                resultados.append({
-                    "arquivo": str(path),
-                    "convergiu": False,
-                    "erros": [str(e)],
-                    "avisos": [],
-                    "passou": False,
-                    "returncode": -1,
-                })
+                resultados.append(
+                    {
+                        "arquivo": str(path),
+                        "convergiu": False,
+                        "erros": [str(e)],
+                        "avisos": [],
+                        "passou": False,
+                        "returncode": -1,
+                    }
+                )
                 continue
 
             # Lê o relatório se existir
@@ -298,14 +338,16 @@ class EnsaioAnatem:
             if criterios.get("convergencia", False) and convergiu is not True:
                 passou = False
 
-            resultados.append({
-                "arquivo": str(path),
-                "convergiu": convergiu,
-                "erros": erros,
-                "avisos": avisos,
-                "passou": passou,
-                "returncode": returncode,
-            })
+            resultados.append(
+                {
+                    "arquivo": str(path),
+                    "convergiu": convergiu,
+                    "erros": erros,
+                    "avisos": avisos,
+                    "passou": passou,
+                    "returncode": returncode,
+                }
+            )
 
         return resultados
 
@@ -315,7 +357,11 @@ class EnsaioAnatem:
         linhas.append("-" * 70)
         for r in resultados:
             nome = Path(r["arquivo"]).stem[:38]
-            conv = "Sim" if r.get("convergiu") else ("Não" if r.get("convergiu") is False else "?")
+            conv = (
+                "Sim"
+                if r.get("convergiu")
+                else ("Não" if r.get("convergiu") is False else "?")
+            )
             passou = "Sim" if r.get("passou") else "Não"
             nerros = len(r.get("erros", []))
             linhas.append(f"{nome:<40}{conv:<11}{passou:<8}{nerros}")
