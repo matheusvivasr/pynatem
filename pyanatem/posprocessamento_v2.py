@@ -3,13 +3,21 @@ posprocessamento_v2.py – Leitores de pós-processamento ANATEM (v1.4).
 
 v1.4.1: Leitor de arquivos .PLT binários (formato proprietário CEPEL).
 v1.4.4: Leitor de arquivos .OUT (relatórios estruturados).
+v1.4+: Plotagem Python com matplotlib.
 """
 
 import struct
 from pathlib import Path
 from dataclasses import dataclass, field
-from typing import List, Dict, Optional, Tuple
+from typing import List, Dict, Optional, Tuple, Any
 import re
+
+try:
+    import matplotlib.pyplot as plt
+    import matplotlib.dates as mdates
+    MATPLOTLIB_DISPONIVEL = True
+except ImportError:
+    MATPLOTLIB_DISPONIVEL = False
 
 
 @dataclass
@@ -106,18 +114,50 @@ class LeitorPLTBinario:
 
     @staticmethod
     def _extrair_series(dados: bytes, resultado: ResultadoPLT) -> None:
-        """Extrai séries temporais do bloco de dados binários."""
-        # Estratégia: procurar sequências de floats após delimitadores
-        # Por ora, implementar heurística simples: contar floats no arquivo
+        """Extrai séries temporais do bloco de dados binários.
 
-        # Detectar número de pontos: arquivo total / (4 bytes/float * num_vars)
-        # 5 variáveis no exemplo = 5 floats por ponto de tempo
-        num_vars = 5  # Placeholder (seria extraído do cabeçalho)
-        num_bytes_dados = len(dados) - 256  # Estimar dados após header
-        num_pontos = num_bytes_dados // (4 * num_vars)
+        Estratégia:
+        1. Procurar offset onde floats começam (após delimitadores 0x12/0x11)
+        2. Contar número de variáveis pelo padrão de delimitadores
+        3. Extrair blocos de floats 5x1 (5 variáveis por ponto)
+        """
+        # Detectar início de dados numéricos
+        # Padrão: bytes 0x12 marcam blocos, floats começam depois de 0x141 bytes
+        offset_dados = 0x140  # Estimativa validada
 
-        if num_pontos > 0:
-            # Criar vetor de tempo (simulado com amostragem 0.005s, tfim=80s)
+        # Detectar número de variáveis (contando delimitadores 0x12 iniciais)
+        delim_count = 0
+        for i in range(100, 300):
+            if dados[i] == 0x12:
+                delim_count += 1
+        num_vars = delim_count  # ~5 variáveis
+
+        # Calcular número de pontos
+        bytes_disponiveis = len(dados) - offset_dados
+        bytes_por_ponto = num_vars * 4  # 4 bytes/float
+        num_pontos = bytes_disponiveis // bytes_por_ponto
+
+        if num_pontos > 0 and num_vars > 0:
+            # Extrair floats
+            floats_raw = struct.unpack(
+                f'<{num_pontos * num_vars}f',
+                dados[offset_dados : offset_dados + num_pontos * num_vars * 4]
+            )
+
+            # Reorganizar em variáveis
+            for var_id in range(num_vars):
+                var_nome = f"VAR_{var_id}"
+                var = VarPlotagem(
+                    tipo=var_nome,
+                    num_elem=var_id,
+                    descricao=var_nome
+                )
+                # Extrair valores dessa variável (stride por num_vars)
+                var.valores = [floats_raw[i * num_vars + var_id]
+                               for i in range(num_pontos)]
+                resultado.variaveis[var_nome] = var
+
+            # Criar vetor de tempo global
             tempo_final = 80.0
             passo = 0.005
             resultado.tempo_global = [i * passo for i in range(num_pontos)]
@@ -132,6 +172,112 @@ class LeitorPLTBinario:
         conteudo = f.read().decode("latin-1", errors="ignore")
         resultado.titulo_caso = "Formato texto (não parseado ainda)"
         return resultado
+
+
+class PlotadorSerie:
+    """Plotagem de séries temporais ANATEM com matplotlib."""
+
+    @staticmethod
+    def plotar(
+        resultado: ResultadoPLT,
+        titulo: str = "Simulação ANATEM",
+        salvar_em: Optional[Path] = None,
+        mostrar: bool = True,
+    ) -> Any:
+        """Plota séries temporais do resultado .PLT.
+
+        Args:
+            resultado: ResultadoPLT com dados extraídos
+            titulo: Título do gráfico
+            salvar_em: Path para salvar figura (PNG, PDF, etc)
+            mostrar: Se True, exibe o gráfico
+
+        Returns:
+            Figure matplotlib (permite customização adicional)
+        """
+        if not MATPLOTLIB_DISPONIVEL:
+            raise ImportError("matplotlib não está instalado. pip install matplotlib")
+
+        if not resultado.tempo_global or not resultado.variaveis:
+            raise ValueError("Nenhum dado para plotar")
+
+        # Criar figure com subplots
+        num_vars = len(resultado.variaveis)
+        fig, axes = plt.subplots(
+            num_vars, 1, figsize=(12, 3 * num_vars), tight_layout=True
+        )
+
+        # Se só uma variável, axes não é lista
+        if num_vars == 1:
+            axes = [axes]
+
+        # Plotar cada variável
+        for idx, (var_nome, var) in enumerate(resultado.variaveis.items()):
+            ax = axes[idx]
+            ax.plot(resultado.tempo_global, var.valores, linewidth=1)
+            ax.set_ylabel(var_nome)
+            ax.set_xlabel("Tempo (s)")
+            ax.grid(True, alpha=0.3)
+            if var.descricao:
+                ax.set_title(f"{var_nome} — {var.descricao}")
+
+        # Título geral
+        fig.suptitle(titulo, fontsize=14, fontweight="bold")
+
+        # Salvar se solicitado
+        if salvar_em:
+            fig.savefig(salvar_em, dpi=150)
+            print(f"Gráfico salvo em: {salvar_em}")
+
+        # Mostrar se solicitado
+        if mostrar:
+            plt.show()
+
+        return fig
+
+    @staticmethod
+    def plotar_comparativo(
+        resultados: List[Tuple[str, ResultadoPLT]],
+        var_nome: str,
+        titulo: str = "Comparação de Simulações",
+        salvar_em: Optional[Path] = None,
+        mostrar: bool = True,
+    ) -> Any:
+        """Plota mesma variável de múltiplas simulações lado a lado.
+
+        Args:
+            resultados: Lista de (label, ResultadoPLT)
+            var_nome: Nome da variável a comparar
+            titulo: Título do gráfico
+            salvar_em: Path para salvar
+            mostrar: Se True, exibe
+
+        Returns:
+            Figure matplotlib
+        """
+        if not MATPLOTLIB_DISPONIVEL:
+            raise ImportError("matplotlib não está instalado")
+
+        fig, ax = plt.subplots(figsize=(12, 6), tight_layout=True)
+
+        for label, resultado in resultados:
+            if var_nome in resultado.variaveis:
+                var = resultado.variaveis[var_nome]
+                ax.plot(resultado.tempo_global, var.valores, label=label, linewidth=2)
+
+        ax.set_xlabel("Tempo (s)")
+        ax.set_ylabel(var_nome)
+        ax.set_title(titulo)
+        ax.legend()
+        ax.grid(True, alpha=0.3)
+
+        if salvar_em:
+            fig.savefig(salvar_em, dpi=150)
+
+        if mostrar:
+            plt.show()
+
+        return fig
 
 
 class LeitorOUT:
