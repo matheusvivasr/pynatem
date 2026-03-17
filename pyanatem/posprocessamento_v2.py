@@ -280,6 +280,149 @@ class PlotadorSerie:
         return fig
 
 
+@dataclass
+class CurvaRele:
+    """Curva de operação de relé (tempo inverso, definida, etc)."""
+
+    tipo: str  # "IEC", "IEEE", "DEFINIDA", etc
+    tempo_operacao: List[float] = field(default_factory=list)  # tempos [s]
+    corrente_multiplo: List[float] = field(default_factory=list)  # múltiplos de Is
+    descricao: str = ""
+
+    def obtém_tempo(self, multiplo_is: float) -> Optional[float]:
+        """Retorna tempo de operação para múltiplo de Is dado (interpolação linear)."""
+        if not self.tempo_operacao or len(self.corrente_multiplo) != len(self.tempo_operacao):
+            return None
+        # Busca por interpolação linear
+        for i in range(len(self.corrente_multiplo) - 1):
+            if self.corrente_multiplo[i] <= multiplo_is <= self.corrente_multiplo[i + 1]:
+                x0, x1 = self.corrente_multiplo[i], self.corrente_multiplo[i + 1]
+                y0, y1 = self.tempo_operacao[i], self.tempo_operacao[i + 1]
+                return y0 + (multiplo_is - x0) * (y1 - y0) / (x1 - x0)
+        return None
+
+
+@dataclass
+class ResultadoSnapshot:
+    """Snapshot de estado do sistema em um ponto no tempo."""
+
+    arquivo: Path
+    tempo: float = 0.0
+    titulo_caso: str = ""
+    variaveis_estado: Dict[str, float] = field(default_factory=dict)
+    barras: Dict[int, Dict[str, float]] = field(default_factory=dict)
+    maquinas: Dict[Tuple[int, int], Dict[str, float]] = field(default_factory=dict)  # (nb, gr)
+    linhas: Dict[Tuple[int, int, int], Dict[str, float]] = field(default_factory=dict)  # (de, pa, nc)
+
+
+class LeitorREL:
+    """Leitor de arquivo .REL (Curvas de Relés) do ANATEM (v1.4.2)."""
+
+    @staticmethod
+    def ler(caminho: Path) -> Dict[str, CurvaRele]:
+        """Lê arquivo .REL e retorna dicionário de curvas por tipo de relé."""
+        curvas = {}
+
+        with open(caminho, "r", encoding="latin-1", errors="ignore") as f:
+            linhas = f.readlines()
+
+        # Parser simples para formato de curvas
+        # Formato esperado: tipo_rele / tempo / corrente_multiplo
+        current_tipo = None
+
+        for linha in linhas:
+            linha = linha.strip()
+            if not linha or linha.startswith("("):
+                continue
+
+            # Detectar tipo de curva
+            if any(tipo in linha for tipo in ["IEC", "IEEE", "DEFINIDA", "ABB", "SIEMENS"]):
+                for tipo in ["IEC", "IEEE", "DEFINIDA", "ABB", "SIEMENS"]:
+                    if tipo in linha:
+                        current_tipo = tipo
+                        curvas[current_tipo] = CurvaRele(tipo=current_tipo)
+                        break
+
+            # Parser de valores
+            if current_tipo and not any(t in linha for t in ["IEC", "IEEE", "DEFINIDA"]):
+                try:
+                    partes = linha.split()
+                    if len(partes) >= 2:
+                        tempo = float(partes[0])
+                        corrente = float(partes[1])
+                        curvas[current_tipo].tempo_operacao.append(tempo)
+                        curvas[current_tipo].corrente_multiplo.append(corrente)
+                except (ValueError, IndexError):
+                    pass
+
+        return curvas
+
+
+class LeitorSNAP:
+    """Leitor de arquivo .SNAP (Snapshot de estado) do ANATEM (v1.4.3)."""
+
+    @staticmethod
+    def ler(caminho: Path, tempo: float = 0.0) -> ResultadoSnapshot:
+        """Lê arquivo .SNAP e retorna estado do sistema em determinado instante."""
+        resultado = ResultadoSnapshot(arquivo=Path(caminho), tempo=tempo)
+
+        with open(caminho, "r", encoding="latin-1", errors="ignore") as f:
+            linhas = f.readlines()
+
+        section = None
+
+        for linha in linhas:
+            linha_limpa = linha.strip()
+
+            if not linha_limpa or linha_limpa.startswith("("):
+                continue
+
+            # Detectar seções
+            if "BARRA" in linha or "BAR" in linha:
+                section = "BARRAS"
+            elif "MAQUINA" or "GERADOR" in linha:
+                section = "MAQUINAS"
+            elif "LINHA" in linha or "CIRCUITO" in linha:
+                section = "LINHAS"
+            elif "ESTADO" in linha or "VARIAVEL" in linha:
+                section = "VARIAVEIS"
+            else:
+                # Parser genérico por seção
+                try:
+                    if section == "BARRAS":
+                        partes = linha_limpa.split()
+                        if len(partes) >= 2:
+                            nb = int(partes[0])
+                            tensao = float(partes[1]) if len(partes) > 1 else 0.0
+                            resultado.barras[nb] = {"V": tensao}
+
+                    elif section == "MAQUINAS":
+                        partes = linha_limpa.split()
+                        if len(partes) >= 3:
+                            nb, gr = int(partes[0]), int(partes[1])
+                            pm = float(partes[2]) if len(partes) > 2 else 0.0
+                            resultado.maquinas[(nb, gr)] = {"Pm": pm}
+
+                    elif section == "LINHAS":
+                        partes = linha_limpa.split()
+                        if len(partes) >= 4:
+                            de, pa, nc = int(partes[0]), int(partes[1]), int(partes[2])
+                            fluxo = float(partes[3]) if len(partes) > 3 else 0.0
+                            resultado.linhas[(de, pa, nc)] = {"FLUXO": fluxo}
+
+                    elif section == "VARIAVEIS":
+                        partes = linha_limpa.split("=")
+                        if len(partes) == 2:
+                            var_nome = partes[0].strip()
+                            valor = float(partes[1].strip())
+                            resultado.variaveis_estado[var_nome] = valor
+
+                except (ValueError, IndexError):
+                    pass
+
+        return resultado
+
+
 class LeitorOUT:
     """Leitor de arquivo .OUT estruturado do ANATEM (v1.4.4)."""
 
