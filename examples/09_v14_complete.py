@@ -56,20 +56,21 @@ except Exception as e:
     print(f"  [!] Plotagem: {e}")
 
 # ============================================================================
-# v1.4.2: Curvas de Relés (.REL)
+# v1.4.2: Relatório de Execução (.REL)
 # ============================================================================
-print("\n[v1.4.2] Leitor de Curvas de Relés (.REL)...")
+print("\n[v1.4.2] Leitor de Relatório de Execução (.REL)...")
 rel_path = exemplo_dir / "dummy.rel"
 
 if not rel_path.exists():
     print("  [!] Arquivo .REL não encontrado no exemplo")
     print("  [i] Estrutura de LeitorREL pronta para uso:")
-    print("    - Suporta tipos: IEC, IEEE, DEFINIDA, ABB, SIEMENS")
-    print("    - Interpolação linear de tempo de operação")
-    print("    - Método: curva.obtém_tempo(multiplo_is)")
+    print("    - Parse de relatórios de execução ANATEM")
+    print("    - Extrai: versão, tempo CPU, passos, iterações")
+    print("    - Detecta: erros, avisos, convergência")
 else:
-    curvas = LeitorREL.ler(rel_path)
-    print(f"  [OK] {len(curvas)} curvas lidas")
+    relatorio = LeitorREL.ler(rel_path)
+    print(f"  [OK] Relatório lido")
+    print(f"       Tempo CPU: {relatorio.tempo_cpu}s | Passos: {relatorio.num_passos}")
 
 # ============================================================================
 # v1.4.3: Snapshots de Estado (.SNAP)
@@ -99,7 +100,7 @@ print("=" * 70)
 print("""
 Funcionalidades entregues:
   v1.4.1 [OK]  Leitor .PLT binário + PlotadorSerie (matplotlib)
-  v1.4.2 [OK]  Leitor .REL (Curvas de Relés) com interpolação
+  v1.4.2 [OK]  Leitor .REL (Relatório de Execução)
   v1.4.3 [OK]  Leitor .SNAP (Snapshots de estado do sistema)
   v1.4.4 [OK]  Leitor .OUT (Relatórios estruturados)
 

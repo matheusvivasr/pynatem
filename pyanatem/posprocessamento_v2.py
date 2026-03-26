@@ -281,25 +281,21 @@ class PlotadorSerie:
 
 
 @dataclass
-class CurvaRele:
-    """Curva de operação de relé (tempo inverso, definida, etc)."""
+class ResultadoRelatório:
+    """Resultado de leitura de arquivo de relatório de execução (.rel, .out, etc)."""
 
-    tipo: str  # "IEC", "IEEE", "DEFINIDA", etc
-    tempo_operacao: List[float] = field(default_factory=list)  # tempos [s]
-    corrente_multiplo: List[float] = field(default_factory=list)  # múltiplos de Is
-    descricao: str = ""
-
-    def obtém_tempo(self, multiplo_is: float) -> Optional[float]:
-        """Retorna tempo de operação para múltiplo de Is dado (interpolação linear)."""
-        if not self.tempo_operacao or len(self.corrente_multiplo) != len(self.tempo_operacao):
-            return None
-        # Busca por interpolação linear
-        for i in range(len(self.corrente_multiplo) - 1):
-            if self.corrente_multiplo[i] <= multiplo_is <= self.corrente_multiplo[i + 1]:
-                x0, x1 = self.corrente_multiplo[i], self.corrente_multiplo[i + 1]
-                y0, y1 = self.tempo_operacao[i], self.tempo_operacao[i + 1]
-                return y0 + (multiplo_is - x0) * (y1 - y0) / (x1 - x0)
-        return None
+    arquivo: Path
+    titulo: str = ""
+    versao_anatem: Optional[str] = None
+    tempo_cpu: Optional[float] = None
+    tempo_simulacao_total: Optional[float] = None
+    num_passos: int = 0
+    num_iteracoes: int = 0
+    convergencia_media: Optional[float] = None
+    eventos: List[Dict[str, Any]] = field(default_factory=list)
+    avisos: List[str] = field(default_factory=list)
+    erros: List[str] = field(default_factory=list)
+    dados_brutos: str = ""
 
 
 @dataclass
@@ -316,46 +312,61 @@ class ResultadoSnapshot:
 
 
 class LeitorREL:
-    """Leitor de arquivo .REL (Curvas de Relés) do ANATEM (v1.4.2)."""
+    """Leitor de arquivo .REL (Relatório de Execução) do ANATEM (v1.4.2)."""
 
     @staticmethod
-    def ler(caminho: Path) -> Dict[str, CurvaRele]:
-        """Lê arquivo .REL e retorna dicionário de curvas por tipo de relé."""
-        curvas = {}
+    def ler(caminho: Path) -> ResultadoRelatório:
+        """Lê arquivo .REL (relatório de execução) e extrai informações.
+
+        Formato esperado: Relatório estruturado similar ao .OUT
+        - Cabeçalho com versão, data, hora
+        - Seções de resultado: passos, convergência, eventos
+        - Resumo: tempo CPU, número de iterações
+        """
+        resultado = ResultadoRelatório(arquivo=Path(caminho))
 
         with open(caminho, "r", encoding="latin-1", errors="ignore") as f:
             linhas = f.readlines()
+            resultado.dados_brutos = "".join(linhas)
 
-        # Parser simples para formato de curvas
-        # Formato esperado: tipo_rele / tempo / corrente_multiplo
-        current_tipo = None
+        # Extração de informações-chave (similar a LeitorOUT)
+        for i, linha in enumerate(linhas):
+            # Versão ANATEM
+            if "VERS" in linha and ":" in linha:
+                partes = linha.split(":")
+                if len(partes) > 1:
+                    resultado.versao_anatem = partes[1].strip()
 
-        for linha in linhas:
-            linha = linha.strip()
-            if not linha or linha.startswith("("):
-                continue
+            # Título
+            if "Sistema" in linha or "Treinamento" in linha:
+                resultado.titulo = linha.strip()
 
-            # Detectar tipo de curva
-            if any(tipo in linha for tipo in ["IEC", "IEEE", "DEFINIDA", "ABB", "SIEMENS"]):
-                for tipo in ["IEC", "IEEE", "DEFINIDA", "ABB", "SIEMENS"]:
-                    if tipo in linha:
-                        current_tipo = tipo
-                        curvas[current_tipo] = CurvaRele(tipo=current_tipo)
-                        break
+            # Tempo CPU
+            if "Tempo de CPU" in linha or "CPU time" in linha:
+                match = re.search(r"(\d{2}):(\d{2}):(\d+\.\d+)", linha)
+                if match:
+                    h, m, s = match.groups()
+                    resultado.tempo_cpu = int(h) * 3600 + int(m) * 60 + float(s)
 
-            # Parser de valores
-            if current_tipo and not any(t in linha for t in ["IEC", "IEEE", "DEFINIDA"]):
-                try:
-                    partes = linha.split()
-                    if len(partes) >= 2:
-                        tempo = float(partes[0])
-                        corrente = float(partes[1])
-                        curvas[current_tipo].tempo_operacao.append(tempo)
-                        curvas[current_tipo].corrente_multiplo.append(corrente)
-                except (ValueError, IndexError):
-                    pass
+            # Número de passos
+            if "passo" in linha.lower() and "simulacao" in linha.lower():
+                match = re.search(r"(\d+)\s+passo", linha)
+                if match:
+                    resultado.num_passos = int(match.group(1))
 
-        return curvas
+            # Número de iterações
+            if "iteracao" in linha.lower() or "iteration" in linha.lower():
+                match = re.search(r"(\d+)\s+itera", linha)
+                if match:
+                    resultado.num_iteracoes = int(match.group(1))
+
+            # Erros e avisos
+            if "ERRO" in linha or "ERROR" in linha:
+                resultado.erros.append(linha.strip())
+            elif "AVISO" in linha or "WARNING" in linha:
+                resultado.avisos.append(linha.strip())
+
+        return resultado
 
 
 class LeitorSNAP:
