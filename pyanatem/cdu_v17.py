@@ -118,6 +118,106 @@ class InicializacaoCDU:
 
 
 @dataclass
+class MensagemPersonalizada:
+    """Mensagem personalizada para alertas em CDU (§33.1, código DMSG).
+
+    Define mensagens que serão emitidas por blocos ALERTA durante simulação.
+    Suporta expressões coringas que são substituídas em tempo de simulação.
+    """
+    lc: int  # número identificador da mensagem (usado por ALERTA P1/P2)
+    texto: str  # mensagem com expressões coringas
+
+    CORINGAS_VALIDAS = {
+        "%vent%": "Nome da variável de entrada do bloco (6 chars)",
+        "%nb%": "Número do bloco",
+        "%nome_do_cdu%": "Nome do CDU (identificação alfanumérica)",
+        "%ncdu%": "Número do CDU",
+        "%trns%": "Transição observada ('0 -> 1' ou '1 -> 0')",
+    }
+
+    def validar(self) -> tuple[bool, List[str]]:
+        """Valida se coringas utilizados são válidos."""
+        erros = []
+        import re
+        coringas_encontrados = re.findall(r'%[^%]+%', self.texto)
+        for coringa in coringas_encontrados:
+            if coringa not in self.CORINGAS_VALIDAS:
+                erros.append(f"Coringa inválido: {coringa}")
+        return len(erros) == 0, erros
+
+    def serializar(self) -> str:
+        """Serializa em formato ANATEM DMSG."""
+        return f"DMSG {self.lc:<10} {self.texto}\n"
+
+
+@dataclass
+class BlocoAlerta:
+    """Bloco ALERTA para monitoração com mensagens personalizadas (§33.1.2).
+
+    Emite mensagem quando entrada transita entre 0/1 ou 1/0.
+    P1: Lc para transição 0->1 (em branco=desabilitado, 0=msg padrão, >0=DMSG)
+    P2: Lc para transição 1->0 (mesma lógica)
+    """
+    nome: str  # identificação do bloco
+    entrada: str  # sinal de entrada a monitorar
+    p1: Optional[int] = None  # mensagem para 0->1
+    p2: Optional[int] = None  # mensagem para 1->0
+
+    def validar(self) -> tuple[bool, str]:
+        """Valida se ao menos P1 ou P2 está preenchido."""
+        if self.p1 is None and self.p2 is None:
+            return False, "Ao menos P1 ou P2 deve estar preenchido"
+        return True, ""
+
+    def serializar_bloco_cdu(self) -> str:
+        """Serializa bloco ALERTA em formato CDU."""
+        linha = f"BLO {self.nome} ALERTA {self.entrada}"
+        if self.p1 is not None:
+            linha += f" {self.p1}"
+        else:
+            linha += " "
+        if self.p2 is not None:
+            linha += f" {self.p2}"
+        else:
+            linha += " "
+        return linha + "\n"
+
+
+@dataclass
+class AlgoritmoOTM:
+    """Algoritmo OTMx para detecção de malha inativa (§32.5, código DARQ/RELA).
+
+    Define quais algoritmos de otimização usar:
+    - OTM3: Forward/Backward a partir de ENTRAD
+    - OTM4: Backward a partir de SAIDA
+    - OTM5: Backward a partir de ganho nulo
+    - OTMX: Combinação automática (recomendada)
+    """
+    tipo: str  # "OTM3", "OTM4", "OTM5" ou "OTMX" (recomendado)
+    ativo: bool = True  # habilitar algoritmo
+    gerar_relatorio: bool = False  # gerar relatório com blocos desligados
+
+    ALGORITMOS_VALIDOS = {
+        "OTM3": "Forward/Backward a partir de ENTRAD",
+        "OTM4": "Backward a partir de SAIDA",
+        "OTM5": "Backward a partir de ganho nulo",
+        "OTMX": "Combinação automática (recomendada)",
+    }
+
+    def validar(self) -> tuple[bool, str]:
+        """Valida se tipo é um algoritmo conhecido."""
+        if self.tipo not in self.ALGORITMOS_VALIDOS:
+            return False, f"Tipo OTM desconhecido: {self.tipo}"
+        return True, ""
+
+    def serializar_opcao(self) -> str:
+        """Serializa para código DARQ/RELA."""
+        status = "[ATIVO]" if self.ativo else "[INATIVO]"
+        relatorio = " + RELATÓRIO" if self.gerar_relatorio else ""
+        return f"{self.tipo} {status}{relatorio}\n"
+
+
+@dataclass
 class Sensor:
     """Sensor/Supervisor de um SEP por CDU (§34.2.1).
 
@@ -586,3 +686,81 @@ if __name__ == "__main__":
 
     print("\nRelé/SEP Estruturado (v1.7.3):")
     print(rele_uv.serializar_cdu())
+
+    # Exemplo v1.7.4: Mensagens Personalizadas + Otimizações
+    print("\n" + "=" * 70)
+    print("v1.7.4: Mensagens Personalizadas + OTMx (Malha Inativa)")
+    print("=" * 70)
+
+    # Definir mensagens personalizadas (DMSG)
+    print("\n--- MENSAGENS PERSONALIZADAS ---")
+    msg1 = MensagemPersonalizada(
+        lc=1001,
+        texto="ALERTA: Subtensao detectada em %nome_do_cdu% (CDU %ncdu%)"
+    )
+    valido, erros = msg1.validar()
+    if valido:
+        print(f"Mensagem 1001 OK:\n{msg1.serializar()}")
+    else:
+        print(f"Erro na msg 1001: {erros}")
+
+    msg2 = MensagemPersonalizada(
+        lc=1002,
+        texto="ALERTA: Transicao %trns% em %vent% (bloco %nb%)"
+    )
+    valido, erros = msg2.validar()
+    if valido:
+        print(f"Mensagem 1002 OK:\n{msg2.serializar()}")
+    else:
+        print(f"Erro na msg 1002: {erros}")
+
+    # Erro intencional: coringa inválido
+    print("\nTestando coringa inválido:")
+    msg_erro = MensagemPersonalizada(
+        lc=1003,
+        texto="Sinal %invalido% causou problema"
+    )
+    valido, erros = msg_erro.validar()
+    if not valido:
+        print(f"  Erro esperado detectado: {erros}")
+
+    # Blocos ALERTA
+    print("\n--- BLOCOS ALERTA ---")
+    alerta1 = BlocoAlerta(
+        nome="Alerta_Subtensao",
+        entrada="condicao_tensao_baixa",
+        p1=1001,  # usa DMSG 1001 para transição 0->1
+        p2=0      # usa mensagem padrão para transição 1->0
+    )
+    valido, msg_erro = alerta1.validar()
+    if valido:
+        print(f"Bloco ALERTA criado:\n{alerta1.serializar_bloco_cdu()}")
+    else:
+        print(f"Erro: {msg_erro}")
+
+    # Algoritmos OTMx
+    print("--- ALGORITMOS OTMx (Detecção Malha Inativa) ---")
+    otmx = AlgoritmoOTM(tipo="OTMX", ativo=True, gerar_relatorio=True)
+    valido, msg = otmx.validar()
+    if valido:
+        print(f"Algoritmo {otmx.tipo} configurado:\n{otmx.serializar_opcao()}")
+        print("Benefícios:")
+        print("  • Desliga blocos certamente inativos (ramos com lógicas desabilitadas)")
+        print("  • Melhora performance: ~10-15% mais rápido em sistemas completos")
+        print("  • Reduz uso de memória: detecta 5K-20K blocos inativos")
+        print("  • Recomendado para uso cotidiano (v11.5+)")
+
+    # Combinação completa: Relé com alertas + otimização
+    print("\n" + "-" * 70)
+    print("Exemplo Completo: Relé com Alertas e Otimização")
+    print("-" * 70)
+    print("\nSegunda-feira (Caso Reduzido):")
+    print(f"  • Blocos: 49.704")
+    print(f"  • Sem OTM: 6min 36s")
+    print(f"  • Com OTMX: 6min 30s (1.5% mais rápido)")
+    print(f"  • Blocos desligados: 5.066 (10%)")
+    print("\nCaso Completo (SIN com Eólica + Solar):")
+    print(f"  • Blocos: 128.512")
+    print(f"  • Sem OTM: 17min 36s")
+    print(f"  • Com OTMX: 15min 34s (13% mais rápido)")
+    print(f"  • Blocos desligados: 19.812 (15%)")
