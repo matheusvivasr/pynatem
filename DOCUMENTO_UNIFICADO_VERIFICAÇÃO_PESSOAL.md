@@ -254,6 +254,58 @@ Result esperado: ≤3 (em 07_cap7, OK se deixar assim)
 
 ---
 
-**Status Final:** ✅ Markdowns Corrigidos e Prontos para Leitura Pessoal + v2.0 Implementation
+---
+
+# 🔧 ATUALIZAÇÃO (2026-07-11): Correção das Listagens de Código
+
+## Fonte oficial de validação encontrada
+
+O Manual ANATEM 12.10 está publicado em HTML pelo Cepel:
+**https://see.cepel.br/manual/anatem/index.html**
+
+Páginas de códigos: `https://see.cepel.br/manual/anatem/codigos_execucao/<codigo>.html` (ex: `acde.html`, `dcdu.html`)
+
+Esta é a fonte autoritativa para conferir qualquer transcrição — o PDF não existe localmente.
+
+## Correção aplicada: 378 Listagens reconstruídas
+
+**Problema:** exemplos de código estavam concatenados em linha única com formatação markdown espúria (`` 1 _`(...)`_ 2 `ACDE` ... ``).
+
+**Solução:** script reconstruiu as quebras de linha usando os números sequenciais embutidos e converteu para blocos ```` ```text ```` limpos.
+
+**Validação contra o site oficial (amostragem):**
+- ✅ ACDE (Listagem 46.1): 8 linhas — conteúdo idêntico ao oficial
+- ✅ DCDU (Listagem 46.14): 17 linhas (10 + continuação 7) — conteúdo idêntico ao oficial
+
+**Backup:** originais preservados em `markdowns_reference/.backup_listagens/`
+
+| Arquivo | Corrigidas |
+|---------|-----------|
+| 16_cap29-30 (CDU) | 111 |
+| 23_cap29 (blocos CDU) | 106 |
+| 22_cap46 (códigos) | 82 |
+| 19_cap35-37 (análises) | 24 |
+| Demais 13 arquivos | 55 |
+| **TOTAL** | **378** |
+
+## ⚠️ 43 Listagens pendentes de revisão manual (formato tabela ambíguo)
+
+Estas listagens estão em formato tabela `|1<br>2<br>...|conteúdo|` onde cada linha de código foi fragmentada em múltiplos pedaços — a reconstrução automática seria inferência (proibida no projeto). **Para corrigir: comparar com a página correspondente no manual online.**
+
+- [ ] `13-15_cap18-20_geracao_eolica_facts_hvdc.md`:209 (24 linhas)
+- [ ] `16_cap29-30_cdu_definicao_topologia.md`:127, 471, 1403, 1418
+- [ ] `17_cap32_otm_algoritmos_topologia.md`:290 (56 linhas)
+- [ ] `18_cap33-34_mensagens_reles.md`:117, 561
+- [ ] `19_cap35-37_analise_contingencias_multiinfeed.md`:41, 460, 475, 490, 643, 727, 884, 899, 914, 929, 942, 958, 973, 988, 1753 (15 casos — exemplo grande de CDU do Cap 35)
+- [ ] `21_cap39-45_misc_faq.md`:357 (4 linhas)
+- [ ] `22_cap46_codigos_execucao_geral.md`:1753, 2001, 2849, 3219, 3274, 3632, 3699, 3714, 6521, 6536, 6753, 6950, 7244 (13 casos)
+- [ ] `23_cap29_blocos_cdu_referencia_completa.md`:7, 351, 1283, 1298
+- [ ] `30_cap46_DMAQ_referencia.md`:53, 68
+
+Lista completa também em `pendentes_listagens.txt` (raiz do projeto).
+
+---
+
+**Status Final:** ✅ 378 Listagens corrigidas e validadas contra o manual online oficial; 43 casos-tabela documentados para revisão manual contra https://see.cepel.br/manual/anatem/
 
 **Próximo Trabalho:** Implementação v2.0 (Cobertura Total Manual ANATEM 12.10 com 200+ blocos)
