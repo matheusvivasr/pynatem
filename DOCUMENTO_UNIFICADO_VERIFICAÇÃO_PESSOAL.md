@@ -288,24 +288,36 @@ Esta é a fonte autoritativa para conferir qualquer transcrição — o PDF não
 | Demais 13 arquivos | 55 |
 | **TOTAL** | **378** |
 
-## ⚠️ 43 Listagens pendentes de revisão manual (formato tabela ambíguo)
+## ✅ 43 Listagens em formato tabela — TODAS RESOLVIDAS (2026-07-11)
 
-Estas listagens estão em formato tabela `|1<br>2<br>...|conteúdo|` onde cada linha de código foi fragmentada em múltiplos pedaços — a reconstrução automática seria inferência (proibida no projeto). **Para corrigir: comparar com a página correspondente no manual online.**
+As 43 listagens em formato tabela ambíguo foram resolvidas **buscando o conteúdo oficial no manual online do Cepel** — sem inferência:
 
-- [ ] `13-15_cap18-20_geracao_eolica_facts_hvdc.md`:209 (24 linhas)
-- [ ] `16_cap29-30_cdu_definicao_topologia.md`:127, 471, 1403, 1418
-- [ ] `17_cap32_otm_algoritmos_topologia.md`:290 (56 linhas)
-- [ ] `18_cap33-34_mensagens_reles.md`:117, 561
-- [ ] `19_cap35-37_analise_contingencias_multiinfeed.md`:41, 460, 475, 490, 643, 727, 884, 899, 914, 929, 942, 958, 973, 988, 1753 (15 casos — exemplo grande de CDU do Cap 35)
-- [ ] `21_cap39-45_misc_faq.md`:357 (4 linhas)
-- [ ] `22_cap46_codigos_execucao_geral.md`:1753, 2001, 2849, 3219, 3274, 3632, 3699, 3714, 6521, 6536, 6753, 6950, 7244 (13 casos)
-- [ ] `23_cap29_blocos_cdu_referencia_completa.md`:7, 351, 1283, 1298
-- [ ] `30_cap46_DMAQ_referencia.md`:53, 68
+**Método:**
+1. Baixadas 352 páginas HTML + fontes texto (`_sources/*.rst.txt`) das seções relevantes do manual
+2. Cada tabela pendente casada com o bloco oficial por similaridade de tokens
+3. Tabelas com faixas de linha (ex: 117..172) casadas por **fatia** do bloco oficial correspondente (o exemplão do Cap 35 tem 1219 linhas no fonte oficial `analises/anacdu/Caso4`)
+4. Substituídas por blocos ```` ```text ```` com o conteúdo oficial exato
 
-Lista completa também em `pendentes_listagens.txt` (raiz do projeto).
+**Resultados por passada:**
+| Passada | Método | Resolvidas | Score |
+|---------|--------|-----------|-------|
+| 1ª | Matching por bloco inteiro (HTML) | 17 | 0.86–0.99 |
+| 2ª | Matching por fatia (fontes .rst) | 25 | 0.97–1.00 |
+| 3ª | Fatia determinística 901..956 (bloco Caso4, vizinhos confirmados) | 1 | — |
+| **Total** | | **43/43** | |
+
+**Fontes oficiais usadas (principais):**
+- `codigos_execucao/`: dmaq, drel, ddfm, dera, dgse, dldn, dltc, dsto, dfcm, acdu, eaif
+- `controladores/`: cdu/defpar, blocos ord1, blocos seriet, topologia/tutorial, mensagem/tutorial, sep/tutorial
+- `analises/`: anacdu/Intro, anacdu/Caso4, interacao_dfnt/utilizacao_EAIF
+- `equipamentos/`: geradores_gida/escorregamento_inicial
+
+**Verificação final:** `grep -lE '^\|[0-9]+(<br>[0-9]+)+\|' *.md` → **0 resultados**
+
+Total geral de listagens corrigidas: **378 + 43 = 421**
 
 ---
 
-**Status Final:** ✅ 378 Listagens corrigidas e validadas contra o manual online oficial; 43 casos-tabela documentados para revisão manual contra https://see.cepel.br/manual/anatem/
+**Status Final:** ✅ TODAS as 421 listagens de código corrigidas e validadas contra o manual online oficial (https://see.cepel.br/manual/anatem/)
 
 **Próximo Trabalho:** Implementação v2.0 (Cobertura Total Manual ANATEM 12.10 com 200+ blocos)
