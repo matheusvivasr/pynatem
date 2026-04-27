@@ -15,7 +15,7 @@ from pathlib import Path
 # Adicionar parent ao path para importar pyanatem
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from pyanatem.posprocessamento_v2 import LeitorOUT, LeitorPLTBinario, PlotadorSerie
+from pynatem.posprocessamento_v2 import LeitorOUT, LeitorPLTBinario, PlotadorSerie
 
 # Diretório de exemplos
 exemplo_dir = Path(__file__).parent / "treinamentoWP"

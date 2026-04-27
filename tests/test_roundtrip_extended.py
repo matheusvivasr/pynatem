@@ -1,8 +1,8 @@
 """Extended roundtrip tests for improved coverage (50+ tests)."""
 
 import pytest
-from pyanatem import CasoAnatem
-from pyanatem.blocos import (
+from pynatem import CasoAnatem
+from pynatem.blocos import (
     BlocoDARQ,
     BlocoDOPC,
     BlocoDSIM,

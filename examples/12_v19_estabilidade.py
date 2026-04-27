@@ -13,7 +13,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from pyanatem.estabilidade_v19 import (
+from pynatem.estabilidade_v19 import (
     # v1.9.1
     CriterioTensao, CriterioReativoGER, CriterioReativoCER,
     CriterioCarregamento, CriterioReles, CriterioAngular,

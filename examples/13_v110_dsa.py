@@ -13,7 +13,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from pyanatem.dsa_v110 import (
+from pynatem.dsa_v110 import (
     # v1.10.1
     ElementoSeguranca, TipoElementoSeguranca, StatusSeguranca, AvaliadorDSA,
     # v1.10.2

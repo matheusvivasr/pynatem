@@ -14,7 +14,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from pyanatem.cdu_v17 import (
+from pynatem.cdu_v17 import (
     # v1.7.1
     DEFVAL, DEFVDF, DEFPLT, InicializacaoCDU,
     # v1.7.2

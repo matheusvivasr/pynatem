@@ -7,8 +7,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from pyanatem import CasoAnatem, EnsaioAnatem, LeitorPLT, LeitorRelatorio
-from pyanatem.blocos import BlocoDEVT, BlocoDPLT, BlocoDARQ, BlocoDSIM
+from pynatem import CasoAnatem, EnsaioAnatem, LeitorPLT, LeitorRelatorio
+from pynatem.blocos import BlocoDEVT, BlocoDPLT, BlocoDARQ, BlocoDSIM
 
 # ===========================================================================
 # BLOCOS – serialização básica (sessão 2)
@@ -43,17 +43,18 @@ def test_darq_alias_out():
 
 
 def test_dsim_linha_posicional():
-    d = BlocoDSIM(tini=0.0, tfim=5.0, delt=0.005)
+    d = BlocoDSIM(tmax=5.0, stp=0.005)
     t = d.serializar()
-    assert "0.0000" in t and "5.0000" in t and "0.0050" in t
+    # régua oficial: ( Tmax ) (Stp) — Tmax cols 0-7, Stp 9-13
+    assert "    5.00  .005" in t
 
 
 def test_dsim_opcoes():
-    d = BlocoDSIM(tfim=10.0, delt=0.01)
-    d.npas = 2
-    d.mxit = 50
+    d = BlocoDSIM(tmax=10.0, stp=0.01)
+    d.npas = 3  # alias de retrocompatibilidade → campo oficial P
+    d.i = 5
     t = d.serializar()
-    assert "NPAS  2" in t and "MXIT  50" in t
+    assert "   10.00   .01     3     5" in t
 
 
 def test_devt_curto_barra():
@@ -61,15 +62,15 @@ def test_devt_curto_barra():
     d.curto_barra(barra=5, tini=1.0, tipo="APCB")
     d.curto_barra(barra=5, tini=1.1, tipo="RMCB")
     t = d.serializar()
-    assert "APCB" in t and "RMCB" in t and "1.0000" in t and "1.1000" in t
+    assert "APCB        1     5" in t and "RMCB      1.1     5" in t
 
 
 def test_devt_curto_circuito():
     d = BlocoDEVT()
-    d.curto_circuito(de=10, para=20, circ=1, tini=2.0, tipo="APCC")
-    d.curto_circuito(de=10, para=20, circ=1, tini=2.1, tipo="RMCC")
+    d.curto_circuito(de=10, para=20, circ=1, tini=2.0, tipo="APCL")
+    d.curto_circuito(de=10, para=20, circ=1, tini=2.1, tipo="RMCL")
     t = d.serializar()
-    assert "APCC" in t and "RMCC" in t and "10" in t and "20" in t
+    assert "APCL" in t and "RMCL" in t and "10" in t and "20" in t
 
 
 def test_devt_abertura_e_fechamento():
@@ -77,16 +78,16 @@ def test_devt_abertura_e_fechamento():
     d.abertura_linha(de=1, para=2, tini=0.5)
     d.fechamento_linha(de=1, para=2, tini=1.5)
     t = d.serializar()
-    assert "ABLN" in t and "FCLN" in t
+    assert "ABCI" in t and "FECI" in t
 
 
 def test_devt_shunt_e_step():
     d = BlocoDEVT()
-    d.abertura_shunt(barra=7, tini=0.3)
-    d.fechamento_shunt(barra=7, tini=1.3)
-    d.step_referencia(barra=3, unidade=1, tini=2.0, delta=0.05)
+    d.modificacao_shunt(barra=7, tini=0.3, valor=-50.0)
+    d.step_referencia(barra=3, unidade=1, tini=2.0, delta=0.05, tipo="TRGT")
+    d.step_referencia(barra=3, unidade=1, tini=3.0, delta=0.05, tipo="TRGV")
     t = d.serializar()
-    assert "ABSH" in t and "FCSH" in t and "ALTG" in t
+    assert "MDSH" in t and "TRGT" in t and "TRGV" in t
 
 
 def test_dplt_barras_maquinas_circuitos_cargas():
@@ -198,7 +199,7 @@ def test_dplt_saida_cdu():
 
 def test_dplt_facts_hvdc_roundtrip(tmp_path):
     """As linhas DPLT 4-letra sobrevivem ao roundtrip export → ler."""
-    from pyanatem import CasoAnatem
+    from pynatem import CasoAnatem
 
     caso = CasoAnatem()
     caso.darq.sav = "rede.sav"
@@ -678,7 +679,7 @@ if __name__ == "__main__":
 # DMDG – introduzido em v0.4.1 (etapa 0.4)
 # ===========================================================================
 
-from pyanatem import BlocoDMDG, BlocoDRGT
+from pynatem import BlocoDMDG, BlocoDRGT
 
 # ===========================================================================
 # v1.2.1 – DRGT: reguladores de tensão predefinidos (§16.3)
@@ -720,7 +721,7 @@ def test_drgt_generico_qualquer_modelo():
 
 def test_roundtrip_drgt(tmp_path):
     """DRGT: export → ler preserva variante, No e parâmetros (MD01 + MD05)."""
-    from pyanatem import CasoAnatem
+    from pynatem import CasoAnatem
 
     caso = CasoAnatem()
     caso.darq.sav = "rede.sav"
@@ -758,7 +759,7 @@ def test_roundtrip_drgt(tmp_path):
 
 def test_drgt_aparece_no_deck_antes_de_dmaq():
     """deck() emite DRGT entre DMDG e DMAQ quando populado."""
-    from pyanatem import CasoAnatem
+    from pynatem import CasoAnatem
 
     caso = CasoAnatem()
     caso.darq.sav = "rede.sav"
@@ -788,7 +789,7 @@ def test_drgt_aparece_no_deck_antes_de_dmaq():
 
 def test_drgv_md01_nomeado():
     """MD01 (§16.4): construtor nomeado emite No + parâmetros na ordem da régua."""
-    from pyanatem import BlocoDRGV
+    from pynatem import BlocoDRGV
 
     b = BlocoDRGV()
     b.adicionar_md01(
@@ -816,7 +817,7 @@ def test_drgv_md01_nomeado():
 
 def test_roundtrip_drgv(tmp_path):
     """DRGV: export → ler preserva variante, No e parâmetros; genérico MD03."""
-    from pyanatem import CasoAnatem
+    from pynatem import CasoAnatem
 
     caso = CasoAnatem()
     caso.darq.sav = "rede.sav"
@@ -857,7 +858,7 @@ def test_roundtrip_drgv(tmp_path):
 
 def test_dest_md01_nomeado():
     """MD01 (§16.5): construtor nomeado emite No + K/T/T1..T4/Lmn/Lmx."""
-    from pyanatem import BlocoDEST
+    from pynatem import BlocoDEST
 
     b = BlocoDEST()
     b.adicionar_md01(
@@ -871,7 +872,7 @@ def test_dest_md01_nomeado():
 
 def test_roundtrip_dest(tmp_path):
     """DEST: export → ler preserva variante, No e parâmetros; genérico MD04."""
-    from pyanatem import CasoAnatem
+    from pynatem import CasoAnatem
 
     caso = CasoAnatem()
     caso.darq.sav = "rede.sav"
@@ -898,7 +899,7 @@ def test_roundtrip_dest(tmp_path):
 
 def test_dcst_serializa():
     """DCST (§16.2): emite Nc, Tipo, P1, P2, P3 por curva."""
-    from pyanatem import BlocoDCST
+    from pynatem import BlocoDCST
 
     b = BlocoDCST()
     b.adicionar(nc=1, tipo=1, p1=1.2, p2=1.8, p3=2.0)
@@ -910,7 +911,7 @@ def test_dcst_serializa():
 
 def test_roundtrip_dcst(tmp_path):
     """DCST: export → ler preserva as curvas (Nc, Tipo, P1..P3)."""
-    from pyanatem import CasoAnatem
+    from pynatem import CasoAnatem
 
     caso = CasoAnatem()
     caso.darq.sav = "rede.sav"
@@ -929,7 +930,7 @@ def test_roundtrip_dcst(tmp_path):
 
 def test_dcst_aparece_antes_de_dmdg_no_deck():
     """deck() emite DCST antes de DMDG (curvas referenciadas pelo Cs)."""
-    from pyanatem import CasoAnatem
+    from pynatem import CasoAnatem
 
     caso = CasoAnatem()
     caso.darq.sav = "rede.sav"
@@ -947,7 +948,7 @@ def test_dcst_aparece_antes_de_dmdg_no_deck():
 
 def test_dcag_exemplo_manual(tmp_path):
     """DCAG (Listagem 46.11): associa CAG 10 ao modelo CDU 140U."""
-    from pyanatem import CasoAnatem
+    from pynatem import CasoAnatem
 
     stb = "DARQ\nSIST rede.sav\n999999\nDCAG\n(Nc) ( Mc )u\n10 140U\n999999\nFIM\n"
     p = tmp_path / "dcag.stb"
@@ -959,7 +960,7 @@ def test_dcag_exemplo_manual(tmp_path):
 
 def test_roundtrip_dcag_dcct(tmp_path):
     """DCAG e DCCT: export → ler preserva as associações; ambos no deck."""
-    from pyanatem import CasoAnatem
+    from pynatem import CasoAnatem
 
     caso = CasoAnatem()
     caso.darq.sav = "rede.sav"
@@ -986,7 +987,7 @@ def test_roundtrip_dcag_dcct(tmp_path):
 
 def test_dcar_serializa():
     """DCAR (§46.14): seleção + parâmetros ZIP (A/B/C/D/Vmn)."""
-    from pyanatem import BlocoDCAR
+    from pynatem import BlocoDCAR
 
     b = BlocoDCAR()
     b.adicionar(selecao="BARR 1 A BARR 9998", a=100.0, b=0.0, c=0.0, d=100.0)
@@ -998,7 +999,7 @@ def test_dcar_serializa():
 
 def test_roundtrip_dcar(tmp_path):
     """DCAR: export → ler preserva a linha (bruta) e as opções do cabeçalho."""
-    from pyanatem import CasoAnatem
+    from pynatem import CasoAnatem
 
     caso = CasoAnatem()
     caso.darq.sav = "rede.sav"
@@ -1036,7 +1037,7 @@ def test_dplt_shunt():
 
 def test_devt_mdsh_modificacao_shunt(tmp_path):
     """Evento MDSH (§12.1): modificação de shunt equivalente + roundtrip."""
-    from pyanatem import CasoAnatem
+    from pynatem import CasoAnatem
 
     caso = CasoAnatem()
     caso.darq.sav = "rede.sav"
@@ -1060,7 +1061,7 @@ def test_devt_mdsh_modificacao_shunt(tmp_path):
 
 def test_dmtc_md01_nomeado():
     """DMTC MD01 (§14.1): No + Bm1/Bm2/TR/TM/TB/T/Vlm."""
-    from pyanatem import BlocoDMTC
+    from pynatem import BlocoDMTC
 
     b = BlocoDMTC()
     b.adicionar_md01(
@@ -1073,7 +1074,7 @@ def test_dmtc_md01_nomeado():
 
 def test_roundtrip_dltc_dmtc(tmp_path):
     """DLTC/DMTC: OLTC com controle de tensão + OLTC defasador (Tmn/Tmx/Kbs brancos)."""
-    from pyanatem import CasoAnatem
+    from pynatem import CasoAnatem
 
     caso = CasoAnatem()
     caso.darq.sav = "rede.sav"
@@ -1109,7 +1110,7 @@ def test_roundtrip_dltc_dmtc(tmp_path):
 
 def test_dfla_serializa():
     """DFLA (§13.1): área + circuitos, encerrada por FIMFLA."""
-    from pyanatem import BlocoDFLA
+    from pynatem import BlocoDFLA
 
     b = BlocoDFLA()
     area = b.adicionar_area(na=1, ident="SUDESTE")
@@ -1122,7 +1123,7 @@ def test_dfla_serializa():
 
 def test_roundtrip_dfla(tmp_path):
     """DFLA: export → ler preserva áreas, circuitos e Ex (2 áreas)."""
-    from pyanatem import CasoAnatem
+    from pynatem import CasoAnatem
 
     caso = CasoAnatem()
     caso.darq.sav = "rede.sav"
@@ -1401,7 +1402,7 @@ def test_dmdg_roundtrip_md03(tmp_path):
 # v0.4.2 (etapa 0.4) – BlocoDMAQ completo
 # ===========================================================================
 
-from pyanatem.blocos import BlocoDMAQ
+from pynatem.blocos import BlocoDMAQ
 
 
 def test_dmaq_adicionar_maquina_simples():
@@ -1447,7 +1448,7 @@ def test_dmaq_multiplas_maquinas_mesma_barra():
 
 def test_dmaq_api_alto_nivel(tmp_path):
     """CasoAnatem.adicionar_maquina() atalho funciona."""
-    from pyanatem import CasoAnatem
+    from pynatem import CasoAnatem
 
     caso = CasoAnatem()
     caso.darq.sav = "rede.sav"
@@ -1459,7 +1460,7 @@ def test_dmaq_api_alto_nivel(tmp_path):
 
 def test_dmaq_roundtrip(tmp_path):
     """Roundtrip DMAQ: escrito e relido preserva dados."""
-    from pyanatem import CasoAnatem
+    from pynatem import CasoAnatem
 
     caso = CasoAnatem()
     caso.darq.sav = "rede.sav"
@@ -1499,7 +1500,7 @@ def test_dmaq_roundtrip(tmp_path):
 
 def _roundtrip_dmaq(tmp_path, **kwargs):
     """Auxiliar: monta caso mínimo com uma associação, exporta, relê e retorna a associação."""
-    from pyanatem import CasoAnatem
+    from pynatem import CasoAnatem
 
     caso = CasoAnatem()
     caso.darq.sav = "rede.sav"
@@ -1634,7 +1635,7 @@ def test_dmaq_posicional_5f_todos_cdu(tmp_path):
 
 def test_dmaq_posicional_5g_lista_mista(tmp_path):
     """v0.5.3-5g: Lista mista com múltiplas associações em combinações variadas."""
-    from pyanatem import CasoAnatem
+    from pynatem import CasoAnatem
 
     caso = CasoAnatem()
     caso.darq.sav = "rede.sav"
@@ -1692,8 +1693,8 @@ def test_dmaq_posicional_5h_espacos_em_branco_na_posicao(tmp_path):
     Verifica diretamente o STB gerado, não apenas o roundtrip, para garantir
     que campos ausentes não deslocam os campos seguintes.
     """
-    from pyanatem import CasoAnatem
-    from pyanatem.blocos import BlocoDMAQ
+    from pynatem import CasoAnatem
+    from pynatem.blocos import BlocoDMAQ
 
     caso = CasoAnatem()
     caso.darq.sav = "rede.sav"
@@ -1745,7 +1746,7 @@ def test_dmaq_posicional_5h_espacos_em_branco_na_posicao(tmp_path):
 # v0.4.3 (etapa 0.4) – FACTS e HVDC
 # ===========================================================================
 
-from pyanatem import BlocoSVC, BlocoTCSC, BlocoSTATCOM, BlocoHVDC
+from pynatem import BlocoSVC, BlocoTCSC, BlocoSTATCOM, BlocoHVDC
 
 
 def test_svc_serializa():
@@ -1810,7 +1811,7 @@ def test_facts_tem_dados():
 # v0.4.4 / v0.4.5 (etapa 0.4) – BlocoDCDU e CDU
 # ===========================================================================
 
-from pyanatem import BlocoCDU, ParametroCDU, ValorInicialCDU, ControladorCDU, BlocoDCDU
+from pynatem import BlocoCDU, ParametroCDU, ValorInicialCDU, ControladorCDU, BlocoDCDU
 
 
 def test_cdu_parametro_defpar():
@@ -1947,7 +1948,7 @@ def test_cdu_tem_dados():
 
 def test_cdu_roundtrip_basico(tmp_path):
     """BlocoDCDU: serialização e re-parse preserva ncdu e número de blocos."""
-    from pyanatem.cdu import parsear_dcdu
+    from pynatem.cdu import parsear_dcdu
 
     dcdu = BlocoDCDU()
     ctrl = dcdu.novo_controlador(ncdu=42, nome="TESTE")
@@ -1981,7 +1982,7 @@ def test_cdu_bloco_import_export():
 
 
 def test_cdu_defvdf():
-    from pyanatem.cdu import ValorDefaultCDU
+    from pynatem.cdu import ValorDefaultCDU
 
     d = ValorDefaultCDU(vdef="Lim", valor=1.0)
     t = d.serializar()
@@ -1996,7 +1997,7 @@ def test_cdu_defvdf():
 
 def test_contingencias_de_contingencias():
     """de_contingencias() gera o número correto de casos."""
-    from pyanatem import CasoAnatem, EnsaioAnatem
+    from pynatem import CasoAnatem, EnsaioAnatem
 
     base = CasoAnatem()
     base.darq.sav = "rede.sav"
@@ -2031,7 +2032,7 @@ def test_contingencias_de_contingencias():
 
 def test_contingencias_nomes_arquivo(tmp_path):
     """Arquivos STB exportados têm os nomes corretos."""
-    from pyanatem import CasoAnatem, EnsaioAnatem
+    from pynatem import CasoAnatem, EnsaioAnatem
 
     base = CasoAnatem()
     base.darq.sav = "rede.sav"
@@ -2062,7 +2063,7 @@ def test_contingencias_nomes_arquivo(tmp_path):
 
 def test_contingencias_isoladas():
     """Cada caso é independente (modificar um não afeta outro)."""
-    from pyanatem import CasoAnatem, EnsaioAnatem
+    from pynatem import CasoAnatem, EnsaioAnatem
 
     base = CasoAnatem()
     base.darq.sav = "rede.sav"
@@ -2083,7 +2084,7 @@ def test_contingencias_isoladas():
 
 def test_relatorio_consolidado():
     """relatorio_consolidado() produz tabela legível."""
-    from pyanatem import EnsaioAnatem
+    from pynatem import EnsaioAnatem
 
     ensaio = EnsaioAnatem.novo()
     resultados = [
@@ -2113,7 +2114,7 @@ def test_relatorio_consolidado():
 # v0.4.7 (etapa 0.4) – LeitorSAV e validação cruzada
 # ===========================================================================
 
-from pyanatem import LeitorSAV, ResultadoSAV
+from pynatem import LeitorSAV, ResultadoSAV
 
 
 def test_leitor_sav_barras_minimo():
@@ -2165,7 +2166,7 @@ DLIN
 
 def test_validar_contra_sav_ok(tmp_path):
     """validar_contra_sav: caso consistente retorna lista vazia."""
-    from pyanatem import CasoAnatem
+    from pynatem import CasoAnatem
 
     sav_path = tmp_path / "rede.sav"
     sav_path.write_text(
@@ -2183,7 +2184,7 @@ def test_validar_contra_sav_ok(tmp_path):
 
 def test_validar_contra_sav_barra_inexistente(tmp_path):
     """validar_contra_sav: detecta barra inexistente em evento."""
-    from pyanatem import CasoAnatem
+    from pynatem import CasoAnatem
 
     sav_path = tmp_path / "rede.sav"
     sav_path.write_text(
@@ -2201,7 +2202,7 @@ def test_validar_contra_sav_barra_inexistente(tmp_path):
 
 def test_validar_contra_sav_circuito_inexistente(tmp_path):
     """validar_contra_sav: detecta circuito inexistente em evento DEVT."""
-    from pyanatem import CasoAnatem
+    from pynatem import CasoAnatem
 
     sav_path = tmp_path / "rede.sav"
     sav_path.write_text(
@@ -2281,9 +2282,9 @@ def test_leitor_sav_ignora_blocos_extras():
 
 def test_caso_tem_atributos_facts_hvdc():
     """CasoAnatem expõe svc, tcsc, statcom, hvdc e dcdu após __init__."""
-    from pyanatem import CasoAnatem
-    from pyanatem.blocos import BlocoSVC, BlocoTCSC, BlocoSTATCOM, BlocoHVDC
-    from pyanatem.cdu import BlocoDCDU
+    from pynatem import CasoAnatem
+    from pynatem.blocos import BlocoSVC, BlocoTCSC, BlocoSTATCOM, BlocoHVDC
+    from pynatem.cdu import BlocoDCDU
 
     caso = CasoAnatem()
     assert isinstance(caso.svc, BlocoSVC)
@@ -2295,7 +2296,7 @@ def test_caso_tem_atributos_facts_hvdc():
 
 def test_svc_populado_aparece_no_deck():
     """deck() emite bloco SVC (DCER) quando populado."""
-    from pyanatem import CasoAnatem
+    from pynatem import CasoAnatem
 
     caso = CasoAnatem()
     caso.darq.sav = "rede.sav"
@@ -2306,7 +2307,7 @@ def test_svc_populado_aparece_no_deck():
 
 def test_tcsc_populado_aparece_no_deck():
     """deck() emite bloco TCSC (DCSC) quando populado."""
-    from pyanatem import CasoAnatem
+    from pynatem import CasoAnatem
 
     caso = CasoAnatem()
     caso.darq.sav = "rede.sav"
@@ -2317,7 +2318,7 @@ def test_tcsc_populado_aparece_no_deck():
 
 def test_svc_roundtrip(tmp_path):
     """SVC/CER: export → ler preserva equipamentos com modelos de controle."""
-    from pyanatem import CasoAnatem
+    from pynatem import CasoAnatem
 
     caso = CasoAnatem()
     caso.darq.sav = "rede.sav"
@@ -2339,7 +2340,7 @@ def test_svc_roundtrip(tmp_path):
 
 def test_tcsc_roundtrip(tmp_path):
     """TCSC/CSC: export → ler preserva equipamentos com modelos + circuitos paralelos."""
-    from pyanatem import CasoAnatem
+    from pynatem import CasoAnatem
 
     caso = CasoAnatem()
     caso.darq.sav = "rede.sav"
@@ -2361,7 +2362,7 @@ def test_tcsc_roundtrip(tmp_path):
 
 def test_statcom_populado_aparece_no_deck():
     """deck() emite bloco STATCOM (DVSI) quando populado."""
-    from pyanatem import CasoAnatem
+    from pynatem import CasoAnatem
 
     caso = CasoAnatem()
     caso.darq.sav = "rede.sav"
@@ -2382,7 +2383,7 @@ def test_statcom_populado_aparece_no_deck():
 
 def test_hvdc_populado_aparece_no_deck():
     """deck() emite bloco HVDC (DCNV) quando populado."""
-    from pyanatem import CasoAnatem
+    from pynatem import CasoAnatem
 
     caso = CasoAnatem()
     caso.darq.sav = "rede.sav"
@@ -2393,7 +2394,7 @@ def test_hvdc_populado_aparece_no_deck():
 
 def test_statcom_roundtrip(tmp_path):
     """STATCOM (VSI): export → ler preserva conversores com modelos de controle."""
-    from pyanatem import CasoAnatem
+    from pynatem import CasoAnatem
 
     caso = CasoAnatem()
     caso.darq.sav = "rede.sav"
@@ -2414,7 +2415,7 @@ def test_statcom_roundtrip(tmp_path):
 
 def test_hvdc_roundtrip(tmp_path):
     """HVDC (LCC): export → ler preserva conversores com modelos de controle."""
-    from pyanatem import CasoAnatem
+    from pynatem import CasoAnatem
 
     caso = CasoAnatem()
     caso.darq.sav = "rede.sav"
@@ -2433,7 +2434,7 @@ def test_hvdc_roundtrip(tmp_path):
 
 def test_facts_blocos_vazios_nao_aparecem_no_deck():
     """deck() omite cabeçalhos de blocos FACTS/HVDC quando vazios."""
-    from pyanatem import CasoAnatem
+    from pynatem import CasoAnatem
 
     caso = CasoAnatem()
     caso.darq.sav = "rede.sav"
@@ -2447,7 +2448,7 @@ def test_facts_blocos_vazios_nao_aparecem_no_deck():
 
 def test_facts_ordem_no_deck():
     """Blocos FACTS/HVDC aparecem entre DMAQ e DEVT no STB."""
-    from pyanatem import CasoAnatem
+    from pynatem import CasoAnatem
 
     caso = CasoAnatem()
     caso.darq.sav = "rede.sav"
@@ -2470,7 +2471,7 @@ def test_facts_ordem_no_deck():
 
 def test_dcer_exemplo_manual(tmp_path):
     """Valores da Listagem 46.16: DCER ``500 10 800 94U``."""
-    from pyanatem import CasoAnatem
+    from pynatem import CasoAnatem
 
     stb = (
         "DARQ\nSIST rede.sav\n999999\n"
@@ -2487,7 +2488,7 @@ def test_dcer_exemplo_manual(tmp_path):
 
 def test_dcsc_exemplo_manual(tmp_path):
     """Valores da Listagem 46.20: DCSC ``500 501 01 800 94U``."""
-    from pyanatem import CasoAnatem
+    from pynatem import CasoAnatem
 
     stb = (
         "DARQ\nSIST rede.sav\n999999\n"
@@ -2503,7 +2504,7 @@ def test_dcsc_exemplo_manual(tmp_path):
 
 def test_roundtrip_dcer(tmp_path):
     """DCER: serializa → exporta → lê, preservando campos e flags U."""
-    from pyanatem import CasoAnatem
+    from pynatem import CasoAnatem
 
     caso = CasoAnatem()
     caso.darq.sav = "rede.sav"
@@ -2525,7 +2526,7 @@ def test_roundtrip_dcer(tmp_path):
 
 def test_roundtrip_dcsc(tmp_path):
     """DCSC: circuito default vs. explícito; com e sem estabilizador."""
-    from pyanatem import CasoAnatem
+    from pynatem import CasoAnatem
 
     caso = CasoAnatem()
     caso.darq.sav = "rede.sav"
@@ -2543,7 +2544,7 @@ def test_roundtrip_dcsc(tmp_path):
 
 def test_roundtrip_dvsi_shunt(tmp_path):
     """DVSI shunt (STATCOM): Pa em branco; Rv/Vpt em branco (valores Lst. 46.61)."""
-    from pyanatem import CasoAnatem
+    from pynatem import CasoAnatem
 
     caso = CasoAnatem()
     caso.darq.sav = "rede.sav"
@@ -2574,7 +2575,7 @@ def test_roundtrip_dvsi_shunt(tmp_path):
 
 def test_roundtrip_dvsi_serie(tmp_path):
     """DVSI série (SSSC): Pa presente, Rv em branco (valores Lst. 46.61)."""
-    from pyanatem import CasoAnatem
+    from pynatem import CasoAnatem
 
     caso = CasoAnatem()
     caso.darq.sav = "rede.sav"
@@ -2611,7 +2612,7 @@ def test_roundtrip_dvsi_serie(tmp_path):
 
 def test_dcnv_roundtrip(tmp_path):
     """DCNV: conversor 25 com Mc do usuário e ângulos (Listagem 46.19)."""
-    from pyanatem import CasoAnatem
+    from pynatem import CasoAnatem
 
     caso = CasoAnatem()
     caso.darq.sav = "rede.sav"
@@ -2629,7 +2630,7 @@ def test_dcnv_roundtrip(tmp_path):
 
 def test_dcnv_roundtrip_sinais(tmp_path):
     """DCNV: sinais de modulação S1 (usuário) + S2 (predefinido)."""
-    from pyanatem import CasoAnatem
+    from pynatem import CasoAnatem
 
     caso = CasoAnatem()
     caso.darq.sav = "rede.sav"
@@ -2657,7 +2658,7 @@ def test_dcnv_roundtrip_sinais(tmp_path):
 
 def test_delo_exemplo_manual(tmp_path):
     """Parse literal da Listagem 46.25 (DELO é formato livre)."""
-    from pyanatem import CasoAnatem
+    from pynatem import CasoAnatem
 
     stb = (
         "DARQ\nSIST rede.sav\n999999\n"
@@ -2686,7 +2687,7 @@ def test_delo_exemplo_manual(tmp_path):
 
 def test_roundtrip_delo(tmp_path):
     """DELO: elo bipolar e elo monopolar (só polo +)."""
-    from pyanatem import CasoAnatem
+    from pynatem import CasoAnatem
 
     caso = CasoAnatem()
     caso.darq.sav = "rede.sav"
@@ -2704,7 +2705,7 @@ def test_roundtrip_delo(tmp_path):
 
 def test_salvar_cdu_cria_arquivo(tmp_path):
     """salvar_cdu() grava o arquivo .cdu no caminho indicado."""
-    from pyanatem import CasoAnatem
+    from pynatem import CasoAnatem
 
     caso = CasoAnatem()
     caso.darq.sav = "rede.sav"
@@ -2725,7 +2726,7 @@ def test_salvar_cdu_cria_arquivo(tmp_path):
 
 def test_salvar_cdu_dcdu_vazio(tmp_path):
     """salvar_cdu() grava arquivo mesmo com BlocoDCDU vazio."""
-    from pyanatem import CasoAnatem
+    from pynatem import CasoAnatem
 
     caso = CasoAnatem()
     cdu_path = tmp_path / "vazio.cdu"
@@ -2736,7 +2737,7 @@ def test_salvar_cdu_dcdu_vazio(tmp_path):
 
 def test_salvar_cdu_cria_diretorio(tmp_path):
     """salvar_cdu() cria diretórios intermediários se necessário."""
-    from pyanatem import CasoAnatem
+    from pynatem import CasoAnatem
 
     caso = CasoAnatem()
     cdu_path = tmp_path / "subdir" / "controles.cdu"
@@ -2751,7 +2752,7 @@ def test_salvar_cdu_cria_diretorio(tmp_path):
 
 def test_validar_dmaq_mg_ausente_no_dmdg():
     """validar() detecta mg referenciando modelo inexistente no DMDG."""
-    from pyanatem import CasoAnatem
+    from pynatem import CasoAnatem
 
     caso = CasoAnatem()
     caso.darq.sav = "rede.sav"
@@ -2766,7 +2767,7 @@ def test_validar_dmaq_mg_ausente_no_dmdg():
 
 def test_validar_dmaq_mg_presente_no_dmdg():
     """validar() não reporta erro quando mg está corretamente definido no DMDG."""
-    from pyanatem import CasoAnatem
+    from pynatem import CasoAnatem
 
     caso = CasoAnatem()
     caso.darq.sav = "rede.sav"
@@ -2781,7 +2782,7 @@ def test_validar_dmaq_mg_presente_no_dmdg():
 
 def test_validar_dmaq_mt_predefinido_ausente_no_dmdg():
     """validar() detecta mt predefinido (mt_cdu=False) ausente no DMDG."""
-    from pyanatem import CasoAnatem
+    from pynatem import CasoAnatem
 
     caso = CasoAnatem()
     caso.darq.sav = "rede.sav"
@@ -2796,7 +2797,7 @@ def test_validar_dmaq_mt_predefinido_ausente_no_dmdg():
 
 def test_validar_dmaq_mt_cdu_nao_valida_contra_dmdg():
     """validar() não verifica mt quando mt_cdu=True (modelo CDU, não DMDG)."""
-    from pyanatem import CasoAnatem
+    from pynatem import CasoAnatem
 
     caso = CasoAnatem()
     caso.darq.sav = "rede.sav"
@@ -2812,7 +2813,7 @@ def test_validar_dmaq_mt_cdu_nao_valida_contra_dmdg():
 
 def test_validar_dmaq_mv_me_ausentes_no_dmdg():
     """validar() detecta mv e me predefinidos ausentes no DMDG."""
-    from pyanatem import CasoAnatem
+    from pynatem import CasoAnatem
 
     caso = CasoAnatem()
     caso.darq.sav = "rede.sav"
@@ -2835,7 +2836,7 @@ def test_validar_dmaq_mv_me_ausentes_no_dmdg():
 
 def test_validar_dmaq_sem_associacoes_nao_gera_erro():
     """validar() não gera erros de DMAQ↔DMDG quando DMAQ está vazio."""
-    from pyanatem import CasoAnatem
+    from pynatem import CasoAnatem
 
     caso = CasoAnatem()
     caso.darq.sav = "rede.sav"
@@ -2848,7 +2849,7 @@ def test_validar_dmaq_sem_associacoes_nao_gera_erro():
 
 def test_validar_dmaq_multiplas_maquinas_erros_individuais():
     """validar() reporta erro individualmente para cada associação inválida."""
-    from pyanatem import CasoAnatem
+    from pynatem import CasoAnatem
 
     caso = CasoAnatem()
     caso.darq.sav = "rede.sav"
@@ -2871,8 +2872,8 @@ def test_executar_contingencias_usa_darq_rela(tmp_path):
     """executar_contingencias usa caso.darq.rela quando definido."""
     import subprocess
     from unittest.mock import patch, MagicMock
-    from pyanatem import CasoAnatem
-    from pyanatem.ensaio import EnsaioAnatem
+    from pynatem import CasoAnatem
+    from pynatem.ensaio import EnsaioAnatem
 
     # Prepara caso com darq.rela definido
     template = CasoAnatem()
@@ -2906,8 +2907,8 @@ def test_executar_contingencias_fallback_sem_darq_rela(tmp_path):
     """executar_contingencias faz fallback para .rela quando darq.rela não definido."""
     import subprocess
     from unittest.mock import patch, MagicMock
-    from pyanatem import CasoAnatem
-    from pyanatem.ensaio import EnsaioAnatem
+    from pynatem import CasoAnatem
+    from pynatem.ensaio import EnsaioAnatem
 
     template = CasoAnatem()
     template.darq.sav = "rede.sav"
@@ -2939,8 +2940,8 @@ def test_executar_contingencias_sem_rela_usa_returncode(tmp_path):
     """executar_contingencias usa returncode quando nenhum .rela existe."""
     import subprocess
     from unittest.mock import patch, MagicMock
-    from pyanatem import CasoAnatem
-    from pyanatem.ensaio import EnsaioAnatem
+    from pynatem import CasoAnatem
+    from pynatem.ensaio import EnsaioAnatem
 
     template = CasoAnatem()
     template.darq.sav = "rede.sav"
@@ -2974,7 +2975,7 @@ def test_executar_contingencias_sem_rela_usa_returncode(tmp_path):
 # serializar -> parsear_dcdu (o parser é baseado em split()).
 # ===========================================================================
 
-from pyanatem.cdu import parsear_dcdu, ValorDefaultCDU
+from pynatem.cdu import parsear_dcdu, ValorDefaultCDU
 
 
 def _roundtrip_dcdu(dcdu):
@@ -3324,7 +3325,7 @@ def test_cdu_nomes_validos_nao_levantam():
 
 def test_cdu_parser_permanece_leniente():
     """O parser não deve aplicar a validação de nomes (arquivos existentes)."""
-    from pyanatem.cdu import BlocoDCDU, parsear_dcdu
+    from pynatem.cdu import BlocoDCDU, parsear_dcdu
 
     ctrl = ControladorCDU(ncdu=1, nome="V")
     ctrl.bloco(10, "GANHO", vent="A", vsai="B", p1=1.0)
@@ -3817,7 +3818,7 @@ def test_caso_salvar_cdu_char_fora_latin1_valueerror_descritivo():
     import pytest
     import tempfile
     from pathlib import Path
-    from pyanatem import BlocoDCDU
+    from pynatem import BlocoDCDU
 
     caso = CasoAnatem()
     dcdu = BlocoDCDU()
@@ -3906,7 +3907,7 @@ FIM
         assert "Caso de teste latin-1" in conteudo_lido
 
         # Parser lê com latin-1 (sem erro)
-        from pyanatem.parser.stb import ParserSTB
+        from pynatem.parser.stb import ParserSTB
 
         caso = ParserSTB.ler(arquivo)
 
@@ -3921,7 +3922,7 @@ FIM
 
 def test_dmot_tipo1_serializacao():
     """DMOT Tipo 1 (sem dinâmica rotórica) — serialização básica."""
-    from pyanatem import BlocoDMOT
+    from pynatem import BlocoDMOT
 
     b = BlocoDMOT()
     b.adicionar_tipo1(nb=3, gr=1, h=2.5, k0=0.5, k1=0.2, k2=0.1, exp=1.5)
@@ -3934,7 +3935,7 @@ def test_dmot_tipo1_serializacao():
 
 def test_dmot_tipo2_serializacao():
     """DMOT Tipo 2 (com dinâmica rotórica) — serialização com parâmetros rotor."""
-    from pyanatem import BlocoDMOT
+    from pynatem import BlocoDMOT
 
     b = BlocoDMOT()
     b.adicionar_tipo2(
@@ -4006,7 +4007,7 @@ FIM
 
 def test_dger_serializacao():
     """DGER (Geração ZIP Funcional) — serialização básica."""
-    from pyanatem import BlocoDGER
+    from pynatem import BlocoDGER
 
     b = BlocoDGER()
     b.adicionar("BARR 1 A BARR 9998", a=50, b=50, c=100, d=0)
@@ -4059,7 +4060,7 @@ FIM
 
 def test_ddfm_serializacao():
     """DDFM (Associação DFIG) — serialização básica."""
-    from pyanatem import BlocoDDFM
+    from pynatem import BlocoDDFM
 
     b = BlocoDDFM()
     b.adicionar(nb=6073, gr=10, p=100, q=100, und=66, mg=17, mt=90146, mc=90145,
@@ -4108,7 +4109,7 @@ FIM
 
 def test_dgse_serializacao():
     """DGSE (Associação GSE) — serialização básica."""
-    from pyanatem import BlocoDGSE
+    from pynatem import BlocoDGSE
 
     b = BlocoDGSE()
     b.adicionar(nb=100, gr=10, p=100, q=100, und=1, mg=1525,
@@ -4159,7 +4160,7 @@ FIM
 
 def test_dfnt_serializacao():
     """DFNT (Fonte Shunt CDU) — serialização básica."""
-    from pyanatem import BlocoDFNT
+    from pynatem import BlocoDFNT
 
     b = BlocoDFNT()
     b.adicionar(nb=10, gr=10, tipo='I', fp=100, fq=100, und=5,
@@ -4209,7 +4210,7 @@ FIM
 
 def test_dmel_serializacao():
     """DMEL (Modelo Elo CC) — serialização básica."""
-    from pyanatem import BlocoDMEL
+    from pynatem import BlocoDMEL
 
     b = BlocoDMEL()
     b.adicionar_md01(no=10, tipo='C', tbp=0.0)
@@ -4259,7 +4260,7 @@ FIM
 
 def test_dcli_serializacao():
     """DCLI (Linha CC) — serialização básica."""
-    from pyanatem import BlocoDCLI
+    from pynatem import BlocoDCLI
 
     b = BlocoDCLI()
     b.adicionar(de=1, pa=2, l=0.1)

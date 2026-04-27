@@ -13,7 +13,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from pyanatem.analise_v18 import (
+from pynatem.analise_v18 import (
     # v1.8.1
     Contingencia, AnalisadorContingencia,
     # v1.8.2

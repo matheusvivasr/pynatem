@@ -12,7 +12,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from pyanatem.posprocessamento_v2 import (
+from pynatem.posprocessamento_v2 import (
     LeitorOUT,
     LeitorPLTBinario,
     LeitorREL,
