@@ -11,7 +11,7 @@ import time
 import tempfile
 from pathlib import Path
 
-from pYnatem import CasoAnatem
+from pynatem import CasoAnatem
 
 
 def _cronometrar(descricao, repeticoes, funcao):
