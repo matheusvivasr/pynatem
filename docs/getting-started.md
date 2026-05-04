@@ -11,8 +11,8 @@ pip install pynatem
 ### Instalação em desenvolvimento
 
 ```bash
-git clone https://github.com/MatheusVivas/ana-estatica.git
-cd ana-estatica
+git clone https://github.com/matheusvivasr/pynatem.git
+cd pynatem
 pip install -e ".[dev,plt]"
 ```
 
