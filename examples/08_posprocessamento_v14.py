@@ -12,7 +12,7 @@ Demonstra:
 import sys
 from pathlib import Path
 
-# Adicionar parent ao path para importar pyanatem
+# Adicionar parent ao path para importar pynatem
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from pynatem.posprocessamento_v2 import LeitorOUT, LeitorPLTBinario, PlotadorSerie

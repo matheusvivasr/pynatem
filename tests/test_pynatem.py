@@ -1,5 +1,5 @@
 """
-tests/test_pyanatem.py – Suite de testes para o pyanatem.
+tests/test_pynatem.py – Suite de testes para o pynatem.
 """
 
 import sys, tempfile
@@ -279,14 +279,14 @@ def test_curto_circuito_alto_nivel():
     caso = CasoAnatem()
     caso.curto_circuito(de=10, para=20, circ=1, t_apl=1.0, t_rem=1.1)
     deck = caso.deck()
-    assert "APCC" in deck and "RMCC" in deck
+    assert "APCL" in deck and "RMCL" in deck
 
 
 def test_abrir_e_fechar_linha():
     caso = CasoAnatem()
     caso.abrir_linha_e_fechar(de=10, para=20, t_aber=0.5, t_fech=1.5)
     deck = caso.deck()
-    assert "ABLN" in deck and "FCLN" in deck
+    assert "ABCI" in deck and "FECI" in deck
 
 
 def test_alterar_dsim_attr_invalido():
@@ -356,9 +356,9 @@ def test_validar_eventos_sobrepostos():
     caso.darq.sav = "x.sav"
     caso.dsim.tfim = 10.0
     caso.devt.curto_barra(barra=5, tini=1.0, tipo="APCB")
-    caso.devt.abertura_shunt(
-        barra=5, tini=1.0
-    )  # mesmo nb1, mesmo tini, código diferente
+    caso.devt.modificacao_shunt(
+        barra=5, tini=1.0, valor=-10.0
+    )  # mesmo el, mesmo tini, código diferente
     erros = caso.validar()
     assert any("sobrepost" in e or "mesmo instante" in e for e in erros)
 
@@ -400,7 +400,7 @@ PLOT    saida.plt
 LOGI    log.log
 999999
 DSIM
-    0.0000   15.0000    0.0050
+   15.00  .005
 999999
 DEVT
 999999
@@ -429,9 +429,9 @@ DSIM
 0.0 10.0 0.01
 999999
 DEVT
-APCB      1.0000      5      0.0000      0.0000
-RMCB      1.1000      5      0.0000      0.0000
-ABLN      2.0000     10     20    1
+APCB        1     5
+RMCB      1.1     5
+ABCI        2    10   20 1
 999999
 DPLT
 999999
@@ -443,7 +443,7 @@ FIM
         p.write_text(stb, encoding="latin-1")
         caso = CasoAnatem.ler(p)
         codigos = [e.codigo for e in caso.devt._eventos]
-        assert codigos.count("APCB") == 1 and "RMCB" in codigos and "ABLN" in codigos
+        assert codigos.count("APCB") == 1 and "RMCB" in codigos and "ABCI" in codigos
 
 
 def test_devt_ordem_tempo_el_manual():
@@ -470,10 +470,10 @@ FIM
         p.write_text(stb, encoding="latin-1")
         caso = CasoAnatem.ler(p)
         ev = caso.devt._eventos
-        assert ev[0].codigo == "APCB" and ev[0].tini == 0.05 and ev[0].nb1 == 2
-        assert ev[1].codigo == "RMCB" and ev[1].tini == 0.25 and ev[1].nb1 == 2
-        assert ev[2].codigo == "ABCI" and ev[2].tini == 0.25 and ev[2].nb1 == 2
-        assert ev[2].nb2 == 3
+        assert ev[0].codigo == "APCB" and ev[0].tini == 0.05 and ev[0].el == 2
+        assert ev[1].codigo == "RMCB" and ev[1].tini == 0.25 and ev[1].el == 2
+        assert ev[2].codigo == "ABCI" and ev[2].tini == 0.25 and ev[2].el == 2
+        assert ev[2].pa == 3
 
 
 def test_roundtrip_darq_multiplos_cdu():
@@ -1051,7 +1051,7 @@ def test_devt_mdsh_modificacao_shunt(tmp_path):
     lido = CasoAnatem.ler(p)
     mdsh = [e for e in lido.devt._eventos if e.codigo == "MDSH"]
     assert len(mdsh) == 1
-    assert mdsh[0].nb1 == 5 and mdsh[0].tini == 1.0 and mdsh[0].p1 == 50.0
+    assert mdsh[0].el == 5 and mdsh[0].tini == 1.0 and mdsh[0].abs_ == 50.0
 
 
 # ===========================================================================
@@ -1089,7 +1089,7 @@ def test_roundtrip_dltc_dmtc(tmp_path):
     caso.exportar(p)
 
     conteudo = p.read_text(encoding="latin-1")
-    assert "DMTC MD01" in conteudo and "DLTC" in conteudo and "5300U" in conteudo
+    assert "DMTC MD01" in conteudo and "DLTC" in conteudo and "5300u" in conteudo
 
     lido = CasoAnatem.ler(p)
     assert len(lido.dmtc._modelos) == 1
@@ -1720,17 +1720,16 @@ def test_dmaq_posicional_5h_espacos_em_branco_na_posicao(tmp_path):
 
     assert linha_dados is not None, "Linha de dados do DMAQ não encontrada no STB"
 
-    # Nb (cols 0-5) deve conter 3500; Gr (6-9) deve conter 10
-    # P (10-13), Q (14-17), Und (18-21) devem ser brancos
-    # Mg (22-27) deve conter 753
-    nb_str = linha_dados[0:6].strip()
-    gr_str = linha_dados[6:10].strip()
+    # Régua oficial (§46.41): Nb [0:5], Gr [5:10], P [10:14], Q [14:18],
+    # Und [18:22], Mg [22:29], Mt [29:36], flag u na col 36
+    nb_str = linha_dados[0:5].strip()
+    gr_str = linha_dados[5:10].strip()
     p_str = linha_dados[10:14].strip()
     q_str = linha_dados[14:18].strip()
     und_str = linha_dados[18:22].strip()
-    mg_str = linha_dados[22:28].strip()
-    mt_str = linha_dados[28:34].strip()
-    cdu_str = linha_dados[34:35] if len(linha_dados) > 34 else " "
+    mg_str = linha_dados[22:29].strip()
+    mt_str = linha_dados[29:36].strip()
+    cdu_str = linha_dados[36:37] if len(linha_dados) > 36 else " "
 
     assert nb_str == "3500", f"Nb incorreto: {repr(nb_str)}"
     assert gr_str == "10", f"Gr incorreto: {repr(gr_str)}"
@@ -2076,8 +2075,8 @@ def test_contingencias_isoladas():
     ensaio = EnsaioAnatem.de_contingencias(base, conts)
     casos = ensaio.casos()
     # Barra 10 só no caso A
-    ev_a = [ev.nb1 for ev in casos["A"].devt._eventos]
-    ev_b = [ev.nb1 for ev in casos["B"].devt._eventos]
+    ev_a = [ev.el for ev in casos["A"].devt._eventos]
+    ev_b = [ev.el for ev in casos["B"].devt._eventos]
     assert 10 in ev_a and 10 not in ev_b
     assert 20 in ev_b and 20 not in ev_a
 

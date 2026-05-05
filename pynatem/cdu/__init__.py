@@ -1,5 +1,5 @@
 """
-pyanatem/cdu/__init__.py – DSL de Controladores Definidos pelo Usuário (CDU/DCDU).
+pynatem/cdu/__init__.py – DSL de Controladores Definidos pelo Usuário (CDU/DCDU).
 
 Introduzido nas versões v0.4.4 e v0.4.5 (etapa 0.4):
   - BlocoCDU: linha genérica de bloco CDU (tipos aritméticos, dinâmicos, lógicos,

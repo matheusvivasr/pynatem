@@ -1,14 +1,39 @@
-# 🔬 Validação: Serializadores pyanatem × Manual ANATEM 12.10 Oficial
+# 🔬 Validação: Serializadores pynatem × Manual ANATEM 12.10 Oficial
 
 **Data:** 2026-07-11
-**Método:** Reproduzir com a API do pyanatem os MESMOS dados dos exemplos oficiais
+**Método:** Reproduzir com a API do pynatem os MESMOS dados dos exemplos oficiais
 (fontes `.rst` do manual online, espaçamento exato) e comparar char-a-char.
 **Baseline:** 263 testes passando — mas os testes codificam as mesmas expectativas
 do código, então **não detectam** divergência contra o manual.
 
 ---
 
-## Resultado: 6 de 6 códigos validados apresentam divergências
+## ✅ ATUALIZAÇÃO: TODAS AS DIVERGÊNCIAS CORRIGIDAS (2026-07-11)
+
+Os 6 serializadores foram corrigidos e agora conferem **char-a-char** com os
+exemplos oficiais. Correções aplicadas:
+
+| Código | Correção | Status |
+|--------|----------|--------|
+| DEVT | `ABLN`→`ABCI`, `FCLN`→`FECI`, `APCC/RMCC` (circuito)→`APCL/RMCL`, `ALTG`→`TRGT/TRGV`; `ABSH/FCSH` removidos (oficial: só `MDSH`); serialização em canvas posicional pela régua §46.31 | ✅ |
+| DSIM | Reescrito com campos oficiais `(Tmax)(Stp)(P)(I)(F)`; aliases `tfim/delt/npas` mantidos p/ retrocompatibilidade; `tini` não é serializado (não existe no formato) | ✅ |
+| DMAQ | Larguras oficiais: Nb=5, Gr=5, Mg=7, Mt=7+u, Mv=6+u, Me=6+u, Xvd=5, Nbc=5 | ✅ |
+| DCAR | Seleção preenchida até col 52; A/B/C/D em colunas fixas; Vmn opcional (branco → default 70) | ✅ |
+| DLTC | Larguras oficiais (De=5, Nt=8, Nc=3 branco=1, Mt=7+u, Tmn/Tmx=6, Nst=4, Kbs=7); régua oficial na guia | ✅ |
+| DFLA | NA=4 colunas; circuitos De=5/Pa=5/NC=3; Nc opcional em branco | ✅ |
+
+**Parsers atualizados** (stb.py): DEVT posicional pela régua oficial (com
+fallback tolerante p/ espaçamento livre), DSIM oficial, DMAQ/DLTC nas novas fatias.
+
+**Testes:** 270 passando — inclui os novos `tests/test_conformidade_manual.py`
+(7 testes que comparam a saída char-a-char com os exemplos oficiais; se um
+serializador regredir, a suíte acusa).
+
+---
+
+## Registro histórico da auditoria (divergências encontradas e já corrigidas)
+
+## Resultado original: 6 de 6 códigos validados apresentavam divergências
 
 ### 🔴 CRÍTICO 1 — DEVT: código de evento inexistente `ABLN`
 

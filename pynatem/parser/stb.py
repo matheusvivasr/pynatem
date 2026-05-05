@@ -121,7 +121,7 @@ class ParserSTB:
 
     @staticmethod
     def ler(caminho) -> "CasoAnatem":  # noqa: F821
-        from pYnatem.caso import CasoAnatem
+        from pynatem.caso import CasoAnatem
 
         caminho = Path(caminho)
         texto = caminho.read_text(encoding="latin-1", errors="replace")
@@ -288,7 +288,7 @@ class ParserSTB:
 
     @staticmethod
     def _ler_devt(linhas, inicio, caso) -> int:
-        from pYnatem.blocos import _Evento
+        from pynatem.blocos import _Evento
 
         i = inicio
         while i < len(linhas):
@@ -325,6 +325,14 @@ class ParserSTB:
                     bc=_safe_float(fatia(79, 86)) if fatia(79, 86) else None,
                     defas=_safe_float(fatia(86, 94)) if fatia(86, 94) else None,
                 )
+                if ev.el is None and len(partes) > 2:
+                    # fallback tolerante para decks com espaçamento livre
+                    # (fora das colunas oficiais): Tp Tempo El [Pa [Nc]]
+                    ev.tini = _safe_float(partes[1])
+                    ev.el = _safe_int(partes[2])
+                    if cod in _DEVT_COM_CIRCUITO:
+                        ev.pa = _safe_int(partes[3]) if len(partes) > 3 else None
+                        ev.nc = _safe_int(partes[4]) if len(partes) > 4 else None
                 caso.devt._eventos.append(ev)
 
             else:
@@ -391,7 +399,7 @@ class ParserSTB:
             Xvd : [51:56]  float opcional
             Nbc : [56:61]  int opcional
         """
-        from pYnatem.blocos import _AssocMaquina
+        from pynatem.blocos import _AssocMaquina
 
         def _slice_int(s: str, a: int, b: int):
             """Extrai inteiro da fatia [a:b]; retorna None se vazio."""
@@ -482,7 +490,7 @@ class ParserSTB:
         A linha `inicio` contém a palavra-chave "DMDG MDxx".
         Cada variante (MD01/MD02/MD03) tem layout de colunas distinto.
         """
-        from pYnatem.blocos import BlocoDMDG
+        from pynatem.blocos import BlocoDMDG
 
         if not hasattr(caso, "dmdg") or caso.dmdg is None:
             caso.dmdg = BlocoDMDG()
@@ -1353,7 +1361,7 @@ class ParserSTB:
     @staticmethod
     def _ler_dcdu(linhas, inicio, caso) -> int:
         """Lê um bloco DCDU e popula caso.dcdu (se existir) ou ignora graciosamente."""
-        from pYnatem.cdu import parsear_dcdu, BlocoDCDU
+        from pynatem.cdu import parsear_dcdu, BlocoDCDU
 
         try:
             dcdu, proximo = parsear_dcdu(linhas, inicio)
