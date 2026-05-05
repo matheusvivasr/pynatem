@@ -1,4 +1,4 @@
-# 🤝 Contribuindo para pyanatem
+# 🤝 Contribuindo para pynatem
 
 Obrigado por seu interesse em contribuir! Este documento explica como participar do projeto.
 
@@ -28,14 +28,14 @@ pytest tests/ -v
 ### Verificar type hints
 
 ```bash
-mypy pyanatem/
+mypy pynatem/
 ```
 
 ### Formatar código
 
 ```bash
-black pyanatem/ tests/
-isort pyanatem/ tests/
+black pynatem/ tests/
+isort pynatem/ tests/
 ```
 
 ## Diretrizes de Contribuição
@@ -82,7 +82,7 @@ Use [GitHub Issues](https://github.com/MatheusVivas/ana-estatica/issues) com:
 - ✅ Descrição clara
 - ✅ Passos para reproduzir
 - ✅ Código mínimo exemplo
-- ✅ Versão de Python/pyanatem
+- ✅ Versão de Python/pynatem
 - ✅ Traceback (se houver)
 
 ## Sugerir Features
@@ -105,7 +105,7 @@ Todas as PRs serão revisadas por maintainers. Feedback pode incluir:
 ## Comunidade
 
 - 💬 Faça perguntas em [Discussions](https://github.com/MatheusVivas/ana-estatica/discussions)
-- 📧 Contate: vivas.matheus@usp.br
+- 📧 Contate: <vivas.matheus@usp.br>
 - 📚 Leia [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
 
 ## Licença
@@ -114,4 +114,4 @@ Ao contribuir, você concorda que seu código será licenciado sob MIT License.
 
 ---
 
-Obrigado por ajudar a melhorar pyanatem! 🎉
+Obrigado por ajudar a melhorar pynatem! 🎉

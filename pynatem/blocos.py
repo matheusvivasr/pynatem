@@ -69,19 +69,29 @@ class BlocoDOPC(BlocoBase):
     """
 
     keyword: str = field(default="DOPC", init=False, repr=False)
-    freq: Optional[float] = None
-    base_mva: Optional[float] = None
+    freq: Optional[float] = None  # compat de API — não faz parte do formato DOPC
+    base_mva: Optional[float] = None  # compat de API — idem
     opcoes_extras: List[str] = field(default_factory=list)
+    _opcoes: List[tuple] = field(default_factory=list)  # [(mnemônico, estado)]
+
+    def ativar(self, opcao: str, estado: str = "L") -> "BlocoDOPC":
+        """Adiciona uma opção de controle de execução (régua ``(Op) E``).
+
+        ``estado``: L (ligado), D (desligado) ou "" (em branco → L).
+        """
+        if estado not in ("L", "D", ""):
+            raise ValueError(f"Estado inválido: {estado!r} (use L, D ou vazio)")
+        self._opcoes.append((opcao.upper(), estado))
+        return self
 
     def tem_dados(self) -> bool:
-        return bool(self.freq or self.base_mva or self.opcoes_extras)
+        return bool(self._opcoes or self.opcoes_extras)
 
     def serializar(self) -> str:
         linhas = [self._cabecalho()]
-        if self.freq is not None:
-            linhas.append(f"FREQ  {self.freq:.1f}\n")
-        if self.base_mva is not None:
-            linhas.append(f"BASE  {self.base_mva:.1f}\n")
+        if self._opcoes:
+            pares = [f"{op:<4} {estado}".rstrip() for op, estado in self._opcoes]
+            linhas.append(" ".join(pares) + "\n")
         for op in self.opcoes_extras:
             linhas.append(op.rstrip() + "\n")
         linhas.append(self._terminador())
@@ -210,28 +220,68 @@ class BlocoDARQ(BlocoBase):
 class BlocoDSIM(BlocoBase):
     """Parâmetros de simulação transitória (DSIM).
 
-    Atributos:
-        tini  – tempo inicial [s] (padrão 0.0)
-        tfim  – tempo final   [s] (padrão 10.0)
-        delt  – passo de integração [s] (padrão 0.01)
-        npas  – passos entre gravações de plotagem
-        mxit  – máximo de iterações Newton por passo
+    Campos oficiais (régua ``( Tmax ) (Stp) ( P ) ( I ) ( F )``):
+        tmax – tempo máximo de simulação [s] (branco → 10)
+        stp  – passo de integração [s] (branco → 0.001)
+        p    – frequência de gravação p/ plotagem, em passos (ímpar; branco → 1)
+        i    – frequência de emissão de relatórios, em passos (ímpar; branco → 1)
+        f    – frequência de atualização da jacobiana p/ opção DNWT (branco → 1)
+
+    ``tini`` é mantido apenas por compatibilidade de API (a simulação ANATEM
+    sempre inicia em t=0; o campo não existe no formato e não é serializado).
     """
 
     keyword: str = field(default="DSIM", init=False, repr=False)
-    tini: float = 0.0
-    tfim: float = 10.0
-    delt: float = 0.01
-    npas: Optional[int] = None
-    mxit: Optional[int] = None
+    tmax: float = 10.0
+    stp: float = 0.001
+    p: Optional[int] = None
+    i: Optional[int] = None
+    f: Optional[int] = None
+    tini: float = 0.0  # compat: não faz parte do formato oficial
+
+    # ---- aliases de retrocompatibilidade (API antiga) ----
+    @property
+    def tfim(self) -> float:
+        return self.tmax
+
+    @tfim.setter
+    def tfim(self, v: float) -> None:
+        self.tmax = v
+
+    @property
+    def delt(self) -> float:
+        return self.stp
+
+    @delt.setter
+    def delt(self, v: float) -> None:
+        self.stp = v
+
+    @property
+    def npas(self) -> Optional[int]:
+        return self.p
+
+    @npas.setter
+    def npas(self, v: Optional[int]) -> None:
+        self.p = v
 
     def serializar(self) -> str:
+        # régua oficial: Tmax cols 0-7, Stp 9-13, P 15-19, I 21-25, F 27-31
+        campos = [
+            (7, 8, f"{self.tmax:.2f}"),
+            (13, 5, _num_compacto(self.stp)),
+        ]
+        if self.p is not None:
+            campos.append((19, 5, str(self.p)))
+        if self.i is not None:
+            campos.append((25, 5, str(self.i)))
+        if self.f is not None:
+            campos.append((31, 5, str(self.f)))
+        canvas = list(" " * 32)
+        for fim, largura, texto in campos:
+            texto = texto[:largura]
+            canvas[fim - len(texto) + 1 : fim + 1] = texto
         linhas = [self._cabecalho()]
-        linhas.append(f"{self.tini:10.4f}{self.tfim:10.4f}{self.delt:10.4f}\n")
-        if self.npas is not None:
-            linhas.append(f"NPAS  {self.npas}\n")
-        if self.mxit is not None:
-            linhas.append(f"MXIT  {self.mxit}\n")
+        linhas.append("".join(canvas).rstrip() + "\n")
         linhas.append(self._terminador())
         return "".join(linhas)
 
@@ -241,30 +291,77 @@ class BlocoDSIM(BlocoBase):
 # ---------------------------------------------------------------------------
 
 
+def _num_compacto(v: float) -> str:
+    """Número em forma compacta (estilo do manual: '.05', '10', '1.5')."""
+    if float(v).is_integer():
+        return str(int(v))
+    s = f"{v:.6g}"
+    if s.startswith("0."):
+        s = s[1:]
+    elif s.startswith("-0."):
+        s = "-" + s[2:]
+    return s
+
+
+# Colunas posicionais da régua oficial do DEVT (§46.31): coluna final
+# (inclusiva, 0-indexada) e largura máxima de cada campo.
+# Régua: (Tp) ( Tempo)( El )( Pa)Nc( Ex) ( % ) (ABS ) Gr Uni  (Bl)P ( Rc ) ( Xc ) ( Bc ) (Defas)
+_DEVT_COLUNAS = {
+    "tempo": (12, 8),
+    "el": (18, 6),
+    "pa": (23, 5),
+    "nc": (25, 2),
+    "ex": (30, 5),
+    "pct": (36, 6),
+    "abs_": (43, 7),
+    "gr": (46, 3),
+    "uni": (50, 4),
+    "bl": (63, 5),
+    "rc": (71, 7),
+    "xc": (78, 7),
+    "bc": (85, 7),
+    "defas": (93, 8),
+}
+
+
 @dataclass
 class _Evento:
-    """Representa uma linha de evento DEVT."""
+    """Linha de evento DEVT em colunas posicionais fixas (régua §46.31)."""
 
     codigo: str
-    nb1: int
-    nb2: int = 0
-    nc: int = 0
     tini: float = 0.0
-    p1: float = 0.0
-    p2: float = 0.0
+    el: Optional[int] = None
+    pa: Optional[int] = None
+    nc: Optional[int] = None
+    ex: Optional[int] = None
+    pct: Optional[float] = None
+    abs_: Optional[float] = None
+    gr: Optional[int] = None
+    uni: Optional[int] = None
+    bl: Optional[int] = None
+    rc: Optional[float] = None
+    xc: Optional[float] = None
+    bc: Optional[float] = None
+    defas: Optional[float] = None
 
     def serializar(self) -> str:
-        cod = f"{self.codigo:<4}"
-        if self.nb2 or self.nc:
-            return (
-                f"{cod}  {self.tini:>10.4f}  {self.nb1:>5}  {self.nb2:>5}  {self.nc:>3}"
-                f"  {self.p1:>10.4f}  {self.p2:>10.4f}"
-            )
-        else:
-            return (
-                f"{cod}  {self.tini:>10.4f}  {self.nb1:>5}"
-                f"  {self.p1:>10.4f}  {self.p2:>10.4f}"
-            )
+        canvas = list(" " * 94)
+        canvas[0:4] = f"{self.codigo:<4}"
+        valores = {"tempo": _num_compacto(self.tini)}
+        for campo in ("el", "pa", "nc", "ex", "gr", "uni", "bl"):
+            v = getattr(self, campo)
+            if v is not None:
+                valores[campo] = str(v)
+        for campo in ("pct", "abs_", "rc", "xc", "bc", "defas"):
+            v = getattr(self, campo)
+            if v is not None:
+                valores[campo] = _num_compacto(v)
+        for campo, texto in valores.items():
+            fim, largura = _DEVT_COLUNAS[campo]
+            texto = texto[:largura]
+            inicio = fim - len(texto) + 1
+            canvas[inicio : fim + 1] = texto
+        return "".join(canvas).rstrip()
 
 
 @dataclass
@@ -292,8 +389,16 @@ class BlocoDEVT(BlocoBase):
         r: float = 0.0,
         x: float = 0.0,
     ) -> "BlocoDEVT":
-        """Aplica (APCB) ou remove (RMCB) curto-circuito em barra CA."""
-        self._eventos.append(_Evento(codigo=tipo, nb1=barra, tini=tini, p1=r, p2=x))
+        """Aplica (APCB) ou remove (RMCB) curto-circuito em barra CA (§10.1)."""
+        self._eventos.append(
+            _Evento(
+                codigo=tipo,
+                tini=tini,
+                el=barra,
+                rc=r if r else None,
+                xc=x if x else None,
+            )
+        )
         return self
 
     def curto_circuito(
@@ -302,60 +407,83 @@ class BlocoDEVT(BlocoBase):
         para: int,
         circ: int,
         tini: float,
-        tipo: str = "APCC",
+        tipo: str = "APCL",
         r: float = 0.0,
         x: float = 0.0,
     ) -> "BlocoDEVT":
-        """Aplica (APCC) ou remove (RMCC) curto-circuito em circuito CA."""
+        """Aplica (APCL) ou remove (RMCL) curto-circuito em circuito CA (§13.2)."""
         self._eventos.append(
-            _Evento(codigo=tipo, nb1=de, nb2=para, nc=circ, tini=tini, p1=r, p2=x)
+            _Evento(
+                codigo=tipo,
+                tini=tini,
+                el=de,
+                pa=para,
+                nc=circ,
+                rc=r if r else None,
+                xc=x if x else None,
+            )
         )
         return self
 
     def abertura_linha(
-        self, de: int, para: int, tini: float, circ: int = 1
+        self, de: int, para: int, tini: float, circ: Optional[int] = None
     ) -> "BlocoDEVT":
-        """Abre um circuito CA (ABLN)."""
+        """Abre um circuito CA (ABCI, §13.2). ``circ`` em branco = circuito 1."""
         self._eventos.append(
-            _Evento(codigo="ABLN", nb1=de, nb2=para, nc=circ, tini=tini)
+            _Evento(codigo="ABCI", tini=tini, el=de, pa=para, nc=circ)
         )
         return self
 
     def fechamento_linha(
-        self, de: int, para: int, tini: float, circ: int = 1
+        self, de: int, para: int, tini: float, circ: Optional[int] = None
     ) -> "BlocoDEVT":
-        """Fecha um circuito CA (FCLN)."""
+        """Fecha um circuito CA (FECI, §13.2). ``circ`` em branco = circuito 1."""
         self._eventos.append(
-            _Evento(codigo="FCLN", nb1=de, nb2=para, nc=circ, tini=tini)
+            _Evento(codigo="FECI", tini=tini, el=de, pa=para, nc=circ)
         )
         return self
 
-    def abertura_shunt(self, barra: int, tini: float) -> "BlocoDEVT":
-        """Abre banco shunt (ABSH)."""
-        self._eventos.append(_Evento(codigo="ABSH", nb1=barra, tini=tini))
-        return self
-
-    def fechamento_shunt(self, barra: int, tini: float) -> "BlocoDEVT":
-        """Fecha banco shunt (FCSH)."""
-        self._eventos.append(_Evento(codigo="FCSH", nb1=barra, tini=tini))
-        return self
-
-    def modificacao_shunt(self, barra: int, tini: float, valor: float) -> "BlocoDEVT":
+    def modificacao_shunt(
+        self,
+        barra: int,
+        tini: float,
+        valor: Optional[float] = None,
+        pct: Optional[float] = None,
+        grupo: Optional[int] = None,
+        unidades: Optional[int] = None,
+    ) -> "BlocoDEVT":
         """Modificação de shunt equivalente em barra CA (MDSH, §12.1).
 
-        ``valor`` é a variação absoluta (Abs) do shunt equivalente. Para o caso
-        individualizado (grupo/nº de unidades) ou variação percentual, use
-        ``linha_bruta()`` com a régua completa do DEVT.
+        ``valor`` é a variação absoluta (Abs) do shunt equivalente; ``pct`` a
+        variação percentual; ``grupo``/``unidades`` para o caso individualizado.
         """
-        self._eventos.append(_Evento(codigo="MDSH", nb1=barra, tini=tini, p1=valor))
+        self._eventos.append(
+            _Evento(
+                codigo="MDSH",
+                tini=tini,
+                el=barra,
+                pct=pct,
+                abs_=valor,
+                gr=grupo,
+                uni=unidades,
+            )
+        )
         return self
 
     def step_referencia(
-        self, barra: int, unidade: int, tini: float, delta: float, tipo: str = "ALTG"
+        self, barra: int, unidade: int, tini: float, delta: float, tipo: str = "TRGT"
     ) -> "BlocoDEVT":
-        """Step em sinal de referência de máquina (ALTG)."""
+        """Degrau no sinal de referência de regulador built-in de máquina (§16.9).
+
+        ``tipo``: TRGT (regulador de tensão) ou TRGV (regulador de velocidade).
+        ``delta`` é a variação percentual (campo %); ``unidade`` é o grupo (Gr).
+        """
+        if tipo not in ("TRGT", "TRGV"):
+            raise ValueError(
+                f"Evento de referência inválido: {tipo!r} (use TRGT ou TRGV, §16.9)"
+            )
         self._eventos.append(
-            _Evento(codigo=tipo, nb1=barra, nb2=unidade, tini=tini, p1=delta)
+            _Evento(codigo=tipo, tini=tini, el=barra, gr=unidade, pct=delta)
         )
         return self
 
@@ -663,21 +791,11 @@ class _AssocMaquina:
     def serializar(self) -> str:
         """Serializa a linha em colunas posicionais fixas conforme §46.41.
 
-        Layout (posições relativas ao início da linha de dados):
-            Nb  : 6 chars  right-aligned
-            Gr  : 4 chars  right-aligned
-            P   : 4 chars  right-aligned  (espaços se omitido)
-            Q   : 4 chars  right-aligned  (espaços se omitido)
-            Und : 4 chars  right-aligned  (espaços se omitido)
-            Mg  : 6 chars  right-aligned  (espaços se omitido)
-            Mt  : 6 chars  right-aligned  (espaços se omitido)
-            u   : 1 char   'u' se CDU, ' ' caso contrário
-            Mv  : 6 chars  right-aligned  (espaços se omitido)
-            u   : 1 char   'u' se CDU, ' ' caso contrário
-            Me  : 6 chars  right-aligned  (espaços se omitido)
-            u   : 1 char   'u' se CDU, ' ' caso contrário
-            Xvd : 8 chars  float 4 casas  (espaços se omitido)
-            Nbc : 6 chars  right-aligned  (espaços se omitido)
+        Larguras derivadas da régua oficial do manual:
+            ( Nb)   Gr (P) (Q) Und ( Mg ) ( Mt )u( Mv )u( Me )u(Xvd)(Nbc)
+
+            Nb=5, Gr=5, P=4, Q=4, Und=4, Mg=7, Mt=7+u, Mv=7+u, Me=7+u,
+            Xvd=5, Nbc=5 — todos right-aligned; flag 'u' minúsculo.
 
         Campos opcionais ausentes são emitidos como espaços em branco na
         posição correta, garantindo que campos posteriores não se desloquem.
@@ -685,23 +803,25 @@ class _AssocMaquina:
         if self.texto_bruto is not None:
             return self.texto_bruto
         fi = self._fi
-        ff = self._ff
         fu = self._fu
+        xvd = (
+            f"{_num_compacto(self.xvd):>5}" if self.xvd is not None else " " * 5
+        )
         linha = (
-            fi(self.barra, 6)
-            + fi(self.grupo, 4)
+            fi(self.barra, 5)
+            + fi(self.grupo, 5)
             + fi(self.p, 4)
             + fi(self.q, 4)
             + fi(self.und, 4)
-            + fi(self.mg, 6)
-            + fi(self.mt, 6)
+            + fi(self.mg, 7)
+            + fi(self.mt, 7)
             + fu(self.mt_cdu)
             + fi(self.mv, 6)
             + fu(self.mv_cdu)
             + fi(self.me, 6)
             + fu(self.me_cdu)
-            + ff(self.xvd, 8)
-            + fi(self.nbc, 6)
+            + xvd
+            + fi(self.nbc, 5)
         )
         return linha.rstrip()
 
@@ -825,18 +945,12 @@ class BlocoDMAQ(BlocoBase):
     def serializar(self) -> str:
         """Serializa o bloco DMAQ.
 
-        A segunda linha emitida (``( Nb)  Gr   P   Q  Und ...``) é uma **legenda
-        funcional**: nomeia os campos na ordem em que são emitidos, servindo de
-        referência de leitura no deck. Ela **não** é uma régua de colunas — os
-        rótulos coincidem com as posições reais apenas até ``Mg`` e derivam a
-        partir de ``Mt`` porque a legenda omite os três flags CDU de 1 caractere
-        (após Mt/Mv/Me). As posições verdadeiras são as fatias de largura fixa
-        definidas em :meth:`_AssocMaquina.serializar` e no parser posicional
-        (§46.41). Ver CHANGELOG v0.11.2.
+        A linha de comentário emitida é a régua oficial do manual (§46.41),
+        alinhada às colunas reais dos campos de dados.
         """
         linhas = [self._cabecalho()]
         linhas.append(
-            "( Nb)  Gr   P   Q  Und    Mg      Mt        Mv        Me     Xvd    Nbc\n"
+            "( Nb)   Gr (P) (Q) Und ( Mg ) ( Mt )u( Mv )u( Me )u(Xvd)(Nbc)\n"
         )
         for a in self.associacoes:
             linhas.append(a.serializar() + "\n")
@@ -849,12 +963,19 @@ class BlocoDMAQ(BlocoBase):
 # ---------------------------------------------------------------------------
 
 
+@dataclass
 class BlocoEXSI(BlocoBase):
-    """Comando de execução do caso (EXSI)."""
+    """Comando de execução do caso (EXSI, §46.68).
 
-    keyword = "EXSI"
+    ``opcoes``: opções de execução inline (ex.: ``["DLCA", "DLCC"]``).
+    """
+
+    keyword: str = field(default="EXSI", init=False, repr=False)
+    opcoes: List[str] = field(default_factory=list)
 
     def serializar(self) -> str:
+        if self.opcoes:
+            return "EXSI " + " ".join(self.opcoes) + "\n"
         return "EXSI\n"
 
 
@@ -1443,9 +1564,9 @@ class _CurvaSaturacao:
     p3: float  # X1 (tipos 1/3/4) ou C (tipo 2)
 
     def serializar(self) -> str:
-        return "  ".join(
-            [f"{self.nc:>4}", f"{self.tipo:>2}"]
-            + [_fmt_valor(p) for p in (self.p1, self.p2, self.p3)]
+        # régua oficial: (No)   T (  Y1  ) (  Y2  ) (  X1  )
+        return f"{self.nc:>4}{self.tipo:>4}" + "".join(
+            f"{_fmt_valor(p):>9}" for p in (self.p1, self.p2, self.p3)
         )
 
 
@@ -1511,7 +1632,8 @@ class _AssocCDU:
     usuario: bool = True  # sempre 'U' — só há modelo por CDU
 
     def serializar(self) -> str:
-        return f"{self.nc:>4}  {_sep_u(self.mc, self.usuario):>7}"
+        # régua oficial: (Nc)   ( Mc )u — Mc termina na col 12, flag na col 13
+        return f"{self.nc:>4}{self.mc:>9}" + ("U" if self.usuario else " ")
 
 
 @dataclass
@@ -1529,7 +1651,7 @@ class _BlocoAssocCDU(BlocoBase):
         return self
 
     def serializar(self) -> str:
-        linhas = [self._cabecalho(), "(Nc) ( Mc )u\n"]
+        linhas = [self._cabecalho(), "(Nc)   ( Mc )u\n"]
         for a in self._assoc:
             linhas.append(a.serializar() + "\n")
         linhas.append(self._terminador())
@@ -1583,16 +1705,20 @@ class _CargaFuncional:
     b: float = 0.0  # parcela ativa ~ V² (impedância constante)
     c: float = 0.0  # parcela reativa ~ V
     d: float = 0.0  # parcela reativa ~ V²
-    vmn: float = 70.0  # tensão (%) abaixo da qual vira Z constante
+    vmn: Optional[float] = None  # tensão (%) p/ Z constante (branco → default 70)
     texto_bruto: str = ""  # linha original (preserva roundtrip quando lida)
 
     def serializar(self) -> str:
+        """Colunas fixas da régua oficial (§46.14): seleção até a col 51;
+        (A) cols 52-54, (B) 56-58, (C) 60-62, (D) 64-66, (Vmn) 68-72."""
         if self.texto_bruto:
             return self.texto_bruto
-        params = "  ".join(
-            _fmt_valor(v) for v in (self.a, self.b, self.c, self.d, self.vmn)
+        linha = f"{self.selecao:<52}" + " ".join(
+            f"{_num_compacto(v):>3}" for v in (self.a, self.b, self.c, self.d)
         )
-        return f"{self.selecao}  {params}".rstrip()
+        if self.vmn is not None:
+            linha += f" {_num_compacto(self.vmn):>5}"
+        return linha.rstrip()
 
 
 @dataclass
@@ -1619,7 +1745,7 @@ class BlocoDCAR(BlocoBase):
         b: float = 0.0,
         c: float = 0.0,
         d: float = 0.0,
-        vmn: float = 70.0,
+        vmn: Optional[float] = None,
     ) -> "BlocoDCAR":
         """Adiciona/altera um modelo de carga funcional (ZIP).
 
@@ -1627,7 +1753,8 @@ class BlocoDCAR(BlocoBase):
             selecao: expressão da linguagem de seleção (barras/cargas alvo).
             a, b: parcelas da carga ativa que variam com V e V².
             c, d: parcelas da carga reativa que variam com V e V².
-            vmn: tensão (%) abaixo da qual a carga vira impedância constante.
+            vmn: tensão (%) abaixo da qual a carga vira impedância constante
+                 (em branco, o ANATEM assume o default de 70%).
         """
         self._cargas.append(
             _CargaFuncional(selecao=selecao, a=a, b=b, c=c, d=d, vmn=vmn)
@@ -1645,7 +1772,7 @@ class BlocoDCAR(BlocoBase):
     def serializar(self) -> str:
         linhas = [
             self._cabecalho(),
-            "(tp) ( no) C (tp) ( no) C (tp) ( no) C (tp) ( no) (A) (B) (C) (D) (Vmn)\n",
+            "(tp) ( no) C (tp) ( no) C (tp) ( no) C (tp) ( no)   (A) (B) (C) (D) (Vmn)\n",
         ]
         for c in self._cargas:
             linhas.append(c.serializar() + "\n")
@@ -1671,19 +1798,24 @@ class _GeracaoFuncional:
     b: float = 0.0  # ativa ~ V² [%]
     c: float = 0.0  # reativa ~ V [%]
     d: float = 0.0  # reativa ~ V² [%]
-    vbp: float = 100.0  # tensão base ativa [%]
-    vdp: float = 100.0  # tensão limite ativa [%]
-    vbq: float = 100.0  # tensão base reativa [%]
-    vdq: float = 100.0  # tensão limite reativa [%]
+    vbp: Optional[float] = None  # tensão base ativa [%] (branco → default)
+    vdp: Optional[float] = None  # tensão limite ativa [%] (branco → default)
+    vbq: Optional[float] = None  # tensão base reativa [%] (branco → default)
+    vdq: Optional[float] = None  # tensão limite reativa [%] (branco → default)
     texto_bruto: str = ""  # fallback para roundtrip exato
 
     def serializar(self) -> str:
+        """Colunas oficiais: seleção até col 51; (A) 52-54, (B) 56-58,
+        (C) 60-62, (D) 64-66, (VbP) 68-72, (VdP) 74-78, (VbQ) 80-84, (VdQ) 86-90."""
         if self.texto_bruto:
             return self.texto_bruto
-        return (
-            f"{self.selecao:<30} {self.a:>6.1f} {self.b:>6.1f} {self.c:>6.1f} "
-            f"{self.d:>6.1f} {self.vbp:>6.1f} {self.vdp:>6.1f} {self.vbq:>6.1f} {self.vdq:>6.1f}"
+        linha = f"{self.selecao:<52}" + " ".join(
+            f"{_num_compacto(v):>3}" for v in (self.a, self.b, self.c, self.d)
         )
+        for v in (self.vbp, self.vdp, self.vbq, self.vdq):
+            # percentuais com 1 casa decimal (estilo do exemplo oficial: 84.5)
+            linha += f" {v:>5.1f}" if v is not None else " " * 6
+        return linha.rstrip()
 
 
 @dataclass
@@ -1718,10 +1850,10 @@ class BlocoDGER(BlocoBase):
         b: float = 0.0,
         c: float = 0.0,
         d: float = 0.0,
-        vbp: float = 100.0,
-        vdp: float = 100.0,
-        vbq: float = 100.0,
-        vdq: float = 100.0,
+        vbp: Optional[float] = None,
+        vdp: Optional[float] = None,
+        vbq: Optional[float] = None,
+        vdq: Optional[float] = None,
     ) -> "BlocoDGER":
         """Adiciona um modelo de geração funcional (ZIP).
 
@@ -1751,7 +1883,7 @@ class BlocoDGER(BlocoBase):
     def serializar(self) -> str:
         linhas = [
             self._cabecalho(),
-            "(tp) ( no) C (tp) ( no) C (tp) ( no) C (tp) ( no) (A) (B) (C) (D) (VbP) (VdP) (VbQ) (VdQ)\n",
+            "(tp) ( no) C (tp) ( no) C (tp) ( no) C (tp) ( no)   (A) (B) (C) (D) (VbP) (VdP) (VbQ) (VdQ)\n",
         ]
         for g in self._geracoes:
             linhas.append(g.serializar() + "\n")
@@ -1806,13 +1938,13 @@ class BlocoDMTC(_BlocoModeloMDxx):
 # Colunas do OLTC (DLTC §46.40). Tmn/Tmx/Kbs são opcionais → colunas fixas
 # (espelhadas por ParserSTB._ler_dltc).
 _DLTC_COLS = (
-    ("de", 6),
-    ("pa", 6),
-    ("nc", 4),
-    ("mt", 7),
-    ("tmn", 8),
-    ("tmx", 8),
-    ("nst", 5),
+    ("de", 5),
+    ("pa", 8),
+    ("nc", 3),
+    ("mt", 8),  # 7 + coluna do flag 'u'
+    ("tmn", 6),
+    ("tmx", 6),
+    ("nst", 4),
     ("kbs", 7),
 )
 
@@ -1824,24 +1956,26 @@ class _AssocOLTC:
     de: int  # barra DE do circuito (ANAREDE/DLIN)
     pa: int  # barra PARA do circuito
     mt: int  # nº do modelo de controle (DMTC ou CDU)
-    nc: int = 1  # nº do circuito paralelo
+    nc: Optional[int] = None  # nº do circuito paralelo (branco → 1)
     nst: int = 1  # nº de intervalos de discretização do tap (>0)
-    mt_usuario: bool = False  # 'U' se Mt definido por CDU
+    mt_usuario: bool = False  # 'u' se Mt definido por CDU
     tmn: Optional[float] = None  # tap mínimo [pu] (branco → ANAREDE)
     tmx: Optional[float] = None  # tap máximo [pu] (branco → ANAREDE)
     kbs: Optional[int] = None  # barra controlada (sinal indica direção)
 
     def serializar(self) -> str:
+        # régua oficial: ( Nf)   ( Nt) Nc ( Mt )u (Tmn) (Tmx) Nst ( Kbs)
         return (
-            _col_int(self.de, 6)
-            + _col_int(self.pa, 6)
-            + _col_int(self.nc, 4)
-            + _col_modelo(self.mt, self.mt_usuario, 7)
-            + _col_float(self.tmn, 8)
-            + _col_float(self.tmx, 8)
-            + _col_int(self.nst, 5)
+            _col_int(self.de, 5)
+            + _col_int(self.pa, 8)
+            + _col_int(self.nc, 3)
+            + _col_int(self.mt, 7)
+            + ("u" if self.mt_usuario else " ")
+            + _col_float(self.tmn, 6)
+            + _col_float(self.tmx, 6)
+            + _col_int(self.nst, 4)
             + _col_int(self.kbs, 7)
-        )
+        ).rstrip()
 
 
 @dataclass
@@ -1868,7 +2002,7 @@ class BlocoDLTC(BlocoBase):
         de: int,
         pa: int,
         mt: int,
-        nc: int = 1,
+        nc: Optional[int] = None,
         nst: int = 1,
         mt_usuario: bool = False,
         tmn: Optional[float] = None,
@@ -1892,17 +2026,8 @@ class BlocoDLTC(BlocoBase):
         return self
 
     def _guia(self) -> str:
-        rotulos = {
-            "de": "( De)",
-            "pa": "( Pa)",
-            "nc": "Nc",
-            "mt": "(Mt)u",
-            "tmn": "(Tmn)",
-            "tmx": "(Tmx)",
-            "nst": "Nst",
-            "kbs": "(Kbs)",
-        }
-        return "".join(f"{rotulos[nome]:>{w}}" for nome, w in _DLTC_COLS) + "\n"
+        # régua oficial do manual (§46.40)
+        return "( Nf)   ( Nt) Nc ( Mt )u (Tmn) (Tmx) Nst ( Kbs)\n"
 
     def serializar(self) -> str:
         linhas = [self._cabecalho(), self._guia()]
@@ -1927,14 +2052,15 @@ class _CircuitoIntercambio:
 
     de: int  # barra DE (ANAREDE)
     pa: int  # barra PARA (ANAREDE)
-    nc: int = 1  # nº do circuito
+    nc: Optional[int] = None  # nº do circuito (branco → 1)
     ex: Optional[int] = None  # extremidade de medição (default=De; sinal inverte)
 
     def serializar(self) -> str:
-        campos = [f"{self.de:>6}", f"{self.pa:>6}", f"{self.nc:>3}"]
+        # régua oficial: (De ) (Pa ) NC ( Ex )
+        campos = [f"{self.de:>5}", f" {self.pa:>5}", _col_int(self.nc, 3)]
         if self.ex is not None:
             campos.append(f"{self.ex:>7}")
-        return "".join(campos)
+        return "".join(campos).rstrip()
 
 
 @dataclass
@@ -1946,7 +2072,7 @@ class _AreaFluxo:
     circuitos: list = field(default_factory=list)
 
     def adicionar_circuito(
-        self, de: int, pa: int, nc: int = 1, ex: Optional[int] = None
+        self, de: int, pa: int, nc: Optional[int] = None, ex: Optional[int] = None
     ) -> "_AreaFluxo":
         """Adiciona um circuito à área (encadeável)."""
         self.circuitos.append(_CircuitoIntercambio(de=de, pa=pa, nc=nc, ex=ex))
@@ -1984,7 +2110,7 @@ class BlocoDFLA(BlocoBase):
     def serializar(self) -> str:
         linhas = [self._cabecalho()]
         for area in self._areas:
-            linhas.append(f"{area.na:>5}  {area.ident}".rstrip() + "\n")
+            linhas.append(f"{area.na:>4} {area.ident}".rstrip() + "\n")
             for c in area.circuitos:
                 linhas.append(c.serializar() + "\n")
             linhas.append("FIMFLA\n")
@@ -2496,10 +2622,11 @@ class _AssocElo:
     mm_usuario: bool = False
 
     def serializar(self) -> str:
-        partes = [f"{self.ne:>5}", f"{_sep_u(self.mp, self.mp_usuario):>7}"]
+        # régua oficial: (Ne)   ( M+ )u( M- )u
+        linha = f"{self.ne:>4}{self.mp:>9}" + ("u" if self.mp_usuario else " ")
         if self.mm is not None:
-            partes.append(f"{_sep_u(self.mm, self.mm_usuario):>7}")
-        return "".join(partes)
+            linha += f"{self.mm:>6}" + ("u" if self.mm_usuario else "")
+        return linha.rstrip()
 
 
 @dataclass
@@ -2530,7 +2657,7 @@ class BlocoDELO(BlocoBase):
         return self
 
     def serializar(self) -> str:
-        linhas = [self._cabecalho(), "(Ne) ( M+ )u( M- )u\n"]
+        linhas = [self._cabecalho(), "(Ne)   ( M+ )u( M- )u\n"]
         for e in self._elos:
             linhas.append(e.serializar() + "\n")
         linhas.append(self._terminador())
@@ -3101,10 +3228,11 @@ class _ModeloElo:
     tbp: float = 0.0
 
     def serializar(self) -> str:
-        partes = [f"{self.no:>5}", f"{self.tipo:>2}"]
+        # régua oficial: (No)   C (Tbp) — No 0-3, C na col 7, Tbp 8-13
+        linha = f"{self.no:>4}{self.tipo:>4}"
         if self.tbp != 0.0:
-            partes.append(f"{self.tbp:>6.2f}")
-        return "".join(partes)
+            linha += f"{_num_compacto(self.tbp):>6}"
+        return linha
 
 
 @dataclass
@@ -3131,6 +3259,9 @@ class BlocoDMEL(BlocoBase):
     keyword: str = field(default="DMEL", init=False, repr=False)
     opcoes: str = field(default="MD01", init=False)
     _modelos: List[_ModeloElo] = field(default_factory=list)
+
+    def _cabecalho(self) -> str:
+        return f"{self.keyword} {self.opcoes}\n"
 
     def tem_dados(self) -> bool:
         return bool(self._modelos)
@@ -3166,17 +3297,18 @@ class _LinhaCC:
 
     de: int
     pa: int
-    nc: int = 1
+    nc: Optional[int] = None  # branco → 1
     l: float = 0.0
     c: float = 0.0
 
     def serializar(self) -> str:
-        partes = [f"{self.de:>5}", f"{self.pa:>5}", f"{self.nc:>3}"]
-        if self.l != 0.0 or self.c != 0.0:
-            partes.append(f"{self.l:>6.2f}")
+        # régua oficial: (De)    (Pa)Nc         ( L  )( C  )
+        # De 0-3, Pa 4-11, Nc 12-13 (branco = 1), L termina col 28, C col 34
+        linha = f"{self.de:>4}{self.pa:>8}" + _col_int(self.nc, 2)
+        linha += f"{_fmt_valor(self.l):>15}" if self.l != 0.0 else " " * 15
         if self.c != 0.0:
-            partes.append(f"{self.c:>6.2f}")
-        return "".join(partes)
+            linha += f"{_fmt_valor(self.c):>6}"
+        return linha.rstrip()
 
 
 @dataclass
@@ -3207,7 +3339,7 @@ class BlocoDCLI(BlocoBase):
     def tem_dados(self) -> bool:
         return bool(self._linhas)
 
-    def adicionar(self, de: int, pa: int, nc: int = 1, l: float = 0.0, c: float = 0.0) -> "BlocoDCLI":
+    def adicionar(self, de: int, pa: int, nc: Optional[int] = None, l: float = 0.0, c: float = 0.0) -> "BlocoDCLI":
         """Adiciona linha CC.
 
         Args:
@@ -3223,7 +3355,7 @@ class BlocoDCLI(BlocoBase):
         return self
 
     def _guia(self) -> str:
-        return "(De) (Pa)Nc ( L )( C )\n"
+        return "(De)    (Pa)Nc         ( L  )( C  )\n"
 
     def serializar(self) -> str:
         linhas = [self._cabecalho(), self._guia()]

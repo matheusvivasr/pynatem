@@ -1,21 +1,21 @@
-# pyanatem
+# Pynatem
 
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![Tests](https://img.shields.io/badge/tests-220%20passing-green.svg)](tests/)
 [![Coverage](https://img.shields.io/badge/coverage-87%25-green.svg)](tests/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
-[![Type hints](https://img.shields.io/badge/type%20hints-full-brightgreen.svg)](pyanatem/)
+[![Type hints](https://img.shields.io/badge/type%20hints-full-brightgreen.svg)](pynatem/)
 
 **v1.6.4 — HVDC & FACTS Completos** ⭐ | **Etapas v1.1–v1.6 concluídas**
 
 Biblioteca Python para **geração, manipulação, parsing e execução automatizada** de arquivos de caso do simulador de estabilidade eletromecânica transitória **ANATEM** (CEPEL).
 
-O pyanatem representa um arquivo `.stb` como um grafo de blocos serializáveis (padrão *AST + Serializer*): cada bloco é um objeto Python que sabe se serializar no texto posicional exato esperado pelo ANATEM, e o parser reconstrói a mesma árvore a partir de um `.stb` existente, garantindo *roundtrip*.
+O pynatem representa um arquivo `.stb` como um grafo de blocos serializáveis (padrão *AST + Serializer*): cada bloco é um objeto Python que sabe se serializar no texto posicional exato esperado pelo ANATEM, e o parser reconstrói a mesma árvore a partir de um `.stb` existente, garantindo *roundtrip*.
 
-> **Versão:** 1.6.4 — **HVDC & FACTS Completos** (base v1.0.0)  
-> **Status:** 220 testes; etapas v1.1–v1.6 concluídas ✅ | Pós-processamento (v1.4) pendente  
-> Referência técnica: Manual ANATEM 12.10 (CEPEL)  
+> **Versão:** 1.6.4 — **HVDC & FACTS Completos** (base v1.0.0)
+> **Status:** 220 testes; etapas v1.1–v1.6 concluídas ✅ | Pós-processamento (v1.4) pendente
+> Referência técnica: Manual ANATEM 12.10 (CEPEL)
 
 ---
 
@@ -98,8 +98,9 @@ O pyanatem representa um arquivo `.stb` como um grafo de blocos serializáveis (
 O **ANATEM** é o programa do CEPEL para simulação de **estabilidade eletromecânica transitória** de sistemas de potência. Ele recebe arquivos de texto estruturado (`.stb`, `.dat`, `.cdu`, `.blt`) e produz arquivos de saída (`.plt`, `.rela`, `.log`).
 
 Este projeto oferece uma biblioteca Python para:
+
 - ✅ Criar casos de simulação do zero
-- ✅ Editar casos existentes programaticamente  
+- ✅ Editar casos existentes programaticamente
 - ✅ Parsear arquivos `.stb` com garantia de *roundtrip* (ler → modificar → escrever sem perda)
 - ✅ Executar lotes de simulações (sequencial ou paralelo)
 - ✅ Validar consistência de casos
@@ -126,7 +127,7 @@ pip install -e ".[plt]"
 ### Criar um novo caso
 
 ```python
-from pyanatem import CasoAnatem
+from pynatem import CasoAnatem
 
 caso = CasoAnatem()
 caso.titulo = "Curto em barra - exemplo"
@@ -166,7 +167,7 @@ caso.exportar("meu_caso.stb")
 ### Editar um caso existente
 
 ```python
-from pyanatem import CasoAnatem
+from pynatem import CasoAnatem
 
 caso = CasoAnatem.ler("REGER_3Q25.stb")
 caso.dsim.tfim = 15.0  # Estender tempo de simulação
@@ -177,7 +178,7 @@ caso.exportar("REGER_3Q25_15s.stb")
 ### Executar um lote de casos
 
 ```python
-from pyanatem import EnsaioAnatem
+from pynatem import EnsaioAnatem
 
 ensaio = EnsaioAnatem.de_template("base.stb", anatem_exe="anatem.exe")
 
@@ -200,7 +201,7 @@ resultados = ensaio.executar_paralelo(paths, max_workers=4)
 ### Ler resultados
 
 ```python
-from pyanatem import LeitorPLT, LeitorRelatorio
+from pynatem import LeitorPLT, LeitorRelatorio
 
 # Leitura de arquivo de plotagem (formato texto)
 plt = LeitorPLT.ler("batch/caso_0000/resultado.plt")
@@ -219,7 +220,7 @@ print("Avisos:", rel.avisos)
 ## Arquitetura
 
 ```
-pyanatem/
+pynatem/
 ├── __init__.py           ← Exports públicos
 ├── caso.py               ← CasoAnatem (API fluente + validação)
 ├── blocos.py             ← Um dataclass por bloco STB, com serializar()
@@ -294,6 +295,7 @@ Para transparência sobre validação (v1.0.0):
 > O parsing estruturado da seleção é um item próprio do roadmap (A43, v1.9.2).
 
 **Safeguards em v1.0.0:**
+
 - ✅ **Encoding latin-1 garantido** — sem corrupção silenciosa, `ValueError` descritivo se fora do intervalo
 - ✅ **Desambiguação CDU por tipo** — IMPORT/EXPORT/INPUT/OUTPUT/SERIET/LOGIC/COMPAR reconhecidos corretamente (Cap. 29)
 - ✅ **Validação cruzada automática** — DMAQ ↔ DMDG, caminhos de arquivo, campos vazios em IMPORT/EXPORT
@@ -351,12 +353,12 @@ Para transparência sobre validação (v1.0.0):
 pytest tests/ -v
 
 # Com cobertura de código
-pytest tests/ --cov=pyanatem --cov-report=html
+pytest tests/ --cov=pynatem --cov-report=html
 
 # Verificação de qualidade completa
 pip install -e ".[dev]"
-black --check --target-version py311 pyanatem/ tests/
-mypy pyanatem/ --ignore-missing-imports
+black --check --target-version py311 pynatem/ tests/
+mypy pynatem/ --ignore-missing-imports
 pytest tests/ -v
 ```
 
@@ -401,6 +403,7 @@ pytest tests/ -v
 Contribuições são bem-vindas! Leia [CONTRIBUTING.md](CONTRIBUTING.md) para começar.
 
 **Checklist rápido:**
+
 - Código segue o style guide (black, isort, flake8)
 - Type hints completos (mypy compatible)
 - Testes passam: `pytest tests/`
@@ -417,7 +420,7 @@ Veja também o [Código de Conduta](CODE_OF_CONDUCT.md).
 - 📖 **Teoria:** [TEORIA.md](TEORIA.md) — conceitos de estabilidade transitória
 - 💡 **Exemplos:** [examples/](examples/) — 7 scripts executáveis
 - 🐛 **Reportar bug:** [GitHub Issues](https://github.com/matheusvivasr/pynatem/issues)
-- 📧 **Email:** vivas.matheus@usp.br
+- 📧 **Email:** <vivas.matheus@usp.br>
 
 ---
 
@@ -429,8 +432,8 @@ MIT — veja [LICENSE](LICENSE) para detalhes.
 
 ## Créditos
 
-**Autor:** Matheus Antonio Vivas Rocha ([@matheusvivasr](https://github.com/matheusvivasr))  
-**Email:** vivas.matheus@usp.br  
+**Autor:** Matheus Antonio Vivas Rocha ([@matheusvivasr](https://github.com/matheusvivasr))
+**Email:** <vivas.matheus@usp.br>
 **Instituição:** Universidade de São Paulo (USP)
 
 ---
@@ -438,4 +441,4 @@ MIT — veja [LICENSE](LICENSE) para detalhes.
 ## Referências
 
 - Manual ANATEM v12.10 (CEPEL)
-- Simulador: https://www.cepel.br
+- Simulador: <https://www.cepel.br>

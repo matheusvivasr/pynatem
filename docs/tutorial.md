@@ -20,8 +20,8 @@ Um arquivo `.stb` (STudy Base) contém:
 ### Criando um Caso Completo
 
 ```python
-from pyanatem import CasoAnatem
-from pyanatem.blocos import BlocoDSIM, BlocoDOPC, BlocoDARQ
+from pynatem import CasoAnatem
+from pynatem.blocos import BlocoDSIM, BlocoDOPC, BlocoDARQ
 
 # 1. Criar caso
 caso = CasoAnatem()
@@ -57,7 +57,7 @@ print("✅ Caso criado com sucesso!")
 ### Tipos de Eventos Suportados
 
 ```python
-from pyanatem import CasoAnatem
+from pynatem import CasoAnatem
 
 caso = CasoAnatem.ler("base.stb")
 
@@ -99,8 +99,8 @@ caso.exportar("caso_eventos_avancados.stb")
 ### Criar um Controlador Simples
 
 ```python
-from pyanatem import CasoAnatem
-from pyanatem.cdu import ControladorCDU
+from pynatem import CasoAnatem
+from pynatem.cdu import ControladorCDU
 
 caso = CasoAnatem.ler("base.stb")
 
@@ -122,7 +122,7 @@ caso.exportar("caso_com_cdu.stb")
 ### Executar Múltiplas Contingências
 
 ```python
-from pyanatem import EnsaioAnatem
+from pynatem import EnsaioAnatem
 
 # Definir caso base e contingências
 ensaio = EnsaioAnatem.de_contingencias(
@@ -152,7 +152,7 @@ for contingencia, resultado in resultados.items():
 ### Ler e Analisar Resultados
 
 ```python
-from pyanatem.posprocessamento import LeitorPLT, LeitorRelatorio
+from pynatem.posprocessamento import LeitorPLT, LeitorRelatorio
 
 # 1. Ler arquivo .plt (variáveis de plotagem)
 leitor_plt = LeitorPLT()
@@ -182,7 +182,7 @@ else:
 ### Validar Casos Antes de Executar
 
 ```python
-from pyanatem import CasoAnatem
+from pynatem import CasoAnatem
 
 caso = CasoAnatem.ler("caso.stb")
 

@@ -4,8 +4,8 @@ parser/stb.py – Leitura de arquivos STB do ANATEM.
 Suporte:
     DARQ  – 8 subtipos singulares + DCDU/DBLT com múltiplos arquivos
     DSIM  – linha posicional + NPAS + MXIT
-    DEVT  – eventos estruturados: APCB, RMCB, APCC, RMCC, ABLN, FCLN,
-            ABSH, FCSH, ALTG; demais preservados como texto bruto
+    DEVT  – eventos estruturados: APCB, RMCB, APCC, APCL, RMCL, ABCI, FECI,
+            MDSH, TRGT, TRGV; demais preservados como texto bruto
     DPLT  – 17 variáveis estruturadas (barras, máquinas, circuitos, cargas);
             demais (incluindo OLTC/FACTS/HVDC/CDU best-effort) preservadas
             como texto bruto — o roundtrip funciona igual, só não viram
@@ -106,9 +106,10 @@ _DARQ_MAPA_SIMPLES = {
     "DATO": "rela",  # alias legado
 }
 
-_DEVT_COM_CIRCUITO = {"APCC", "RMCC", "ABLN", "FCLN", "ABCI", "FECI", "MDCI"}
-_DEVT_SIMPLES = {"APCB", "RMCB", "ABSH", "FCSH", "MDSH"}
-_DEVT_MAQUINA = {"ALTG"}
+# Mnemônicos oficiais de eventos DEVT (manual §46.31 + capítulos 10–16)
+_DEVT_COM_CIRCUITO = {"APCL", "RMCL", "ABCI", "FECI", "MDCI"}
+_DEVT_SIMPLES = {"APCB", "RMCB", "APCC", "MDSH", "DBCA", "LBCA"}
+_DEVT_MAQUINA = {"TRGT", "TRGV"}
 
 _DPLT_BARRA = {"VBAR", "TBAR", "FREQ", "PCAG", "QCAG"}
 _DPLT_MAQUINA = {"DELT", "OMEG", "PGER", "QGER", "ICAM", "EEXC", "VTER", "PELM", "PMEC"}
@@ -120,7 +121,7 @@ class ParserSTB:
 
     @staticmethod
     def ler(caminho) -> "CasoAnatem":  # noqa: F821
-        from pyanatem.caso import CasoAnatem
+        from pynatem.caso import CasoAnatem
 
         caminho = Path(caminho)
         texto = caminho.read_text(encoding="latin-1", errors="replace")
@@ -153,7 +154,7 @@ class ParserSTB:
                 i = ParserSTB._ler_dmaq(linhas, i + 1, caso)
             elif kw.startswith("DMDG"):
                 i = ParserSTB._ler_dmdg(linhas, i, caso)
-            elif kw == "DMEL":
+            elif kw.startswith("DMEL"):
                 i = ParserSTB._ler_dmel(linhas, i + 1, caso)
             elif kw == "DCLI":
                 i = ParserSTB._ler_dcli(linhas, i + 1, caso)
@@ -253,39 +254,41 @@ class ParserSTB:
 
     @staticmethod
     def _ler_dsim(linhas, inicio, caso) -> int:
+        """Lê a linha de dados do DSIM no formato oficial.
+
+        Régua: ``( Tmax ) (Stp) ( P ) ( I ) ( F )`` — colunas 0-7, 9-13,
+        15-19, 21-25 e 27-31 (fatias 0-indexadas, fim exclusivo).
+        """
         i = inicio
         linha_pos_lida = False
         while i < len(linhas):
             linha = _strip_comment(linhas[i])
             if _e_terminador(linha) or _e_fim(linha):
                 return i + 1
-            partes = linha.split()
-            if not partes:
+            if not linha.strip():
                 i += 1
                 continue
-            op = partes[0].upper()
-            if op == "NPAS" and len(partes) >= 2:
-                caso.dsim.npas = _safe_int(partes[1])
-            elif op == "MXIT" and len(partes) >= 2:
-                caso.dsim.mxit = _safe_int(partes[1])
-            elif not linha_pos_lida:
-                try:
-                    vals = [float(p) for p in partes[:3]]
-                    if len(vals) >= 1:
-                        caso.dsim.tini = vals[0]
-                    if len(vals) >= 2:
-                        caso.dsim.tfim = vals[1]
-                    if len(vals) >= 3:
-                        caso.dsim.delt = vals[2]
-                    linha_pos_lida = True
-                except ValueError:
-                    pass
+            if not linha_pos_lida:
+                def fatia(a: int, b: int) -> str:
+                    return linha[a:b].strip() if len(linha) > a else ""
+
+                if fatia(0, 8):
+                    caso.dsim.tmax = _safe_float(fatia(0, 8)) or caso.dsim.tmax
+                if fatia(8, 14):
+                    caso.dsim.stp = _safe_float(fatia(8, 14)) or caso.dsim.stp
+                if fatia(14, 20):
+                    caso.dsim.p = _safe_int(fatia(14, 20))
+                if fatia(20, 26):
+                    caso.dsim.i = _safe_int(fatia(20, 26))
+                if fatia(26, 32):
+                    caso.dsim.f = _safe_int(fatia(26, 32))
+                linha_pos_lida = True
             i += 1
         return i
 
     @staticmethod
     def _ler_devt(linhas, inicio, caso) -> int:
-        from pyanatem.blocos import _Evento
+        from pynatem.blocos import _Evento
 
         i = inicio
         while i < len(linhas):
@@ -299,36 +302,38 @@ class ParserSTB:
             partes = linha.split()
             cod = partes[0].upper() if partes else ""
 
-            if cod in _DEVT_SIMPLES:
-                tini = _safe_float(partes[1]) if len(partes) > 1 else 0.0
-                nb1 = _safe_int(partes[2]) if len(partes) > 2 else 0
-                r = _safe_float(partes[3]) if len(partes) > 3 else 0.0
-                x = _safe_float(partes[4]) if len(partes) > 4 else 0.0
-                caso.devt._eventos.append(
-                    _Evento(codigo=cod, nb1=nb1, tini=tini, p1=r, p2=x)
-                )
+            if cod in _DEVT_SIMPLES or cod in _DEVT_COM_CIRCUITO or cod in _DEVT_MAQUINA:
+                # leitura POSICIONAL pelas colunas oficiais da régua §46.31
+                # (fatias 0-indexadas; fim exclusivo)
+                def fatia(a: int, b: int) -> str:
+                    return linha[a:b].strip() if len(linha) > a else ""
 
-            elif cod in _DEVT_COM_CIRCUITO:
-                tini = _safe_float(partes[1]) if len(partes) > 1 else 0.0
-                nb1 = _safe_int(partes[2]) if len(partes) > 2 else 0
-                nb2 = _safe_int(partes[3]) if len(partes) > 3 else 0
-                nc = _safe_int(partes[4]) if len(partes) > 4 else 1
-                p1 = _safe_float(partes[5]) if len(partes) > 5 else 0.0
-                p2 = _safe_float(partes[6]) if len(partes) > 6 else 0.0
-                caso.devt._eventos.append(
-                    _Evento(
-                        codigo=cod, nb1=nb1, nb2=nb2, nc=nc, tini=tini, p1=p1, p2=p2
-                    )
+                ev = _Evento(
+                    codigo=cod,
+                    tini=_safe_float(fatia(5, 13)) or 0.0,
+                    el=_safe_int(fatia(13, 19)) if fatia(13, 19) else None,
+                    pa=_safe_int(fatia(19, 24)) if fatia(19, 24) else None,
+                    nc=_safe_int(fatia(24, 26)) if fatia(24, 26) else None,
+                    ex=_safe_int(fatia(26, 31)) if fatia(26, 31) else None,
+                    pct=_safe_float(fatia(31, 37)) if fatia(31, 37) else None,
+                    abs_=_safe_float(fatia(37, 44)) if fatia(37, 44) else None,
+                    gr=_safe_int(fatia(44, 47)) if fatia(44, 47) else None,
+                    uni=_safe_int(fatia(47, 51)) if fatia(47, 51) else None,
+                    bl=_safe_int(fatia(59, 64)) if fatia(59, 64) else None,
+                    rc=_safe_float(fatia(64, 72)) if fatia(64, 72) else None,
+                    xc=_safe_float(fatia(72, 79)) if fatia(72, 79) else None,
+                    bc=_safe_float(fatia(79, 86)) if fatia(79, 86) else None,
+                    defas=_safe_float(fatia(86, 94)) if fatia(86, 94) else None,
                 )
-
-            elif cod in _DEVT_MAQUINA:
-                tini = _safe_float(partes[1]) if len(partes) > 1 else 0.0
-                nb1 = _safe_int(partes[2]) if len(partes) > 2 else 0
-                nb2 = _safe_int(partes[3]) if len(partes) > 3 else 1
-                p1 = _safe_float(partes[4]) if len(partes) > 4 else 0.0
-                caso.devt._eventos.append(
-                    _Evento(codigo=cod, nb1=nb1, nb2=nb2, tini=tini, p1=p1)
-                )
+                if ev.el is None and len(partes) > 2:
+                    # fallback tolerante para decks com espaçamento livre
+                    # (fora das colunas oficiais): Tp Tempo El [Pa [Nc]]
+                    ev.tini = _safe_float(partes[1])
+                    ev.el = _safe_int(partes[2])
+                    if cod in _DEVT_COM_CIRCUITO:
+                        ev.pa = _safe_int(partes[3]) if len(partes) > 3 else None
+                        ev.nc = _safe_int(partes[4]) if len(partes) > 4 else None
+                caso.devt._eventos.append(ev)
 
             else:
                 caso.devt._linhas_brutas.append(linha)
@@ -378,23 +383,23 @@ class ParserSTB:
         por ``_AssocMaquina.serializar()``.  Campos ausentes (espaços em branco
         na fatia) resultam em ``None``, sem deslocar os campos seguintes.
 
-        Layout de colunas (0-based, relativo ao início da linha de dados):
-            Nb  : [0:6]    int
-            Gr  : [6:10]   int
+        Layout de colunas oficiais (régua §46.41, 0-based):
+            Nb  : [0:5]    int
+            Gr  : [5:10]   int
             P   : [10:14]  int opcional
             Q   : [14:18]  int opcional
             Und : [18:22]  int opcional
-            Mg  : [22:28]  int opcional
-            Mt  : [28:34]  int opcional
-            cdu : [34]     'u'/'U' → mt_cdu=True
-            Mv  : [35:41]  int opcional
-            cdu : [41]     'u'/'U' → mv_cdu=True
-            Me  : [42:48]  int opcional
-            cdu : [48]     'u'/'U' → me_cdu=True
-            Xvd : [49:57]  float opcional
-            Nbc : [57:63]  int opcional
+            Mg  : [22:29]  int opcional
+            Mt  : [29:36]  int opcional
+            cdu : [36]     'u'/'U' → mt_cdu=True
+            Mv  : [37:43]  int opcional
+            cdu : [43]     'u'/'U' → mv_cdu=True
+            Me  : [44:50]  int opcional
+            cdu : [50]     'u'/'U' → me_cdu=True
+            Xvd : [51:56]  float opcional
+            Nbc : [56:61]  int opcional
         """
-        from pyanatem.blocos import _AssocMaquina
+        from pynatem.blocos import _AssocMaquina
 
         def _slice_int(s: str, a: int, b: int):
             """Extrai inteiro da fatia [a:b]; retorna None se vazio."""
@@ -424,22 +429,22 @@ class ParserSTB:
                 i += 1
                 continue
             try:
-                barra = _slice_int(linha, 0, 6)
-                grupo = _slice_int(linha, 6, 10)
+                barra = _slice_int(linha, 0, 5)
+                grupo = _slice_int(linha, 5, 10)
                 if barra is None or grupo is None:
                     raise ValueError("Nb ou Gr ausente")
                 p = _slice_int(linha, 10, 14)
                 q = _slice_int(linha, 14, 18)
                 und = _slice_int(linha, 18, 22)
-                mg = _slice_int(linha, 22, 28)
-                mt = _slice_int(linha, 28, 34)
-                mt_cdu = _slice_cdu(linha, 34)
-                mv = _slice_int(linha, 35, 41)
-                mv_cdu = _slice_cdu(linha, 41)
-                me = _slice_int(linha, 42, 48)
-                me_cdu = _slice_cdu(linha, 48)
-                xvd = _slice_float(linha, 49, 57)
-                nbc = _slice_int(linha, 57, 63)
+                mg = _slice_int(linha, 22, 29)
+                mt = _slice_int(linha, 29, 36)
+                mt_cdu = _slice_cdu(linha, 36)
+                mv = _slice_int(linha, 37, 43)
+                mv_cdu = _slice_cdu(linha, 43)
+                me = _slice_int(linha, 44, 50)
+                me_cdu = _slice_cdu(linha, 50)
+                xvd = _slice_float(linha, 51, 56)
+                nbc = _slice_int(linha, 56, 61)
 
                 caso.dmaq.adicionar_maquina(
                     barra=barra,
@@ -485,7 +490,7 @@ class ParserSTB:
         A linha `inicio` contém a palavra-chave "DMDG MDxx".
         Cada variante (MD01/MD02/MD03) tem layout de colunas distinto.
         """
-        from pyanatem.blocos import BlocoDMDG
+        from pynatem.blocos import BlocoDMDG
 
         if not hasattr(caso, "dmdg") or caso.dmdg is None:
             caso.dmdg = BlocoDMDG()
@@ -866,21 +871,22 @@ class ParserSTB:
                 i += 1
                 continue
             try:
-                de = _si(linha, 0, 6)
-                pa = _si(linha, 6, 12)
-                mt, mt_u = _sm(linha, 16, 23)
+                de = _si(linha, 0, 5)
+                pa = _si(linha, 5, 13)
+                mt = _si(linha, 16, 23)
                 if de is None or pa is None or mt is None:
                     raise ValueError("De/Pa/Mt ausente")
+                mt_u = len(linha) > 23 and linha[23].lower() == "u"
                 caso.dltc.adicionar(
                     de=de,
                     pa=pa,
                     mt=mt,
-                    nc=_si(linha, 12, 16) or 1,
-                    nst=_si(linha, 39, 44) or 1,
+                    nc=_si(linha, 13, 16),
+                    nst=_si(linha, 36, 40) or 1,
                     mt_usuario=mt_u,
-                    tmn=_sf(linha, 23, 31),
-                    tmx=_sf(linha, 31, 39),
-                    kbs=_si(linha, 44, 51),
+                    tmn=_sf(linha, 24, 30),
+                    tmx=_sf(linha, 30, 36),
+                    kbs=_si(linha, 40, 47),
                 )
             except (ValueError, IndexError):
                 pass
@@ -1355,7 +1361,7 @@ class ParserSTB:
     @staticmethod
     def _ler_dcdu(linhas, inicio, caso) -> int:
         """Lê um bloco DCDU e popula caso.dcdu (se existir) ou ignora graciosamente."""
-        from pyanatem.cdu import parsear_dcdu, BlocoDCDU
+        from pynatem.cdu import parsear_dcdu, BlocoDCDU
 
         try:
             dcdu, proximo = parsear_dcdu(linhas, inicio)

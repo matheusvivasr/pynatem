@@ -5,14 +5,14 @@
 ### Via pip (recomendado)
 
 ```bash
-pip install pyanatem
+pip install pynatem
 ```
 
 ### Instalação em desenvolvimento
 
 ```bash
-git clone https://github.com/MatheusVivas/ana-estatica.git
-cd ana-estatica
+git clone https://github.com/matheusvivasr/pynatem.git
+cd pynatem
 pip install -e ".[dev,plt]"
 ```
 
@@ -21,7 +21,7 @@ pip install -e ".[dev,plt]"
 ### 1. Criar um caso do zero
 
 ```python
-from pyanatem import CasoAnatem
+from pynatem import CasoAnatem
 
 # Criar caso vazio
 caso = CasoAnatem()
@@ -42,7 +42,7 @@ print("Caso criado: meu_caso.stb")
 ### 2. Editar um arquivo existente
 
 ```python
-from pyanatem import CasoAnatem
+from pynatem import CasoAnatem
 
 # Carregar caso existente
 caso = CasoAnatem.ler("caso_existente.stb")
@@ -58,8 +58,8 @@ caso.exportar("caso_modificado.stb")
 ### 3. Adicionar eventos
 
 ```python
-from pyanatem import CasoAnatem
-from pyanatem.blocos import EventoAberturaRapida
+from pynatem import CasoAnatem
+from pynatem.blocos import EventoAberturaRapida
 
 caso = CasoAnatem.ler("base.stb")
 

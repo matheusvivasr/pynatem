@@ -1,5 +1,5 @@
 """
-pyanatem – Biblioteca Python para geração, manipulação, parsing e execução
+pynatem – Biblioteca Python para geração, manipulação, parsing e execução
 automatizada de arquivos ANATEM (.stb, .dat, .cdu, .blt).
 """
 

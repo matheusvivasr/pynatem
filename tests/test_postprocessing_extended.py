@@ -2,7 +2,7 @@
 
 import pytest
 from pathlib import Path
-from pyanatem.posprocessamento import LeitorPLT, LeitorRelatorio
+from pynatem.posprocessamento import LeitorPLT, LeitorRelatorio
 
 
 class TestLeitorPLT:

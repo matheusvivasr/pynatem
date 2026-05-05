@@ -7,7 +7,7 @@ Classe principal para manipular casos de simulação ANATEM.
 ### Criar e Carregar
 
 ```python
-from pyanatem import CasoAnatem
+from pynatem import CasoAnatem
 
 # Criar caso vazio
 caso = CasoAnatem()
@@ -37,6 +37,7 @@ caso = CasoAnatem.ler_string(texto_stb)
 ### Métodos Principais
 
 #### `exportar(arquivo_saida: str) -> None`
+
 Salva o caso em arquivo `.stb`.
 
 ```python
@@ -44,6 +45,7 @@ caso.exportar("meu_caso.stb")
 ```
 
 #### `validar() -> List[str]`
+
 Retorna lista de avisos de consistência.
 
 ```python
@@ -53,6 +55,7 @@ for aviso in avisos:
 ```
 
 #### `curto_barra(barra: int, tempo_inicio: float, tempo_fim: float)`
+
 Adiciona evento de curto-circuito em barra.
 
 ```python
@@ -60,6 +63,7 @@ caso.curto_barra(barra=1001, tempo_inicio=1.0, tempo_fim=0.1)
 ```
 
 #### `curto_circuito(barra_de: int, barra_para: int, circuito: int, tempo_inicio: float, tempo_fim: float)`
+
 Adiciona evento de curto-circuito em linha.
 
 ```python
@@ -75,7 +79,7 @@ Classe para automação de lotes de simulação.
 ### Criar Ensaio
 
 ```python
-from pyanatem import EnsaioAnatem
+from pynatem import EnsaioAnatem
 
 # De contingências
 ensaio = EnsaioAnatem.de_contingencias(
@@ -91,6 +95,7 @@ ensaio = EnsaioAnatem.de_contingencias(
 ### Métodos Principais
 
 #### `executar_contingencias(paralelo: bool = False, num_workers: int = 1)`
+
 Executa todas as contingências.
 
 ```python
@@ -131,7 +136,7 @@ Gerenciar Controladores Definidos pelo Usuário.
 ### Adicionar Controlador
 
 ```python
-from pyanatem.cdu import ControladorCDU
+from pynatem.cdu import ControladorCDU
 
 cdu = ControladorCDU(numero=1, nome="Meu CDU")
 caso.dcdu.adicionar_controlador(cdu)
@@ -146,7 +151,7 @@ caso.dcdu.adicionar_controlador(cdu)
 Ler arquivo de saídas `.plt`.
 
 ```python
-from pyanatem.posprocessamento import LeitorPLT
+from pynatem.posprocessamento import LeitorPLT
 
 leitor = LeitorPLT()
 dados = leitor.ler("saidas.plt")
@@ -164,7 +169,7 @@ tensoes = dados.obter_variavel("T", 1001)
 Ler arquivo de relatório `.rela`.
 
 ```python
-from pyanatem.posprocessamento import LeitorRelatorio
+from pynatem.posprocessamento import LeitorRelatorio
 
 leitor = LeitorRelatorio()
 relatorio = leitor.ler("relatorio.rela")
@@ -200,6 +205,6 @@ inconsistencias = caso.validar_contra_sav("rede.sav")
 Para documentação completa, consulte o docstring de cada classe:
 
 ```python
-from pyanatem import CasoAnatem
+from pynatem import CasoAnatem
 help(CasoAnatem)
 ```

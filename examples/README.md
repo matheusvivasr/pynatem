@@ -1,6 +1,6 @@
-# 📚 Exemplos de Uso — pyanatem
+# 📚 Exemplos de Uso — pynatem
 
-Coleção de exemplos práticos de uso da biblioteca pyanatem.
+Coleção de exemplos práticos de uso da biblioteca pynatem.
 
 ## Estrutura
 
@@ -18,7 +18,7 @@ Coleção de exemplos práticos de uso da biblioteca pyanatem.
 ### Prerequisitos
 
 ```bash
-pip install pyanatem
+pip install pynatem
 ```
 
 ### Executar um exemplo
@@ -42,39 +42,51 @@ caso = CasoAnatem.ler("seu_arquivo.stb")
 ## Exemplos Detalhados
 
 ### Exemplo 1: Criar Caso Básico
+
 Mostra como criar um caso ANATEM do zero com:
+
 - Configuração de simulação
 - Adição de eventos
 - Variáveis de saída
 - Validação e exportação
 
 ### Exemplo 2: Editar Caso Existente
+
 Demonstra:
+
 - Carregar arquivo `.stb` existente
 - Modificar parâmetros
 - Adicionar eventos
 - Salvar com novo nome
 
 ### Exemplo 3: Batch de Contingências
+
 Ilustra:
+
 - Criar múltiplas contingências
 - Executar lotes
 - Analisar resultados
 
 ### Exemplo 4: Validação Cruzada
+
 Mostra:
+
 - Validação interna (STB)
 - Validação contra SAV (ANAREDE)
 - Teste de roundtrip
 
 ### Exemplo 5: Pós-processamento
+
 Demonstra:
+
 - Ler arquivo `.plt` (saídas)
 - Ler arquivo `.rela` (relatório)
 - Análise de dados (com pandas)
 
 ### Exemplo 6: CDU Avançado
+
 Ilustra:
+
 - Criar controladores personalizados
 - Adicionar blocos de controle
 - Integração com caso
@@ -95,5 +107,5 @@ Ilustra:
 
 ---
 
-**Versão:** v0.15.0  
+**Versão:** v0.15.0
 **Mantido por:** Matheus Vivas (USP)

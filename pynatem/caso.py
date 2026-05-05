@@ -1,5 +1,5 @@
 """
-caso.py – Objeto principal do pyanatem.
+caso.py – Objeto principal do pynatem.
 
 CasoAnatem representa um arquivo STB completo como grafo de blocos
 serializáveis. A serialização produz o texto exato esperado pelo ANATEM.
@@ -177,11 +177,11 @@ class CasoAnatem:
         r_falta: float = 0.0,
         x_falta: float = 0.0,
     ) -> "CasoAnatem":
-        """Aplica e remove curto-circuito em circuito CA (APCC + RMCC)."""
+        """Aplica e remove curto-circuito em circuito CA (APCL + RMCL, §13.2)."""
         self.devt.curto_circuito(
-            de=de, para=para, circ=circ, tini=t_apl, tipo="APCC", r=r_falta, x=x_falta
+            de=de, para=para, circ=circ, tini=t_apl, tipo="APCL", r=r_falta, x=x_falta
         )
-        self.devt.curto_circuito(de=de, para=para, circ=circ, tini=t_rem, tipo="RMCC")
+        self.devt.curto_circuito(de=de, para=para, circ=circ, tini=t_rem, tipo="RMCL")
         return self
 
     def adicionar_maquina(
@@ -204,7 +204,7 @@ class CasoAnatem:
         """Associa uma máquina síncrona a modelos dinâmicos (DMAQ).
 
         Atalho para ``self.dmaq.adicionar_maquina()``.
-        Veja :class:`~pyanatem.blocos.BlocoDMAQ` para descrição dos parâmetros.
+        Veja :class:`~pynatem.blocos.BlocoDMAQ` para descrição dos parâmetros.
         """
         self.dmaq.adicionar_maquina(
             barra=barra,
@@ -227,14 +227,14 @@ class CasoAnatem:
     def abrir_linha(
         self, de: int, para: int, t_aber: float, circ: int = 1
     ) -> "CasoAnatem":
-        """Abertura de circuito CA (ABLN)."""
+        """Abertura de circuito CA (ABCI, §13.2)."""
         self.devt.abertura_linha(de=de, para=para, tini=t_aber, circ=circ)
         return self
 
     def abrir_linha_e_fechar(
         self, de: int, para: int, t_aber: float, t_fech: float, circ: int = 1
     ) -> "CasoAnatem":
-        """Abre e religa circuito CA (ABLN + FCLN)."""
+        """Abre e religa circuito CA (ABCI + FECI, §13.2)."""
         self.devt.abertura_linha(de=de, para=para, tini=t_aber, circ=circ)
         self.devt.fechamento_linha(de=de, para=para, tini=t_fech, circ=circ)
         return self
@@ -256,7 +256,7 @@ class CasoAnatem:
         partes: List[str] = []
 
         partes.append(
-            f"( {self._titulo}\n" if self._titulo else "( Gerado por pyanatem\n"
+            f"( {self._titulo}\n" if self._titulo else "( Gerado por pynatem\n"
         )
 
         if self._titulo:
@@ -454,20 +454,20 @@ class CasoAnatem:
         apcb = set()
         for ev in self.devt._eventos:
             if ev.codigo == "APCB":
-                apcb.add(ev.nb1)
+                apcb.add(ev.el)
             elif ev.codigo == "RMCB":
-                apcb.discard(ev.nb1)
+                apcb.discard(ev.el)
         for b in apcb:
             erros.append(f"DEVT: curto APCB na barra {b} sem RMCB correspondente.")
 
         # 7. eventos possivelmente sobrepostos (mesmo alvo, mesmo instante, ação diferente)
         vistos: dict = {}
         for ev in self.devt._eventos:
-            chave = (ev.nb1, ev.nb2, ev.nc, round(ev.tini, 6))
+            chave = (ev.el, ev.pa, ev.nc, round(ev.tini, 6))
             if chave in vistos and vistos[chave] != ev.codigo:
                 erros.append(
                     f"DEVT: eventos '{vistos[chave]}' e '{ev.codigo}' no mesmo instante "
-                    f"t={ev.tini}s para o mesmo alvo (nó {ev.nb1}) — verifique a ordem "
+                    f"t={ev.tini}s para o mesmo alvo (nó {ev.el}) — verifique a ordem "
                     "de execução esperada."
                 )
             vistos[chave] = ev.codigo

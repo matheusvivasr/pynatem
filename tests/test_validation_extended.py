@@ -1,7 +1,7 @@
 """Extended validation tests (40+ tests)."""
 
 import pytest
-from pyanatem import CasoAnatem
+from pynatem import CasoAnatem
 
 
 class TestValidationCruzada:

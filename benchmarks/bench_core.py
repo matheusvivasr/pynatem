@@ -1,4 +1,4 @@
-"""Benchmarks de performance para operações centrais do pyanatem.
+"""Benchmarks de performance para operações centrais do pynatem.
 
 Uso:
     python benchmarks/bench_core.py
@@ -11,7 +11,7 @@ import time
 import tempfile
 from pathlib import Path
 
-from pyanatem import CasoAnatem
+from pynatem import CasoAnatem
 
 
 def _cronometrar(descricao, repeticoes, funcao):
@@ -60,7 +60,7 @@ def bench_validacao(repeticoes=500):
 
 def main():
     print("=" * 70)
-    print("pyanatem — Benchmarks de performance (operações centrais)")
+    print("pynatem — Benchmarks de performance (operações centrais)")
     print("=" * 70)
     bench_criacao()
     bench_exportacao()

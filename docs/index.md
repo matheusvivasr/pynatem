@@ -1,4 +1,4 @@
-# 🚀 pyanatem
+# 🚀 pynatem
 
 Biblioteca Python para geração, manipulação e execução automatizada de casos de simulação **ANATEM** (CEPEL).
 
@@ -14,7 +14,7 @@ Biblioteca Python para geração, manipulação e execução automatizada de cas
 ## 📦 Instalação
 
 ```bash
-pip install pyanatem
+pip install pynatem
 ```
 
 ## ⚡ Uso Rápido
@@ -22,7 +22,7 @@ pip install pyanatem
 ### Criar um caso
 
 ```python
-from pyanatem import CasoAnatem
+from pynatem import CasoAnatem
 
 caso = CasoAnatem()
 caso.dsim.tfim = 15.0
@@ -40,7 +40,7 @@ caso.exportar("caso_modificado.stb")
 ### Executar contingências
 
 ```python
-from pyanatem import EnsaioAnatem
+from pynatem import EnsaioAnatem
 
 ensaio = EnsaioAnatem.de_contingencias(
     caso_base="base.stb",
@@ -57,8 +57,8 @@ ensaio = EnsaioAnatem.de_contingencias(
 
 ## 📊 Status
 
-**Versão:** v0.14.2 (Estável)  
-**Testes:** 163 testes  
+**Versão:** v0.14.2 (Estável)
+**Testes:** 163 testes
 **Python:** 3.9+
 
 **Licença:** MIT

@@ -1,4 +1,4 @@
-# 🚀 pyanatem
+# 🚀 pynatem
 
 Python library for ANATEM simulator case generation, manipulation, and automated execution (CEPEL — Electric Energy Research Center).
 
@@ -14,7 +14,7 @@ Python library for ANATEM simulator case generation, manipulation, and automated
 ## 📦 Installation
 
 ```bash
-pip install pyanatem
+pip install pynatem
 ```
 
 ## ⚡ Quick Start
@@ -22,7 +22,7 @@ pip install pyanatem
 ### Create a case
 
 ```python
-from pyanatem import CasoAnatem
+from pynatem import CasoAnatem
 
 caso = CasoAnatem()
 caso.dsim.tfim = 15.0
@@ -40,7 +40,7 @@ caso.exportar("modified_case.stb")
 ### Run contingencies
 
 ```python
-from pyanatem import EnsaioAnatem
+from pynatem import EnsaioAnatem
 
 ensaio = EnsaioAnatem.de_contingencias(
     caso_base="base.stb",
@@ -58,9 +58,9 @@ results = ensaio.executar_contingencias()
 
 ## 📊 Status
 
-**Version:** v1.0  
-**Tests:** 212+ passing  
-**Coverage:** 87%+  
+**Version:** v1.0
+**Tests:** 212+ passing
+**Coverage:** 87%+
 **Python:** 3.9+
 
 **License:** MIT
