@@ -274,8 +274,18 @@ class Timestamp:
         return len(erros) == 0, erros
 
     def serializar_time(self) -> str:
-        """Serializa em formato TIME (§46.72)."""
-        return f"TIME\n{self.ano:04d}/{self.mes:02d}/{self.dia:02d} {self.hora:02d}:{self.minuto:02d}:{self.segundo:02d} {self.utc_offset}\n"
+        """Serializa em formato TIME (§46.72).
+
+        Formato oficial: ``YYYY/MM/DD hh:mm UTC -HH:MM`` (segundos são
+        emitidos apenas quando não nulos — o manual admite outros formatos).
+        """
+        hora = f"{self.hora:02d}:{self.minuto:02d}"
+        if self.segundo:
+            hora += f":{self.segundo:02d}"
+        return (
+            f"TIME\n{self.ano:04d}/{self.mes:02d}/{self.dia:02d} "
+            f"{hora} UTC {self.utc_offset}\n"
+        )
 
 
 @dataclass
@@ -301,8 +311,17 @@ class CenarioEstocastico:
         return len(erros) == 0, erros
 
     def serializar_dsto(self) -> str:
-        """Serializa em formato DSTO (§46.60)."""
-        return f"DSTO\n({self.tipo})\n{self.serie}\n{self.patamar}\n"
+        """Serializa em formato DSTO (§46.60).
+
+        Régua oficial: ``(Tipo) (     valor1     ) (     valor2     )`` —
+        Tipo cols 0-5, valor1 termina na col 24, valor2 na col 43.
+        """
+        return (
+            "DSTO\n"
+            "(Tipo) (     valor1     ) (     valor2     )\n"
+            f"{self.tipo:<5}{self.serie:>20}{self.patamar:>19}\n"
+            "999999\n"
+        )
 
 
 @dataclass

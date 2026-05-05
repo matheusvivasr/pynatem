@@ -2,6 +2,48 @@
 
 Todas as mudanças notáveis estão documentadas aqui.
 
+## [1.10.2] — 2026-07-11 — Conformidade dos serializadores com o Manual oficial 🔬
+
+Auditoria char-a-char contra os exemplos oficiais do manual online do Cepel
+(https://see.cepel.br/manual/anatem/) — 16 códigos corrigidos, 17 testes de
+conformidade externa adicionados (`tests/test_conformidade_manual.py`).
+
+### Corrigido — mnemônicos de evento inexistentes no manual (DEVT)
+- `ABLN`→`ABCI`, `FCLN`→`FECI` (abertura/fechamento de circuito CA)
+- `APCC/RMCC` em circuito → `APCL/RMCL` (APCC oficial é afundamento em barra)
+- `ALTG`→`TRGT`/`TRGV` (degrau de referência de regulador)
+- `abertura_shunt`/`fechamento_shunt` removidos (oficial: apenas MDSH)
+- `_Evento` reescrito com campos nomeados + serialização posicional (régua §46.31)
+
+### Corrigido — colunas posicionais conforme réguas oficiais
+- **DSIM**: campos oficiais `(Tmax)(Stp)(P)(I)(F)`; aliases tfim/delt/npas mantidos;
+  linhas inventadas NPAS/MXIT removidas
+- **DMAQ** (§46.41): Nb=5, Gr=5, Mg=7, Mt=7+u, Mv=6+u, Me=6+u, Xvd=5, Nbc=5
+- **DCAR/DGER**: A/B/C/D (e VbP..VdQ) em colunas fixas; seleção até col 51; Vmn/Vb* opcionais
+- **DLTC** (§46.40): larguras oficiais; Nc em branco = default; flag u em coluna própria
+- **DFLA** (§46.33): NA=4; NC opcional em branco
+- **DCLI** (§46.19): De=4, Pa=8, Nc em branco, L termina col 28
+- **DCST** (§46.23): T na col 7; Y1/Y2/X1 em campos de 9
+- **DCAG/DCCT** (§46.13/15): Mc termina col 12, flag U col 13
+- **DELO** (§46.27): M+ termina col 12 + u; M- termina col 19 + u
+- **DMEL** (§46.47): cabeçalho `DMEL MD01`; C na col 7
+- **DOPC** (§46.53): formato oficial de pares `(Op) E` (linhas `FREQ/BASE <valor>`
+  eram formato inventado); nova API `ativar(op, estado)`
+- **EXSI** (§46.68): opções inline (`EXSI DLCA DLCC`)
+- **DSTO** (§46.60): linha única em colunas fixas + terminador
+- **TIME** (§46.72): formato `YYYY/MM/DD hh:mm UTC -HH:MM`
+
+### Parser (stb.py)
+- DEVT/DSIM/DMAQ/DLTC lidos pelas colunas oficiais (DEVT com fallback tolerante)
+- fix: imports `pYnatem` quebrados pelo rename do pacote
+- dispatch `DMEL MD01` reconhecido
+
+### Pendente para v2.0
+- Blocos MDxx (DRGT/DRGV/DEST/DMDG/DMTC): réguas variam por variante (~30 réguas);
+  serialização genérica atual preserva valores mas não as colunas exatas
+- Demais blocos FACTS/HVDC (DVSI/DCNV/DDFM/DMOT/DGSE) — mesmo método, réguas multilinha
+
+
 ## [1.5.1] — 2026-07-10 — Máquinas de Indução Convencional (DMOT) — inicia etapa v1.5 🚀
 
 > Primeira implementação da etapa **v1.5 (Geração Renovável)**.

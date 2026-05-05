@@ -4013,7 +4013,7 @@ def test_dger_serializacao():
     t = b.serializar()
 
     assert "DGER" in t
-    assert "BARR" in t and "50.0" in t
+    assert "BARR" in t and " 50  50 100   0" in t
 
 
 def test_dger_roundtrip():
@@ -4268,7 +4268,7 @@ def test_dcli_serializacao():
 
     assert "DCLI" in t
     assert "1" in t and "2" in t
-    assert "0.10" in t
+    assert "0.1" in t
 
 
 def test_dcli_roundtrip():

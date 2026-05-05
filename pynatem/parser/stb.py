@@ -154,7 +154,7 @@ class ParserSTB:
                 i = ParserSTB._ler_dmaq(linhas, i + 1, caso)
             elif kw.startswith("DMDG"):
                 i = ParserSTB._ler_dmdg(linhas, i, caso)
-            elif kw == "DMEL":
+            elif kw.startswith("DMEL"):
                 i = ParserSTB._ler_dmel(linhas, i + 1, caso)
             elif kw == "DCLI":
                 i = ParserSTB._ler_dcli(linhas, i + 1, caso)

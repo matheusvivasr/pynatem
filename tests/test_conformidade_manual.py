@@ -20,7 +20,11 @@ from pynatem.blocos import (
     BlocoDSIM,
 )
 
-_IGNORAR = {"DEVT", "DCAR", "DCAR IMPR", "DSIM", "DLTC", "DFLA", "DMAQ", "999999", "FIMFLA"}
+_IGNORAR = {
+    "DEVT", "DCAR", "DCAR IMPR", "DSIM", "DLTC", "DFLA", "DMAQ",
+    "DCLI", "DELO", "DGER", "DGER IMPR", "DOPC", "DCST", "DCAG",
+    "DCCT", "DMEL", "DMEL MD01", "EXSI", "999999", "FIMFLA",
+}
 
 
 def _linhas_dados(texto: str):
@@ -140,3 +144,108 @@ def test_mnemonicos_eventos_oficiais():
         assert m in t
     for m in invalidos:
         assert m not in t
+
+
+# ===========================================================================
+# Lote A (v1.10.2): DCST, DCAG/DCCT, DCLI, DMEL, DELO, DGER, DOPC, EXSI,
+# DSTO, TIME — validados contra os exemplos oficiais.
+# Nota: onde o manual zero-preenche o Nº (ex. "0001"), o pynatem emite
+# right-aligned sem zeros ("   1") — numericamente idêntico em campo fixo.
+# ===========================================================================
+
+from pynatem.blocos import (
+    BlocoDCAG,
+    BlocoDCLI,
+    BlocoDCST,
+    BlocoDELO,
+    BlocoDGER,
+    BlocoDMEL,
+    BlocoDOPC,
+    BlocoEXSI,
+)
+from pynatem.analise_v18 import CenarioEstocastico, Timestamp
+
+
+def test_dcst_conforme_manual():
+    """DCST §46.23 — curva de saturação tipo 2 (colunas Y1/Y2/X1)."""
+    b = BlocoDCST()
+    b.adicionar(nc=1, tipo=2, p1=0.016, p2=8.198, p3=0.8)
+    _conferir(["   1   2    0.016    8.198      0.8"], b.serializar())
+
+
+def test_dcag_conforme_manual():
+    """DCAG §46.13 — associação CAG a CDU (Mc termina col 12, U col 13)."""
+    b = BlocoDCAG()
+    b.adicionar(nc=10, mc=140)
+    _conferir(["  10      140U"], b.serializar())
+
+
+def test_dcli_conforme_manual():
+    """DCLI §46.19 — linha CC com L, Nc em branco (exemplo oficial)."""
+    b = BlocoDCLI()
+    b.adicionar(de=1, pa=2, l=0.1)
+    _conferir(["   1       2              0.1"], b.serializar())
+
+
+def test_dmel_conforme_manual():
+    """DMEL §46.47 — modelos de polo C e P (C na col 7)."""
+    b = BlocoDMEL()
+    b.adicionar_md01(no=10, tipo="C")
+    b.adicionar_md01(no=20, tipo="P")
+    t = b.serializar()
+    assert t.startswith("DMEL MD01\n")
+    _conferir(["  10   C", "  20   P"], t.replace("DMEL MD01", ""))
+
+
+def test_delo_conforme_manual():
+    """DELO §46.27 — elos bipolares/monopolares, flags u (exemplo oficial)."""
+    b = BlocoDELO()
+    b.adicionar(ne=1, mp=10, mm=10)
+    b.adicionar(ne=2, mp=10, mm=20)
+    b.adicionar(ne=3, mp=10, mm=100, mm_usuario=True)
+    b.adicionar(ne=4, mp=110, mp_usuario=True)
+    _conferir([
+        "   1       10     10",
+        "   2       10     20",
+        "   3       10    100u",
+        "   4      110u",
+    ], b.serializar())
+
+
+def test_dger_conforme_manual():
+    """DGER §46.35 — colunas A/B/C/D + VbP/VdP/VbQ/VdQ (exemplo oficial)."""
+    b = BlocoDGER()
+    b.adicionar("BARR   1   A BARR 9998", a=0, b=0, c=100, d=0,
+                vbp=84.5, vdp=85.0, vbq=84.5, vdq=85.0)
+    _conferir([
+        "BARR   1   A BARR 9998                                0   0 100   0  84.5  85.0  84.5  85.0",
+    ], b.serializar())
+
+
+def test_dopc_conforme_manual():
+    """DOPC §46.53 — pares (Op) E (exemplo oficial)."""
+    b = BlocoDOPC()
+    b.ativar("IMPR").ativar("FILE").ativar("CONT").ativar("80CO", "")
+    _conferir(["IMPR L FILE L CONT L 80CO"], b.serializar())
+
+
+def test_exsi_conforme_manual():
+    """EXSI §46.68 — opções inline (exemplo oficial: EXSI DLCA DLCC)."""
+    b = BlocoEXSI()
+    b.opcoes = ["DLCA", "DLCC"]
+    assert b.serializar() == "EXSI DLCA DLCC\n"
+
+
+def test_dsto_conforme_manual():
+    """DSTO §46.60 — série hidrológica (valor1 col 24, valor2 col 43)."""
+    c = CenarioEstocastico(tipo="HIDRO", serie=1984, patamar=1)
+    t = c.serializar_dsto()
+    assert "HIDRO                1984                  1" in t
+    assert t.endswith("999999\n")
+
+
+def test_time_conforme_manual():
+    """TIME §46.72 — formato YYYY/MM/DD hh:mm UTC -HH:MM (exemplo oficial)."""
+    ts = Timestamp(ano=2021, mes=9, dia=16, hora=12, minuto=0,
+                   utc_offset="-03:00")
+    assert ts.serializar_time() == "TIME\n2021/09/16 12:00 UTC -03:00\n"
