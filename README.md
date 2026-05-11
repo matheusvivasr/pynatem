@@ -1,25 +1,26 @@
 # Pynatem
 
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
-[![Tests](https://img.shields.io/badge/tests-220%20passing-green.svg)](tests/)
+[![Tests](https://img.shields.io/badge/tests-280%20passing-green.svg)](tests/)
 [![Coverage](https://img.shields.io/badge/coverage-87%25-green.svg)](tests/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![Type hints](https://img.shields.io/badge/type%20hints-full-brightgreen.svg)](pynatem/)
 
-**v1.6.4 — HVDC & FACTS Completos** ⭐ | **Etapas v1.1–v1.6 concluídas**
+**v1.10.2 — Conformidade com o Manual Oficial** ⭐ | **Etapas v1.1–v1.10 concluídas — pronto para v2.0.0**
 
 Biblioteca Python para **geração, manipulação, parsing e execução automatizada** de arquivos de caso do simulador de estabilidade eletromecânica transitória **ANATEM** (CEPEL).
 
 O pynatem representa um arquivo `.stb` como um grafo de blocos serializáveis (padrão *AST + Serializer*): cada bloco é um objeto Python que sabe se serializar no texto posicional exato esperado pelo ANATEM, e o parser reconstrói a mesma árvore a partir de um `.stb` existente, garantindo *roundtrip*.
 
-> **Versão:** 1.6.4 — **HVDC & FACTS Completos** (base v1.0.0)
-> **Status:** 220 testes; etapas v1.1–v1.6 concluídas ✅ | Pós-processamento (v1.4) pendente
-> Referência técnica: Manual ANATEM 12.10 (CEPEL)
+> **Versão:** 1.10.2 — **Conformidade com o Manual Oficial** (base v1.0.0)
+> **Status:** 280 testes (17 de conformidade externa); etapas v1.1–v1.10 concluídas ✅
+> Referência técnica: Manual ANATEM 12.10 (CEPEL) — validado contra o manual
+> online oficial (https://see.cepel.br/manual/anatem/)
 
 ---
 
-## Estado Atual (v1.6.4)
+## Estado Atual (v1.10.2)
 
 ✅ **Estável: API testada e documentada; endurecendo a confiabilidade (etapa v1.1)**
 
@@ -41,20 +42,30 @@ O pynatem representa um arquivo `.stb` como um grafo de blocos serializáveis (p
 | **1.3** | Cargas, Shunt, OLTC e Circuitos | ✅ v1.3.4 (DCAR + shunt + OLTC + DFLA) |
 | **1.5** | Geração Renovável (DMOT/DGSE/DDFM/DFNT) | ✅ v1.5.5 (DMOT + DGSE + DDFM parser fix + DFNT) |
 | **1.6** | HVDC & FACTS Completos (DMEL/DMCV/DCLI/CER/CSC/VSI/LCC) | ✅ v1.6.4 (DMEL + DMCV + DCLI + SVC/TCSC + STATCOM/HVDC) |
+| **1.4** | Pós-processamento (.plt binário, .out, .rel, .snap) | ✅ (parser PLT binário por engenharia reversa) |
+| **1.7** | CDU Avançado (inicialização, topologia, relés/SEP, mensagens) | ✅ (cdu_v17: DEFVAL/DEFVDF/DEFPLT, DTDU/ACDU, DMSG, OTMx) |
+| **1.8** | Modos de Análise (contingência N-1, multi-infeed, séries temporais) | ✅ (analise_v18: EAMI/EAIF/DMIF, TIME/DSTO) |
+| **1.9** | Algoritmos de Pós-Falta (critérios, sincronismo, frequência) | ✅ (estabilidade_v19) |
+| **1.10** | DSA — Avaliação de Segurança Dinâmica (RSEG, snapshots) | ✅ (dsa_v110) |
+| **1.10.2** | **Conformidade char-a-char com o manual oficial (16 códigos)** | ✅ (test_conformidade_manual.py) |
 
-### Destaques v1.6.4
+### Destaques v1.10.2
 
-- ✅ **220 testes** (roundtrip, encoding, blocos, parser, CDU, validação, renovável, HVDC)
-- ✅ **87%+ cobertura** de código
-- ✅ **v1.1–v1.6 concluídas** — FACTS/HVDC Completos/Máquina Síncrona/Cargas/Geração Renovável
-- ✅ **Encoding latin-1 garantido** — sem corrupção silenciosa, erro explícito
-- ✅ **Parser CDU finalizado** — desambiguação por tipo (Cap. 29), IMPORT/EXPORT/INPUT/OUTPUT validados
-- ✅ **Geração Renovável (v1.5)** — DMOT (indução convencional), DGSE (síncrona eólica), DDFM (DFIG), DFNT (fonte shunt CDU)
-- ✅ **HVDC & FACTS Completos (v1.6)** — DMEL/DMCV (elos), DCLI (linhas), SVC/TCSC (compensadores), STATCOM/HVDC (conversores)
+- ✅ **280 testes** — incluindo **17 testes de conformidade externa** que comparam
+  a saída char-a-char com os exemplos oficiais do manual do Cepel
+- ✅ **16 serializadores auditados e corrigidos** contra o manual online oficial:
+  DEVT, DSIM, DMAQ, DCAR, DLTC, DFLA, DCST, DCAG/DCCT, DCLI, DMEL, DELO, DGER,
+  DOPC, EXSI, DSTO, TIME
+- ✅ **Mnemônicos de evento 100% oficiais** — ABCI/FECI, APCL/RMCL, TRGT/TRGV,
+  MDSH (removidos os inexistentes ABLN/FCLN/ABSH/FCSH/RMCC/ALTG)
+- ✅ **Serialização posicional** pelas réguas oficiais (campos opcionais em branco
+  onde o manual omite)
+- ✅ **Referências corrigidas** — 421 listagens de código dos markdowns
+  reconstruídas a partir dos fontes oficiais
 - ✅ **CI/CD automático** — GitHub Actions (Python 3.9–3.12), Codecov, black, mypy
-- ✅ **30+ classes públicas** com type hints, API estável
+- ✅ **32 blocos + módulos v1.7–v1.10** com type hints, API estável
 
-**Próximo:** v1.4 — Pós-processamento (.plt binary reading, *bloqueado por reverse engineering de formato proprietário*). Veja [ROADMAP.md](ROADMAP.md).
+**Próximo:** 🏁 **v2.0.0 — Cobertura Total ANATEM 12.10** (réguas por variante MDxx, blocos FACTS/HVDC multilinha, 74 códigos + opções Cap. 47). Veja [ROADMAP.md](ROADMAP.md).
 
 ---
 

@@ -43,19 +43,21 @@ ana-estatica/ (Repositório Git — v0.14.2)
 │   ├── eventos/                      • Placeholder reservado
 │   └── modelos/                      • Placeholder reservado
 │
-├── 🧪 tests/                         • Suite de 163 testes (v0.14.2)
-│   ├── test_pyanatem.py              • Testes unitários e integração
+├── 🧪 tests/                         • Suite de 280 testes (v1.10.2)
+│   ├── test_pynatem.py               • Testes unitários e integração
+│   ├── test_conformidade_manual.py   • Conformidade com o manual oficial
 │   └── ...
 │
-├── 📖 markdowns_reference/           • Referências técnicas (Manual ANATEM v12.10)
-│   ├── DARQ.md, DCDU.md, DEVT_completo.md, ...
-│   └── anatem.pdf                    • Manual completo (39 MB, ignorado no git)
+├── 📖 markdowns_reference/           • Referências técnicas (Manual ANATEM 12.10)
+│   ├── INDEX.md                      • Navegação por capítulo (comece aqui)
+│   ├── 07_cap7 ... 30_cap46          • Transcrições organizadas por capítulo
+│   └── (fonte oficial online: https://see.cepel.br/manual/anatem/)
 │
 ├── 📦 .versions/                     • Histórico de versões (referência)
 │   ├── v0.6.0/                       • Primeira versão (marcos iniciais)
 │   ├── v0.8.0/                       • Etapa 0.8 (features intermediárias)
 │   ├── v0.11.3/                      • Etapa 0.11 (polimento, type hints)
-│   └── v0.14.2/                      • Snapshot completo da versão atual
+│   └── v0.14.2/                      • Snapshot histórico (ciclo 0.x)
 │       ├── README.md
 │       ├── CHANGELOG.md
 │       ├── ROADMAP_v7.md, ROADMAP_v8.md

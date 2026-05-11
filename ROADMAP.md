@@ -1,6 +1,12 @@
-# Roadmap — pyanatem
+# Roadmap — pynatem
 
-## Status atual: **v1.3.4** ✅ (estável, lançável) — etapas v1.1, v1.2 e v1.3 concluídas 🎉
+## Status atual: **v1.10.2** ✅ (estável, lançável) — etapas v1.1–v1.10 concluídas 🎉
+
+> **v1.10.2 (2026-07-11):** auditoria de conformidade — 16 serializadores
+> validados **char-a-char** contra o manual online oficial do Cepel
+> (https://see.cepel.br/manual/anatem/), com 17 testes de conformidade
+> externa em `tests/test_conformidade_manual.py`. Pré-requisitos da v2.0.0
+> atualizados abaixo.
 
 Esquema de versão **v1 (SemVer)**. O ciclo `0.x` foi encerrado em v1.0.0
 (lançamento oficial estável). A partir daí:
@@ -148,6 +154,17 @@ Marco **MAJOR**. Critérios de aceite:
 - [ ] Suíte de testes ≥ 500, cobertura ≥ 92%
 - [ ] Documentação teórica cobrindo cada equipamento
 - [ ] Migração para o manual 12.11
+
+### Backlog herdado da auditoria v1.10.2 (fazer primeiro)
+
+- [ ] **Réguas por variante MDxx** (DRGT MD01–24, DRGV MD01–07, DEST MD01–12,
+      DMDG MD01–03, DMTC): ~30 réguas com larguras irregulares — a serialização
+      genérica atual preserva valores mas não as colunas exatas
+- [ ] **Blocos FACTS/HVDC multilinha** (DVSI, DCNV, DDFM, DMOT, DGSE): auditar
+      com o mesmo método char-a-char (fontes oficiais já em cache)
+- [ ] **Método estabelecido:** reproduzir o exemplo oficial via API e comparar
+      com `_sources/*.rst.txt` do manual online — estender
+      `tests/test_conformidade_manual.py` a cada código coberto
 
 ---
 
