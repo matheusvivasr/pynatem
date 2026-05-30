@@ -2,6 +2,28 @@
 
 Todas as mudanças notáveis estão documentadas aqui.
 
+## [2.0.0] — 2026-07-11 — Primeiro lançamento público no PyPI 🚀
+
+Marco MAJOR: o pynatem passa a ser publicado no PyPI (`pip install pynatem`).
+
+### Consolidado neste lançamento
+- 16 serializadores validados **char-a-char** contra o Manual ANATEM 12.10
+  oficial (see.cepel.br/manual/anatem) — v1.10.2
+- 280 testes, incluindo 17 de conformidade externa
+- CI 100% verde: black, isort, flake8 e mypy zerados; workflows corrigidos
+  (release.yml duplicado removido; publicação por tag via pypi.yml)
+- Repositório público limpo: notas de trabalho e transcrições do manual
+  ficam fora do git (pasta `notas_trabalho/` + `markdowns_reference/`)
+
+### Política de branches (ver CONTRIBUTING.md)
+- `main` recebe apenas lançamentos MAJOR (merge + tag + PyPI)
+- `vivas` é a branch de construção (PATCH = commit; MINOR = push)
+
+### Próximos patches (v2.0.x)
+- v2.0.1 — Réguas por variante MDxx (DRGT/DRGV/DEST/DMDG/DMTC)
+- v2.0.2 — Conformidade dos blocos FACTS/HVDC multilinha (DVSI/DCNV/DDFM/DMOT/DGSE)
+
+
 ## [1.10.2] — 2026-07-11 — Conformidade dos serializadores com o Manual oficial 🔬
 
 Auditoria char-a-char contra os exemplos oficiais do manual online do Cepel

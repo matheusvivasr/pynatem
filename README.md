@@ -7,20 +7,20 @@
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![Type hints](https://img.shields.io/badge/type%20hints-full-brightgreen.svg)](pynatem/)
 
-**v1.10.2 — Conformidade com o Manual Oficial** ⭐ | **Etapas v1.1–v1.10 concluídas — pronto para v2.0.0**
+**v2.0.0 — Primeiro Lançamento Público (PyPI)** 🚀 | `pip install pynatem`
 
 Biblioteca Python para **geração, manipulação, parsing e execução automatizada** de arquivos de caso do simulador de estabilidade eletromecânica transitória **ANATEM** (CEPEL).
 
 O pynatem representa um arquivo `.stb` como um grafo de blocos serializáveis (padrão *AST + Serializer*): cada bloco é um objeto Python que sabe se serializar no texto posicional exato esperado pelo ANATEM, e o parser reconstrói a mesma árvore a partir de um `.stb` existente, garantindo *roundtrip*.
 
-> **Versão:** 1.10.2 — **Conformidade com o Manual Oficial** (base v1.0.0)
+> **Versão:** 2.0.0 — **Primeiro Lançamento Público no PyPI**
 > **Status:** 280 testes (17 de conformidade externa); etapas v1.1–v1.10 concluídas ✅
 > Referência técnica: Manual ANATEM 12.10 (CEPEL) — validado contra o manual
 > online oficial (https://see.cepel.br/manual/anatem/)
 
 ---
 
-## Estado Atual (v1.10.2)
+## Estado Atual (v2.0.0)
 
 ✅ **Estável: API testada e documentada; endurecendo a confiabilidade (etapa v1.1)**
 
@@ -49,7 +49,7 @@ O pynatem representa um arquivo `.stb` como um grafo de blocos serializáveis (p
 | **1.10** | DSA — Avaliação de Segurança Dinâmica (RSEG, snapshots) | ✅ (dsa_v110) |
 | **1.10.2** | **Conformidade char-a-char com o manual oficial (16 códigos)** | ✅ (test_conformidade_manual.py) |
 
-### Destaques v1.10.2
+### Destaques v2.0.0
 
 - ✅ **280 testes** — incluindo **17 testes de conformidade externa** que comparam
   a saída char-a-char com os exemplos oficiais do manual do Cepel
@@ -65,7 +65,7 @@ O pynatem representa um arquivo `.stb` como um grafo de blocos serializáveis (p
 - ✅ **CI/CD automático** — GitHub Actions (Python 3.9–3.12), Codecov, black, mypy
 - ✅ **32 blocos + módulos v1.7–v1.10** com type hints, API estável
 
-**Próximo:** 🏁 **v2.0.0 — Cobertura Total ANATEM 12.10** (réguas por variante MDxx, blocos FACTS/HVDC multilinha, 74 códigos + opções Cap. 47). Veja [ROADMAP.md](ROADMAP.md).
+**Próximo:** v2.0.1 — Réguas por variante MDxx (backlog de conformidade rumo à cobertura total, marco v3.0.0). Veja [ROADMAP.md](ROADMAP.md).
 
 ---
 

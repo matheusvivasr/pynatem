@@ -12,6 +12,30 @@ git checkout -b feature/sua-feature
 pip install -e ".[dev]"
 ```
 
+## Fluxo de Branches e Versionamento (postulado)
+
+O projeto usa duas branches com papéis fixos:
+
+| Branch | Papel |
+|--------|-------|
+| `main` | **Somente publicações.** Recebe merge apenas em lançamento de versão **MAJOR** (vX.0.0), seguido de tag e publicação no PyPI. |
+| `vivas` | Branch de construção (trabalho interno). Todo desenvolvimento acontece aqui. |
+
+Regras por nível de versão (SemVer):
+
+- **PATCH (vX.Y.Z)** → permite **commit** na `vivas` (meta concreta entregue
+  com testes passando).
+- **MINOR (vX.Y.0)** → indica **`git push`** da `vivas` para `origin/vivas`
+  (etapa temática fechada, progresso publicado no remoto).
+- **MAJOR (vX.0.0)** → **merge na `main`** + tag `vX.0.0` + lançamento no PyPI
+  (o workflow `pypi.yml` publica automaticamente ao receber a tag).
+
+Antes de qualquer merge na `main`, a suíte completa deve estar verde:
+
+```bash
+pytest tests/ && black --check pynatem/ tests/ && isort --check-only pynatem/ tests/ && flake8 pynatem/ tests/ && mypy pynatem/ --ignore-missing-imports
+```
+
 ## Rodar Testes
 
 ```bash

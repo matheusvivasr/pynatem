@@ -142,7 +142,28 @@ os modelos MDxx + construtor nomeado para o modelo mais comum.*
 
 ---
 
-## 🏁 v2.0.0 — Cobertura Total ANATEM 12.10
+## 🏁 v2.0.0 — Primeiro Lançamento Público (PyPI) ✅ **LANÇADA**
+
+Marco **MAJOR** — `pip install pynatem`. Entregue: conformidade char-a-char
+de 16 serializadores com o manual oficial, 280 testes, CI verde e repositório
+público limpo. A cobertura total do manual passa a ser perseguida nos patches
+v2.0.x abaixo e culmina no marco v3.0.0.
+
+## v2.0.x — Backlog de Conformidade (patches)
+
+| Patch | Meta |
+|-------|------|
+| v2.0.1 | **Réguas por variante MDxx** (DRGT MD01–24, DRGV MD01–07, DEST MD01–12, DMDG MD01–03, DMTC) — colunas exatas por modelo |
+| v2.0.2 | Blocos FACTS/HVDC multilinha (DVSI, DCNV, DDFM, DMOT, DGSE) auditados char-a-char |
+| v2.0.3 | Demais códigos do Cap. 46 ainda sem teste de conformidade |
+
+Método estabelecido: reproduzir o exemplo oficial via API e comparar com os
+fontes `_sources/*.rst.txt` do manual online; estender
+`tests/test_conformidade_manual.py` a cada código coberto.
+
+---
+
+## 🏁 v3.0.0 — Cobertura Total ANATEM 12.10
 
 Marco **MAJOR**. Critérios de aceite:
 
@@ -154,17 +175,6 @@ Marco **MAJOR**. Critérios de aceite:
 - [ ] Suíte de testes ≥ 500, cobertura ≥ 92%
 - [ ] Documentação teórica cobrindo cada equipamento
 - [ ] Migração para o manual 12.11
-
-### Backlog herdado da auditoria v1.10.2 (fazer primeiro)
-
-- [ ] **Réguas por variante MDxx** (DRGT MD01–24, DRGV MD01–07, DEST MD01–12,
-      DMDG MD01–03, DMTC): ~30 réguas com larguras irregulares — a serialização
-      genérica atual preserva valores mas não as colunas exatas
-- [ ] **Blocos FACTS/HVDC multilinha** (DVSI, DCNV, DDFM, DMOT, DGSE): auditar
-      com o mesmo método char-a-char (fontes oficiais já em cache)
-- [ ] **Método estabelecido:** reproduzir o exemplo oficial via API e comparar
-      com `_sources/*.rst.txt` do manual online — estender
-      `tests/test_conformidade_manual.py` a cada código coberto
 
 ---
 

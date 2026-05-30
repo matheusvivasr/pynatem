@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pynatem"
-version = "1.10.2"
+version = "2.0.0"
 description = "Biblioteca Python para geração e manipulação de arquivos ANATEM (.stb)"
 readme = "README.md"
 requires-python = ">=3.9"
@@ -12,7 +12,7 @@ license = "MIT"
 license-files = ["LICENSE"]
 keywords = ["anatem", "power systems", "stability", "transient", "cepel"]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Science/Research",
     "Topic :: Scientific/Engineering :: Electrical Engineering",
     "Programming Language :: Python :: 3",
