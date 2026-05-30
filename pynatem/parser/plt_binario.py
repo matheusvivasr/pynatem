@@ -14,10 +14,10 @@ Status: FASE 1 (análise de estrutura, parser de header)
 """
 
 from __future__ import annotations
+
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import BinaryIO, Dict, List, Optional, Tuple
-import struct
+from typing import BinaryIO, Dict, List, Optional
 
 
 @dataclass
@@ -163,16 +163,13 @@ class LeitorPLTBinario:
             # Padrão: "7TIPO" ou espaço + "TIPO"
             for tipo in tipos_conhecidos:
                 if tipo in text and (
-                    offset > 0 and chr(dados[offset - 1]) in " \n"
-                    or offset == 0
+                    offset > 0 and chr(dados[offset - 1]) in " \n" or offset == 0
                 ):
                     # Extrair linha
                     line_end = dados.find(b"\n", offset)
                     if line_end < 0:
                         line_end = offset + 100
-                    linha = dados[offset:line_end].decode(
-                        "latin-1", errors="ignore"
-                    )
+                    linha = dados[offset:line_end].decode("latin-1", errors="ignore")
 
                     # Parse básico: "TIPO no sub descrição"
                     partes = linha.split()
@@ -219,9 +216,7 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         plt_path = sys.argv[1]
     else:
-        plt_path = (
-            "examples/treinamentoWP/TREINAMENTO_5_BARRAS.PLT"
-        )
+        plt_path = "examples/treinamentoWP/TREINAMENTO_5_BARRAS.PLT"
 
     leitor = LeitorPLTBinario(plt_path)
     try:

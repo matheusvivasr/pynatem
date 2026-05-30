@@ -23,43 +23,44 @@ Ordem dos blocos no STB:
 """
 
 from __future__ import annotations
+
 from copy import deepcopy
 from pathlib import Path
-from typing import List, Optional, Union
 from pathlib import Path as _Path
+from typing import List, Optional, Union
 
 from .blocos import (
-    BlocoDOPC,
     BlocoDARQ,
-    BlocoDSIM,
+    BlocoDCAG,
+    BlocoDCAR,
+    BlocoDCCT,
+    BlocoDCLI,
+    BlocoDCST,
+    BlocoDDFM,
+    BlocoDELO,
+    BlocoDEST,
     BlocoDEVT,
-    BlocoDPLT,
+    BlocoDFLA,
+    BlocoDFNT,
+    BlocoDGER,
+    BlocoDGSE,
+    BlocoDLTC,
     BlocoDMAQ,
+    BlocoDMCV,
     BlocoDMDG,
+    BlocoDMEL,
+    BlocoDMOT,
+    BlocoDMTC,
+    BlocoDOPC,
+    BlocoDPLT,
     BlocoDRGT,
     BlocoDRGV,
-    BlocoDEST,
-    BlocoDCST,
-    BlocoDCAG,
-    BlocoDCCT,
-    BlocoDCAR,
-    BlocoDGER,
-    BlocoDMTC,
-    BlocoDLTC,
-    BlocoDFLA,
-    BlocoDMOT,
-    BlocoDGSE,
-    BlocoDFNT,
-    BlocoDMEL,
-    BlocoDCLI,
-    BlocoDMCV,
+    BlocoDSIM,
     BlocoEXSI,
+    BlocoHVDC,
+    BlocoSTATCOM,
     BlocoSVC,
     BlocoTCSC,
-    BlocoSTATCOM,
-    BlocoHVDC,
-    BlocoDELO,
-    BlocoDDFM,
 )
 
 

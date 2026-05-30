@@ -32,6 +32,7 @@ Inicialização (§29.7):
 from dataclasses import dataclass, field
 from typing import List, Optional
 
+
 @dataclass
 class DEFVAL:
     """Declaração de Valor Inicial de Variável CDU (§29.4)."""
@@ -44,7 +45,7 @@ class DEFVAL:
 
     def serializar(self) -> str:
         """Serializa em formato ANATEM §29.4."""
-        linha = f"DEFVAL"
+        linha = "DEFVAL"
         if self.stip:
             linha += f" {self.stip:<6}"
         else:
@@ -52,7 +53,7 @@ class DEFVAL:
         linha += f" {self.vdef:<15}"
         linha += f" {self.d1:<20}"
         if self.o:
-            linha += f" O"
+            linha += " O"
         if self.d2 != 0.0:
             linha += f" {self.d2:>15.10f}"
         return linha + "\n"
@@ -89,8 +90,9 @@ class InicializacaoCDU:
     defvdf_list: List[DEFVDF] = field(default_factory=list)
     defplt_list: List[DEFPLT] = field(default_factory=list)
 
-    def adicionar_defval(self, vdef: str, d1: str = "", stip: str = "",
-                        o: bool = False, d2: float = 0.0) -> "InicializacaoCDU":
+    def adicionar_defval(
+        self, vdef: str, d1: str = "", stip: str = "", o: bool = False, d2: float = 0.0
+    ) -> "InicializacaoCDU":
         """Adiciona DEFVAL (§29.4)."""
         self.defval_list.append(DEFVAL(vdef=vdef, d1=d1, stip=stip, o=o, d2=d2))
         return self
@@ -124,6 +126,7 @@ class MensagemPersonalizada:
     Define mensagens que serão emitidas por blocos ALERTA durante simulação.
     Suporta expressões coringas que são substituídas em tempo de simulação.
     """
+
     lc: int  # número identificador da mensagem (usado por ALERTA P1/P2)
     texto: str  # mensagem com expressões coringas
 
@@ -139,7 +142,8 @@ class MensagemPersonalizada:
         """Valida se coringas utilizados são válidos."""
         erros = []
         import re
-        coringas_encontrados = re.findall(r'%[^%]+%', self.texto)
+
+        coringas_encontrados = re.findall(r"%[^%]+%", self.texto)
         for coringa in coringas_encontrados:
             if coringa not in self.CORINGAS_VALIDAS:
                 erros.append(f"Coringa inválido: {coringa}")
@@ -158,6 +162,7 @@ class BlocoAlerta:
     P1: Lc para transição 0->1 (em branco=desabilitado, 0=msg padrão, >0=DMSG)
     P2: Lc para transição 1->0 (mesma lógica)
     """
+
     nome: str  # identificação do bloco
     entrada: str  # sinal de entrada a monitorar
     p1: Optional[int] = None  # mensagem para 0->1
@@ -193,6 +198,7 @@ class AlgoritmoOTM:
     - OTM5: Backward a partir de ganho nulo
     - OTMX: Combinação automática (recomendada)
     """
+
     tipo: str  # "OTM3", "OTM4", "OTM5" ou "OTMX" (recomendado)
     ativo: bool = True  # habilitar algoritmo
     gerar_relatorio: bool = False  # gerar relatório com blocos desligados
@@ -224,6 +230,7 @@ class Sensor:
     Sensores importam grandezas elétricas da rede para monitoração.
     Implementados como blocos IMPORT com subtipo apropriado.
     """
+
     nome: str  # identificação alfanumérica do sensor
     tipo: str  # subtipo de IMPORT (STBUS, STCIRC, VOLT, FREQ, etc)
     equipamento: str  # localização remota: nb (barra), nclin (linha), etc
@@ -249,6 +256,7 @@ class Atuador:
     Implementados como blocos EXPORT.
     Suportam manual override (IMPORT de referência) ou sem override (ENTRAD).
     """
+
     nome: str  # identificação alfanumérica do atuador
     tipo: str  # tipo de ação (STGER, STBSH, RTRF, XTRF, etc)
     equipamento: str  # localização: nb, (nb,gr), (ni, nf, nclin), etc
@@ -273,6 +281,7 @@ class MalhaHabilitadora:
     Modela as CONDIÇÕES NECESSÁRIAS para ativação (lógica AND).
     Todas as condições precisam ser verdadeiras simultaneamente.
     """
+
     nome: str  # identificação: ex "MALHA_ENABLE"
     condicoes: List[str] = field(default_factory=list)  # sinais que habilitem
 
@@ -297,6 +306,7 @@ class MalhaInibidora:
     Modela as EXCEÇÕES para não-atuação (lógica NOR).
     Basta uma condição ser falsa para inibir a proteção.
     """
+
     nome: str  # identificação: ex "MALHA_INIBIR"
     condicoes: List[str] = field(default_factory=list)  # sinais que inibam
 
@@ -321,6 +331,7 @@ class MalhaAtuadora:
     Núcleo da lógica de atuação: avalia mudanças a provocar no sistema
     em função de variáveis monitoradas. Maior parte dos blocos concentra-se aqui.
     """
+
     blocos: List[str] = field(default_factory=list)  # linhas de blocos CDU
 
     def adicionar_bloco(self, linha_bloco: str) -> "MalhaAtuadora":
@@ -340,6 +351,7 @@ class ReleouSEP:
     Encapsula sensores, atuadores, malhas habilitadora/inibidora e malha atuadora.
     Gera CDU com estrutura bem-definida para proteção.
     """
+
     nome: str  # identificação do relé/SEP
     sensores: List[Sensor] = field(default_factory=list)
     atuadores: List[Atuador] = field(default_factory=list)
@@ -374,7 +386,10 @@ class ReleouSEP:
 
     def serializar_cdu(self) -> str:
         """Serializa relé/SEP como corpo CDU estruturado."""
-        linhas = [f"# Relé/SEP: {self.nome}\n", "# Estrutura: Sensores -> Malhas -> Atuadores\n\n"]
+        linhas = [
+            f"# Relé/SEP: {self.nome}\n",
+            "# Estrutura: Sensores -> Malhas -> Atuadores\n\n",
+        ]
 
         # Seção de Sensores (IMPORT)
         if self.sensores:
@@ -404,7 +419,9 @@ class ReleouSEP:
         # Seção de Atuadores (EXPORT)
         if self.atuadores:
             linhas.append("# ATUADORES (Comandos para equipamentos da rede)\n")
-            linhas.append("# Recomendação: adicionar DELAY antes do EXPORT para estabilidade\n")
+            linhas.append(
+                "# Recomendação: adicionar DELAY antes do EXPORT para estabilidade\n"
+            )
             for atuador in self.atuadores:
                 linhas.append(atuador.serializar_bloco_export())
 
@@ -414,6 +431,7 @@ class ReleouSEP:
 @dataclass
 class ParametroTopologia:
     """Parâmetro em uma topologia de CDU (§30.1.1)."""
+
     nome: str  # identificação do parâmetro
     valor_padrao: float  # valor padrão na topologia
     obrigatorio: bool = False  # True = usuario DEVE redefinir em ACDU
@@ -432,14 +450,16 @@ class TopologiaCDU:
     em múltiplos equipamentos. Os parâmetros podem ser obrigatórios
     (usuário deve redefinir) ou opcionais (herdam valor da topologia).
     """
+
     ntop: int  # número identificador da topologia
     nome: str  # identificação alfanumérica
     parametros: dict[str, ParametroTopologia] = field(default_factory=dict)
     blocos: List[str] = field(default_factory=list)  # corpo CDU (linhas em ANATEM)
     inicializacao: Optional[InicializacaoCDU] = None
 
-    def adicionar_parametro(self, nome: str, valor_padrao: float,
-                            obrigatorio: bool = False) -> "TopologiaCDU":
+    def adicionar_parametro(
+        self, nome: str, valor_padrao: float, obrigatorio: bool = False
+    ) -> "TopologiaCDU":
         """Adiciona parâmetro à topologia (§30.1.1)."""
         self.parametros[nome] = ParametroTopologia(
             nome=nome, valor_padrao=valor_padrao, obrigatorio=obrigatorio
@@ -456,8 +476,9 @@ class TopologiaCDU:
         self.inicializacao = init
         return self
 
-    def validar_parametros_obrigatorios(self, params_redefinidos: dict[str, float]
-                                       ) -> tuple[bool, List[str]]:
+    def validar_parametros_obrigatorios(
+        self, params_redefinidos: dict[str, float]
+    ) -> tuple[bool, List[str]]:
         """Verifica se todos os parâmetros obrigatórios foram redefinidos.
 
         Retorna: (válido, lista de parâmetros faltantes)
@@ -475,9 +496,7 @@ class TopologiaCDU:
         # Parâmetros (DEFPAR)
         for nome, param in self.parametros.items():
             ob_flag = " O" if param.obrigatorio else ""
-            linhas.append(
-                f"DEFPAR {nome:<15} {param.valor_padrao:>15.10f}{ob_flag}\n"
-            )
+            linhas.append(f"DEFPAR {nome:<15} {param.valor_padrao:>15.10f}{ob_flag}\n")
 
         # Corpo da topologia (blocos CDU)
         for bloco in self.blocos:
@@ -500,6 +519,7 @@ class AssociacaoCDU:
     Cria uma instância concreta de uma topologia, redefinindo
     parâmetros conforme necessário.
     """
+
     ncdu: int  # número identificador do CDU
     ntop: int  # número da topologia (referência DTDU)
     nome: str  # identificação alfanumérica
@@ -567,7 +587,7 @@ if __name__ == "__main__":
 
     # Parâmetros obrigatórios (específicos de cada equipamento)
     top_avr.adicionar_parametro("KA", 100.0, obrigatorio=True)  # Ganho do AVR
-    top_avr.adicionar_parametro("TA", 0.1, obrigatorio=True)   # Constante de tempo
+    top_avr.adicionar_parametro("TA", 0.1, obrigatorio=True)  # Constante de tempo
 
     # Parâmetros opcionais (típicos, podem não mudar)
     top_avr.adicionar_parametro("VMAX", 2.0, obrigatorio=False)  # Limite máximo
@@ -593,9 +613,9 @@ if __name__ == "__main__":
 
     acdu1 = AssociacaoCDU(ncdu=1, ntop=1, nome="AVR_GEN1")
     acdu1.topologia = top_avr
-    acdu1.adicionar_parametro("KA", 150.0)   # Mais rápido para gen grande
+    acdu1.adicionar_parametro("KA", 150.0)  # Mais rápido para gen grande
     acdu1.adicionar_parametro("TA", 0.08)
-    acdu1.adicionar_parametro("VMAX", 2.5)   # Limite maior
+    acdu1.adicionar_parametro("VMAX", 2.5)  # Limite maior
 
     valido, faltantes = acdu1.validar()
     if valido:
@@ -609,7 +629,7 @@ if __name__ == "__main__":
 
     acdu2 = AssociacaoCDU(ncdu=2, ntop=1, nome="AVR_GEN2")
     acdu2.topologia = top_avr
-    acdu2.adicionar_parametro("KA", 80.0)    # Mais lento para gen pequeno
+    acdu2.adicionar_parametro("KA", 80.0)  # Mais lento para gen pequeno
     acdu2.adicionar_parametro("TA", 0.15)
     # VMAX e VMIN usam defaults da topologia
 
@@ -650,7 +670,7 @@ if __name__ == "__main__":
             tipo="VOLT",
             equipamento="1",  # barra 1
             p1="V",
-            p2=1.0  # default 1 pu se barra ausente
+            p2=1.0,  # default 1 pu se barra ausente
         )
     )
 
@@ -669,7 +689,9 @@ if __name__ == "__main__":
     malha = MalhaAtuadora()
     malha.adicionar_bloco("BLO comp COMPAR sensor_V 0.7 0 0 0")  # V < 0.7 pu
     malha.adicionar_bloco("BLO temp DISMAX comp 0.5 0 0 0")  # temporização 0.5s
-    malha.adicionar_bloco("BLO logica AND status_enable temp")  # habilita e temporização
+    malha.adicionar_bloco(
+        "BLO logica AND status_enable temp"
+    )  # habilita e temporização
     malha.adicionar_bloco("BLO comando NOR status_inibir logica")  # não inibido
     rele_uv.definir_malha_atuadora(malha)
 
@@ -695,8 +717,7 @@ if __name__ == "__main__":
     # Definir mensagens personalizadas (DMSG)
     print("\n--- MENSAGENS PERSONALIZADAS ---")
     msg1 = MensagemPersonalizada(
-        lc=1001,
-        texto="ALERTA: Subtensao detectada em %nome_do_cdu% (CDU %ncdu%)"
+        lc=1001, texto="ALERTA: Subtensao detectada em %nome_do_cdu% (CDU %ncdu%)"
     )
     valido, erros = msg1.validar()
     if valido:
@@ -705,8 +726,7 @@ if __name__ == "__main__":
         print(f"Erro na msg 1001: {erros}")
 
     msg2 = MensagemPersonalizada(
-        lc=1002,
-        texto="ALERTA: Transicao %trns% em %vent% (bloco %nb%)"
+        lc=1002, texto="ALERTA: Transicao %trns% em %vent% (bloco %nb%)"
     )
     valido, erros = msg2.validar()
     if valido:
@@ -716,10 +736,7 @@ if __name__ == "__main__":
 
     # Erro intencional: coringa inválido
     print("\nTestando coringa inválido:")
-    msg_erro = MensagemPersonalizada(
-        lc=1003,
-        texto="Sinal %invalido% causou problema"
-    )
+    msg_erro = MensagemPersonalizada(lc=1003, texto="Sinal %invalido% causou problema")
     valido, erros = msg_erro.validar()
     if not valido:
         print(f"  Erro esperado detectado: {erros}")
@@ -730,13 +747,13 @@ if __name__ == "__main__":
         nome="Alerta_Subtensao",
         entrada="condicao_tensao_baixa",
         p1=1001,  # usa DMSG 1001 para transição 0->1
-        p2=0      # usa mensagem padrão para transição 1->0
+        p2=0,  # usa mensagem padrão para transição 1->0
     )
-    valido, msg_erro = alerta1.validar()
+    valido, erro_alerta = alerta1.validar()
     if valido:
         print(f"Bloco ALERTA criado:\n{alerta1.serializar_bloco_cdu()}")
     else:
-        print(f"Erro: {msg_erro}")
+        print(f"Erro: {erro_alerta}")
 
     # Algoritmos OTMx
     print("--- ALGORITMOS OTMx (Detecção Malha Inativa) ---")
@@ -745,7 +762,9 @@ if __name__ == "__main__":
     if valido:
         print(f"Algoritmo {otmx.tipo} configurado:\n{otmx.serializar_opcao()}")
         print("Benefícios:")
-        print("  • Desliga blocos certamente inativos (ramos com lógicas desabilitadas)")
+        print(
+            "  • Desliga blocos certamente inativos (ramos com lógicas desabilitadas)"
+        )
         print("  • Melhora performance: ~10-15% mais rápido em sistemas completos")
         print("  • Reduz uso de memória: detecta 5K-20K blocos inativos")
         print("  • Recomendado para uso cotidiano (v11.5+)")
@@ -755,12 +774,12 @@ if __name__ == "__main__":
     print("Exemplo Completo: Relé com Alertas e Otimização")
     print("-" * 70)
     print("\nSegunda-feira (Caso Reduzido):")
-    print(f"  • Blocos: 49.704")
-    print(f"  • Sem OTM: 6min 36s")
-    print(f"  • Com OTMX: 6min 30s (1.5% mais rápido)")
-    print(f"  • Blocos desligados: 5.066 (10%)")
+    print("  • Blocos: 49.704")
+    print("  • Sem OTM: 6min 36s")
+    print("  • Com OTMX: 6min 30s (1.5% mais rápido)")
+    print("  • Blocos desligados: 5.066 (10%)")
     print("\nCaso Completo (SIN com Eólica + Solar):")
-    print(f"  • Blocos: 128.512")
-    print(f"  • Sem OTM: 17min 36s")
-    print(f"  • Com OTMX: 15min 34s (13% mais rápido)")
-    print(f"  • Blocos desligados: 19.812 (15%)")
+    print("  • Blocos: 128.512")
+    print("  • Sem OTM: 17min 36s")
+    print("  • Com OTMX: 15min 34s (13% mais rápido)")
+    print("  • Blocos desligados: 19.812 (15%)")

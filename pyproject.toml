@@ -40,3 +40,9 @@ Homepage = "https://github.com/matheusvivasr/pynatem"
 Repository = "https://github.com/matheusvivasr/pynatem"
 Issues = "https://github.com/matheusvivasr/pynatem/issues"
 Changelog = "https://github.com/matheusvivasr/pynatem/blob/vivas/CHANGELOG.md"
+
+[tool.black]
+target-version = ["py39", "py310", "py311", "py312"]
+
+[tool.isort]
+profile = "black"

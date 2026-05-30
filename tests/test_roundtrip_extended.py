@@ -1,16 +1,8 @@
 """Extended roundtrip tests for improved coverage (50+ tests)."""
 
 import pytest
+
 from pynatem import CasoAnatem
-from pynatem.blocos import (
-    BlocoDARQ,
-    BlocoDOPC,
-    BlocoDSIM,
-    BlocoDEVT,
-    BlocoDPLT,
-    BlocoDMDG,
-    BlocoDMAQ,
-)
 
 
 class TestRoundtripExtended:
@@ -181,7 +173,7 @@ class TestValidationExtended:
         """Test validation after case modifications."""
         caso = CasoAnatem()
         caso.curto_barra(1001, 1.0, 0.1)
-        avisos_before = caso.validar()
+        caso.validar()
 
         caso.dsim.tfim = 25.0
         avisos_after = caso.validar()

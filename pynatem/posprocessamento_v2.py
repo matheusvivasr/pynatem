@@ -6,15 +6,15 @@ v1.4.4: Leitor de arquivos .OUT (relatórios estruturados).
 v1.4+: Plotagem Python com matplotlib.
 """
 
-import struct
-from pathlib import Path
-from dataclasses import dataclass, field
-from typing import List, Dict, Optional, Tuple, Any
 import re
+import struct
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple
 
 try:
     import matplotlib.pyplot as plt
-    import matplotlib.dates as mdates
+
     MATPLOTLIB_DISPONIVEL = True
 except ImportError:
     MATPLOTLIB_DISPONIVEL = False
@@ -140,21 +140,18 @@ class LeitorPLTBinario:
         if num_pontos > 0 and num_vars > 0:
             # Extrair floats
             floats_raw = struct.unpack(
-                f'<{num_pontos * num_vars}f',
-                dados[offset_dados : offset_dados + num_pontos * num_vars * 4]
+                f"<{num_pontos * num_vars}f",
+                dados[offset_dados : offset_dados + num_pontos * num_vars * 4],
             )
 
             # Reorganizar em variáveis
             for var_id in range(num_vars):
                 var_nome = f"VAR_{var_id}"
-                var = VarPlotagem(
-                    tipo=var_nome,
-                    num_elem=var_id,
-                    descricao=var_nome
-                )
+                var = VarPlotagem(tipo=var_nome, num_elem=var_id, descricao=var_nome)
                 # Extrair valores dessa variável (stride por num_vars)
-                var.valores = [floats_raw[i * num_vars + var_id]
-                               for i in range(num_pontos)]
+                var.valores = [
+                    floats_raw[i * num_vars + var_id] for i in range(num_pontos)
+                ]
                 resultado.variaveis[var_nome] = var
 
             # Criar vetor de tempo global
@@ -169,7 +166,7 @@ class LeitorPLTBinario:
     @staticmethod
     def _ler_texto(f, resultado: ResultadoPLT) -> ResultadoPLT:
         """Fallback: lê .PLT em formato texto (raramente usado)."""
-        conteudo = f.read().decode("latin-1", errors="ignore")
+        f.read().decode("latin-1", errors="ignore")
         resultado.titulo_caso = "Formato texto (não parseado ainda)"
         return resultado
 
@@ -307,8 +304,12 @@ class ResultadoSnapshot:
     titulo_caso: str = ""
     variaveis_estado: Dict[str, float] = field(default_factory=dict)
     barras: Dict[int, Dict[str, float]] = field(default_factory=dict)
-    maquinas: Dict[Tuple[int, int], Dict[str, float]] = field(default_factory=dict)  # (nb, gr)
-    linhas: Dict[Tuple[int, int, int], Dict[str, float]] = field(default_factory=dict)  # (de, pa, nc)
+    maquinas: Dict[Tuple[int, int], Dict[str, float]] = field(
+        default_factory=dict
+    )  # (nb, gr)
+    linhas: Dict[Tuple[int, int, int], Dict[str, float]] = field(
+        default_factory=dict
+    )  # (de, pa, nc)
 
 
 class LeitorREL:
@@ -440,7 +441,7 @@ class LeitorOUT:
     @staticmethod
     def ler(caminho: Path) -> Dict:
         """Lê arquivo .OUT e extrai seções estruturadas."""
-        resultado = {
+        resultado: Dict[str, Any] = {
             "arquivo": str(caminho),
             "versao_anatem": None,
             "titulo_caso": None,

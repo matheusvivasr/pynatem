@@ -28,8 +28,9 @@ NOTA DE CONFIANÇA DOS CÓDIGOS:
 """
 
 from __future__ import annotations
+
 from dataclasses import dataclass, field
-from typing import List, Optional, Tuple
+from typing import List, Optional
 
 # ---------------------------------------------------------------------------
 # Base
@@ -429,18 +430,14 @@ class BlocoDEVT(BlocoBase):
         self, de: int, para: int, tini: float, circ: Optional[int] = None
     ) -> "BlocoDEVT":
         """Abre um circuito CA (ABCI, §13.2). ``circ`` em branco = circuito 1."""
-        self._eventos.append(
-            _Evento(codigo="ABCI", tini=tini, el=de, pa=para, nc=circ)
-        )
+        self._eventos.append(_Evento(codigo="ABCI", tini=tini, el=de, pa=para, nc=circ))
         return self
 
     def fechamento_linha(
         self, de: int, para: int, tini: float, circ: Optional[int] = None
     ) -> "BlocoDEVT":
         """Fecha um circuito CA (FECI, §13.2). ``circ`` em branco = circuito 1."""
-        self._eventos.append(
-            _Evento(codigo="FECI", tini=tini, el=de, pa=para, nc=circ)
-        )
+        self._eventos.append(_Evento(codigo="FECI", tini=tini, el=de, pa=para, nc=circ))
         return self
 
     def modificacao_shunt(
@@ -804,9 +801,7 @@ class _AssocMaquina:
             return self.texto_bruto
         fi = self._fi
         fu = self._fu
-        xvd = (
-            f"{_num_compacto(self.xvd):>5}" if self.xvd is not None else " " * 5
-        )
+        xvd = f"{_num_compacto(self.xvd):>5}" if self.xvd is not None else " " * 5
         linha = (
             fi(self.barra, 5)
             + fi(self.grupo, 5)
@@ -949,9 +944,7 @@ class BlocoDMAQ(BlocoBase):
         alinhada às colunas reais dos campos de dados.
         """
         linhas = [self._cabecalho()]
-        linhas.append(
-            "( Nb)   Gr (P) (Q) Und ( Mg ) ( Mt )u( Mv )u( Me )u(Xvd)(Nbc)\n"
-        )
+        linhas.append("( Nb)   Gr (P) (Q) Und ( Mg ) ( Mt )u( Mv )u( Me )u(Xvd)(Nbc)\n")
         for a in self.associacoes:
             linhas.append(a.serializar() + "\n")
         linhas.append(self._terminador())
@@ -1315,8 +1308,8 @@ class BlocoDMDG(BlocoBase):
             linhas.append("DMDG MD02\n")
             linhas.append('(No) (CS) (Ld )(Lq )(L\'d)(L"d)(Ll )(T\'d) (T"d)(T"q)\n')
             linhas.append("(No) (Ra )( H )( D )(MVA)Fr C\n")
-            for m in self._md02:
-                linhas.append(m.serializar() + "\n")
+            for m2 in self._md02:
+                linhas.append(m2.serializar() + "\n")
             linhas.append("999999\n")
 
         if self._md03:
@@ -1325,8 +1318,8 @@ class BlocoDMDG(BlocoBase):
                 "(No) (CS) (Ld )(Lq )(L'd)(L'q)(L\"d)(Ll )(T'd)(T'q)(T\"d)(T\"q)\n"
             )
             linhas.append("(No) (Ra )( H )( D )(MVA)Fr C\n")
-            for m in self._md03:
-                linhas.append(m.serializar() + "\n")
+            for m3 in self._md03:
+                linhas.append(m3.serializar() + "\n")
             linhas.append("999999\n")
 
         return "".join(linhas)
@@ -1866,8 +1859,7 @@ class BlocoDGER(BlocoBase):
         """
         self._geracoes.append(
             _GeracaoFuncional(
-                selecao=selecao, a=a, b=b, c=c, d=d,
-                vbp=vbp, vdp=vdp, vbq=vbq, vdq=vdq
+                selecao=selecao, a=a, b=b, c=c, d=d, vbp=vbp, vdp=vdp, vbq=vbq, vdq=vdq
             )
         )
         return self
@@ -1883,7 +1875,8 @@ class BlocoDGER(BlocoBase):
     def serializar(self) -> str:
         linhas = [
             self._cabecalho(),
-            "(tp) ( no) C (tp) ( no) C (tp) ( no) C (tp) ( no)   (A) (B) (C) (D) (VbP) (VdP) (VbQ) (VdQ)\n",
+            "(tp) ( no) C (tp) ( no) C (tp) ( no) C (tp) ( no)   "
+            "(A) (B) (C) (D) (VbP) (VdP) (VbQ) (VdQ)\n",
         ]
         for g in self._geracoes:
             linhas.append(g.serializar() + "\n")
@@ -2748,13 +2741,19 @@ class _AssocDFIG:
 
     def serializar(self) -> str:
         partes = [
-            f"{self.nb:>5}", f"{self.gr:>3}", f"{self.p:>6.1f}", f"{self.q:>6.1f}",
-            f"{self.und:>4}", f"{self.mg:>4}",
+            f"{self.nb:>5}",
+            f"{self.gr:>3}",
+            f"{self.p:>6.1f}",
+            f"{self.q:>6.1f}",
+            f"{self.und:>4}",
+            f"{self.mg:>4}",
             f"{_sep_u(self.mt, self.mt_usuario):>6}",
             f"{_sep_u(self.mc, self.mc_usuario):>6}",
-            f"{self.xvd:>7.2f}", f"{self.nbc:>4}",
+            f"{self.xvd:>7.2f}",
+            f"{self.nbc:>4}",
             f"{_sep_u_float(self.slip, self.slip_usuario):>8}",
-            f"{self.r:>2}", f"{self.i:>2}"
+            f"{self.r:>2}",
+            f"{self.i:>2}",
         ]
         return "".join(partes)
 
@@ -2831,9 +2830,22 @@ class BlocoDDFM(BlocoBase):
         """
         self._dfigs.append(
             _AssocDFIG(
-                nb=nb, gr=gr, p=p, q=q, und=und, mg=mg, mt=mt, mc=mc,
-                mt_usuario=mt_usuario, mc_usuario=mc_usuario,
-                xvd=xvd, nbc=nbc, slip=slip, slip_usuario=slip_usuario, r=r, i=i
+                nb=nb,
+                gr=gr,
+                p=p,
+                q=q,
+                und=und,
+                mg=mg,
+                mt=mt,
+                mc=mc,
+                mt_usuario=mt_usuario,
+                mc_usuario=mc_usuario,
+                xvd=xvd,
+                nbc=nbc,
+                slip=slip,
+                slip_usuario=slip_usuario,
+                r=r,
+                i=i,
             )
         )
         return self
@@ -2968,14 +2980,17 @@ class BlocoDMOT(BlocoBase):
         return self
 
     def _guia(self) -> str:
-        return "( Nb)( Gr)      H        K0        K1        K2       EXP  M   ( Rr  Xr  Xs  Xm  Xp Tr0)  M\n"
+        return (
+            "( Nb)( Gr)      H        K0        K1        K2       EXP  M   "
+            "( Rr  Xr  Xs  Xm  Xp Tr0)  M\n"
+        )
 
     def serializar(self) -> str:
         linhas = [self._cabecalho(), self._guia()]
         for m in self._tipo1:
             linhas.append(m.serializar() + "\n")
-        for m in self._tipo2:
-            linhas.append(m.serializar() + "\n")
+        for m2 in self._tipo2:
+            linhas.append(m2.serializar() + "\n")
         linhas.append(self._terminador())
         return "".join(linhas)
 
@@ -3004,13 +3019,19 @@ class _AssocGSE:
 
     def serializar(self) -> str:
         partes = [
-            f"{self.nb:>5}", f"{self.gr:>3}", f"{self.p:>6.0f}", f"{self.q:>6.0f}",
-            f"{self.und:>4}", f"{self.mg:>5}",
+            f"{self.nb:>5}",
+            f"{self.gr:>3}",
+            f"{self.p:>6.0f}",
+            f"{self.q:>6.0f}",
+            f"{self.und:>4}",
+            f"{self.mg:>5}",
             f"{_sep_u(self.mt, self.mt_usuario):>6}",
             f"{_sep_u(self.mv, self.mv_usuario):>6}",
             f"{_sep_u(self.mc1, self.mc1_usuario):>6}",
             f"{_sep_u(self.mc2, self.mc2_usuario):>6}",
-            f"{self.freq:>6.0f}", f"{self.vtr0:>6.2f}", f"{self.vcap0:>6.2f}"
+            f"{self.freq:>6.0f}",
+            f"{self.vtr0:>6.2f}",
+            f"{self.vcap0:>6.2f}",
         ]
         return "".join(partes)
 
@@ -3089,16 +3110,31 @@ class BlocoDGSE(BlocoBase):
         """
         self._gses.append(
             _AssocGSE(
-                nb=nb, gr=gr, p=p, q=q, und=und, mg=mg, mt=mt, mv=mv, mc1=mc1, mc2=mc2,
-                freq=freq, vtr0=vtr0, vcap0=vcap0,
-                mt_usuario=mt_usuario, mv_usuario=mv_usuario,
-                mc1_usuario=mc1_usuario, mc2_usuario=mc2_usuario
+                nb=nb,
+                gr=gr,
+                p=p,
+                q=q,
+                und=und,
+                mg=mg,
+                mt=mt,
+                mv=mv,
+                mc1=mc1,
+                mc2=mc2,
+                freq=freq,
+                vtr0=vtr0,
+                vcap0=vcap0,
+                mt_usuario=mt_usuario,
+                mv_usuario=mv_usuario,
+                mc1_usuario=mc1_usuario,
+                mc2_usuario=mc2_usuario,
             )
         )
         return self
 
     def _guia(self) -> str:
-        return "( Nb) Gr (P) (Q)Und  Mg ( Mt )u( Mv )u(Mc1)u(Mc2)u(Freq)(Vtr0 )(Vcap0)\n"
+        return (
+            "( Nb) Gr (P) (Q)Und  Mg ( Mt )u( Mv )u(Mc1)u(Mc2)u(Freq)(Vtr0 )(Vcap0)\n"
+        )
 
     def serializar(self) -> str:
         linhas = [self._cabecalho(), self._guia()]
@@ -3126,11 +3162,16 @@ class _FonteShuntCDU:
 
     def serializar(self) -> str:
         partes = [
-            f"{self.nb:>5}", f"{self.gr:>3}", f"{self.tipo:>2}",
-            f"{self.fp:>7.0f}", f"{self.fq:>7.0f}", f"{self.und:>4}",
+            f"{self.nb:>5}",
+            f"{self.gr:>3}",
+            f"{self.tipo:>2}",
+            f"{self.fp:>7.0f}",
+            f"{self.fq:>7.0f}",
+            f"{self.und:>4}",
             f"{_sep_u(self.mc, self.mc_usuario):>6}",
-            f"{self.r_ou_g:>6.2f}", f"{self.x_ou_b:>6.2f}",
-            f"{self.sbas:>6.1f}" if self.sbas != 0.0 else ""
+            f"{self.r_ou_g:>6.2f}",
+            f"{self.x_ou_b:>6.2f}",
+            f"{self.sbas:>6.1f}" if self.sbas != 0.0 else "",
         ]
         return "".join(partes)
 
@@ -3202,8 +3243,17 @@ class BlocoDFNT(BlocoBase):
         """
         self._fontes.append(
             _FonteShuntCDU(
-                nb=nb, gr=gr, tipo=tipo.upper(), fp=fp, fq=fq, und=und, mc=mc,
-                mc_usuario=mc_usuario, r_ou_g=r_ou_g, x_ou_b=x_ou_b, sbas=sbas
+                nb=nb,
+                gr=gr,
+                tipo=tipo.upper(),
+                fp=fp,
+                fq=fq,
+                und=und,
+                mc=mc,
+                mc_usuario=mc_usuario,
+                r_ou_g=r_ou_g,
+                x_ou_b=x_ou_b,
+                sbas=sbas,
             )
         )
         return self
@@ -3339,7 +3389,9 @@ class BlocoDCLI(BlocoBase):
     def tem_dados(self) -> bool:
         return bool(self._linhas)
 
-    def adicionar(self, de: int, pa: int, nc: Optional[int] = None, l: float = 0.0, c: float = 0.0) -> "BlocoDCLI":
+    def adicionar(
+        self, de: int, pa: int, nc: Optional[int] = None, l: float = 0.0, c: float = 0.0
+    ) -> "BlocoDCLI":
         """Adiciona linha CC.
 
         Args:
@@ -3382,29 +3434,57 @@ class BlocoDMCV(BlocoBase):
     """
 
     keyword: str = field(default="DMCV", init=False, repr=False)
-    _dados_brutos: List[str] = field(default_factory=list)  # texto bruto para cada modelo
+    _dados_brutos: List[str] = field(
+        default_factory=list
+    )  # texto bruto para cada modelo
 
     def tem_dados(self) -> bool:
         return bool(self._dados_brutos)
 
     def adicionar_md01(
-        self, nm: int, vmn: float, tvp: float, tx1: float, td1: float,
-        yal: float, tmx: float, amx: float, gmx: float = 0.0,
-        stx: float = 0.0, f: str = ""
+        self,
+        nm: int,
+        vmn: float,
+        tvp: float,
+        tx1: float,
+        td1: float,
+        yal: float,
+        tmx: float,
+        amx: float,
+        gmx: float = 0.0,
+        stx: float = 0.0,
+        f: str = "",
     ) -> "BlocoDMCV":
         """Adiciona modelo MD01 de conversor (2 réguas)."""
         # Régua 1
-        r1 = f"{nm:>5}{vmn:>6.2f}{tvp:>6.3f}{tx1:>6.2f}{td1:>6.2f}{yal:>6.1f}{tmx:>6.2f}{amx:>6.2f}{gmx:>6.2f}{stx:>6.1f}{f:>2}"
+        r1 = (
+            f"{nm:>5}{vmn:>6.2f}{tvp:>6.3f}{tx1:>6.2f}{td1:>6.2f}{yal:>6.1f}"
+            f"{tmx:>6.2f}{amx:>6.2f}{gmx:>6.2f}{stx:>6.1f}{f:>2}"
+        )
         self._dados_brutos.append(r1 + "\n")
         return self
 
     def adicionar_md01_r2(
-        self, nm: int, tvd: float, tvs: float, vdn: float, vdx: float,
-        frn: float, imn: float, imx: float, img: float,
-        ki: float, kp: float, to: float, kcg: float
+        self,
+        nm: int,
+        tvd: float,
+        tvs: float,
+        vdn: float,
+        vdx: float,
+        frn: float,
+        imn: float,
+        imx: float,
+        img: float,
+        ki: float,
+        kp: float,
+        to: float,
+        kcg: float,
     ) -> "BlocoDMCV":
         """Adiciona régua 2 do modelo MD01."""
-        r2 = f"{nm:>5}{tvd:>6.2f}{tvs:>6.2f}{vdn:>6.1f}{vdx:>6.1f}{frn:>6.1f}{imn:>6.1f}{imx:>6.1f}{img:>6.1f}{ki:>7.2f}{kp:>7.2f}{to:>6.3f}{kcg:>7.2f}"
+        r2 = (
+            f"{nm:>5}{tvd:>6.2f}{tvs:>6.2f}{vdn:>6.1f}{vdx:>6.1f}{frn:>6.1f}"
+            f"{imn:>6.1f}{imx:>6.1f}{img:>6.1f}{ki:>7.2f}{kp:>7.2f}{to:>6.3f}{kcg:>7.2f}"
+        )
         self._dados_brutos.append(r2 + "\n")
         return self
 

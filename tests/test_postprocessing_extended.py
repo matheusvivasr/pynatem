@@ -1,7 +1,7 @@
 """Extended postprocessing tests - 40+ test cases."""
 
 import pytest
-from pathlib import Path
+
 from pynatem.posprocessamento import LeitorPLT, LeitorRelatorio
 
 

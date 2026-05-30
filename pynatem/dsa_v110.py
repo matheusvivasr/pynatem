@@ -9,17 +9,18 @@ Referência: Manual ANATEM 12.10 §47.101 (RSEG), §7.4 (Critérios)
 """
 
 from dataclasses import dataclass, field
-from typing import List, Optional, Dict, Tuple
 from enum import Enum
 from pathlib import Path
-
+from typing import Dict, List, Optional, Tuple
 
 # ============================================================================
 # v1.10.1 — AVALIAÇÃO DE SEGURANÇA DINÂMICA (DSA, §47.101 RSEG)
 # ============================================================================
 
+
 class TipoElementoSeguranca(Enum):
     """Tipos de elementos monitorados em DSA (§47.101)."""
+
     CIRCUITO = "CIRCUITO"  # Carregamento (% emergência)
     BARRA = "BARRA"  # Tensão (% nominal)
     GERACAO = "GERACAO"  # Geração reativa (faixa em DBAR)
@@ -27,6 +28,7 @@ class TipoElementoSeguranca(Enum):
 
 class StatusSeguranca(Enum):
     """Status de segurança do elemento."""
+
     SEGURO = "SEGURO"  # Dentro dos limites
     ALERTA = "ALERTA"  # Próximo do limite
     VIOLACAO = "VIOLACAO"  # Excedeu limite de emergência
@@ -40,10 +42,11 @@ class ElementoSeguranca:
     Representa um circuito, barra ou barra de geração que será
     monitorado contra limites de emergência do Anarede.
     """
+
     tipo: TipoElementoSeguranca
     identificacao: str  # Nome do elemento
     limite_emergencia: float  # Limite de emergência (DLIN/DBAR)
-    limite_alerta: float = None  # Limite de alerta (opcional, 90% emergência)
+    limite_alerta: Optional[float] = None  # Limite de alerta (opcional, 90% emergência)
     valor_operacional: float = 0.0  # Valor em regime permanente
 
     def __post_init__(self):
@@ -56,7 +59,10 @@ class ElementoSeguranca:
         if not self.identificacao:
             erros.append("Identificação não pode estar vazia")
         if self.limite_emergencia <= 0:
-            erros.append(f"Limite emergência deve ser > 0 (tem {self.limite_emergencia})")
+            erros.append(
+                f"Limite emergência deve ser > 0 (tem {self.limite_emergencia})"
+            )
+        assert self.limite_alerta is not None  # garantido pelo __post_init__
         if self.limite_alerta < 0 or self.limite_alerta > self.limite_emergencia:
             erros.append(f"Limite alerta deve estar entre 0 e {self.limite_emergencia}")
         return len(erros) == 0, erros
@@ -70,6 +76,7 @@ class AvaliadorDSA:
     contra limites de emergência definidos no Anarede.
     Referência: §47.101 (RSEG)
     """
+
     elementos: List[ElementoSeguranca] = field(default_factory=list)
     nome_caso: str = "Caso_DSA"
     tempo_simulacao: float = 0.0  # Instante de avaliação (segundos)
@@ -79,8 +86,9 @@ class AvaliadorDSA:
         self.elementos.append(elemento)
         return self
 
-    def avaliar_seguranca(self, valor_observado: float, elemento_id: int) \
-            -> Tuple[StatusSeguranca, str, float]:
+    def avaliar_seguranca(
+        self, valor_observado: float, elemento_id: int
+    ) -> Tuple[StatusSeguranca, str, float]:
         """Avalia segurança de um elemento em relação aos limites.
 
         Args:
@@ -97,19 +105,27 @@ class AvaliadorDSA:
         margem = elem.limite_emergencia - valor_observado
 
         if valor_observado > elem.limite_emergencia:
-            return StatusSeguranca.VIOLACAO, \
-                f"{elem.identificacao}: {valor_observado:.2f} > limite {elem.limite_emergencia:.2f}", \
-                margem
+            return (
+                StatusSeguranca.VIOLACAO,
+                f"{elem.identificacao}: {valor_observado:.2f} > "
+                f"limite {elem.limite_emergencia:.2f}",
+                margem,
+            )
 
-        elif valor_observado > elem.limite_alerta:
-            return StatusSeguranca.ALERTA, \
-                f"{elem.identificacao}: {valor_observado:.2f} > alerta {elem.limite_alerta:.2f}", \
-                margem
+        elif elem.limite_alerta is not None and valor_observado > elem.limite_alerta:
+            return (
+                StatusSeguranca.ALERTA,
+                f"{elem.identificacao}: {valor_observado:.2f} > alerta {elem.limite_alerta:.2f}",
+                margem,
+            )
 
         else:
-            return StatusSeguranca.SEGURO, \
-                f"{elem.identificacao}: {valor_observado:.2f} < limite {elem.limite_emergencia:.2f}", \
-                margem
+            return (
+                StatusSeguranca.SEGURO,
+                f"{elem.identificacao}: {valor_observado:.2f} < "
+                f"limite {elem.limite_emergencia:.2f}",
+                margem,
+            )
 
     def avaliar_sistema_completo(self, valores: List[float]) -> Dict[int, Tuple]:
         """Avalia segurança de todos os elementos.
@@ -133,7 +149,7 @@ class AvaliadorDSA:
         """
         linhas = [
             "=" * 80,
-            f"RELATÓRIO DE AVALIAÇÃO DE SEGURANÇA DINÂMICA (DSA)",
+            "RELATÓRIO DE AVALIAÇÃO DE SEGURANÇA DINÂMICA (DSA)",
             f"Caso: {self.nome_caso}",
             f"Tempo de simulação: {self.tempo_simulacao:.2f}s",
             "=" * 80,
@@ -157,8 +173,10 @@ class AvaliadorDSA:
 # v1.10.2 — RECOMENDAÇÕES PREVENTIVAS (Ações de Controle)
 # ============================================================================
 
+
 class TipoAcaoPreventiva(Enum):
     """Tipos de ações preventivas recomendadas."""
+
     REDUCAO_CARGA = "REDUCAO_CARGA"  # Reduzir carga em barra
     AUMENTO_GERACAO = "AUMENTO_GERACAO"  # Aumentar geração
     DESLIGAMENTO_CIRCUITO = "DESLIGAMENTO_CIRCUITO"  # Desligar contingência
@@ -173,6 +191,7 @@ class AcaoPreventiva:
 
     Recomendação de controle para manter segurança dinâmica.
     """
+
     tipo: TipoAcaoPreventiva
     descricao: str  # Descrição detalhada da ação
     elemento_afetado: str  # Qual elemento esta ação afeta
@@ -182,7 +201,9 @@ class AcaoPreventiva:
 
     def descrever_criacao(self) -> str:
         """Descrição legível da ação."""
-        criticalidade_str = ["Recomendação", "Desejável", "Crítica"][self.criticidade - 1]
+        criticalidade_str = ["Recomendação", "Desejável", "Crítica"][
+            self.criticidade - 1
+        ]
         return (
             f"{self.tipo.value}: {self.descricao}\n"
             f"  Afeta: {self.elemento_afetado}\n"
@@ -199,6 +220,7 @@ class RecomendadorDSA:
     Analisa violações e gera recomendações de controle para
     manter segurança dinâmica do sistema.
     """
+
     acoes: List[AcaoPreventiva] = field(default_factory=list)
     margem_seguranca_minima: float = 10.0  # % de margem desejada
 
@@ -256,7 +278,7 @@ class RecomendadorDSA:
             "",
         ]
 
-        por_criticidade = {}
+        por_criticidade: Dict[int, List["AcaoPreventiva"]] = {}
         for acao in recomendacoes:
             if acao.criticidade not in por_criticidade:
                 por_criticidade[acao.criticidade] = []
@@ -278,6 +300,7 @@ class RecomendadorDSA:
 # v1.10.3 — INTEGRAÇÃO COM SNAPSHOTS (Multi-caso)
 # ============================================================================
 
+
 @dataclass
 class CasoMultiplesDSA:
     """Caso para análise DSA em múltiplos cenários (com snapshots).
@@ -285,6 +308,7 @@ class CasoMultiplesDSA:
     Permite executar vários casos de estabilidade reutilizando a
     inicialização via snapshot.
     """
+
     nome_caso_base: str
     arquivo_snapshot: Optional[Path] = None
     casos_contingencia: List[str] = field(default_factory=list)
@@ -325,20 +349,22 @@ class CasoMultiplesDSA:
         ]
 
         for i, ctg in enumerate(self.casos_contingencia, 1):
-            linhas.extend([
-                f"( --- Caso {i}/{len(self.casos_contingencia)}: {ctg} ---",
-                "( Restaurar snapshot do caso base",
-                self.restaurar_snapshot(),
-                "",
-                "( Executar simulação",
-                "EXSI",
-                "(",
-                "",
-                "( Gerar relatório DSA",
-                "RELA RSEG",
-                "(",
-                "",
-            ])
+            linhas.extend(
+                [
+                    f"( --- Caso {i}/{len(self.casos_contingencia)}: {ctg} ---",
+                    "( Restaurar snapshot do caso base",
+                    self.restaurar_snapshot(),
+                    "",
+                    "( Executar simulação",
+                    "EXSI",
+                    "(",
+                    "",
+                    "( Gerar relatório DSA",
+                    "RELA RSEG",
+                    "(",
+                    "",
+                ]
+            )
 
         linhas.append("999999")
         return "\n".join(linhas)

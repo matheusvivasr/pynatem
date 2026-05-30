@@ -21,6 +21,7 @@ CONFIANÇA:
 """
 
 from __future__ import annotations
+
 import re
 from dataclasses import dataclass, field
 from typing import List, Optional, Union
@@ -506,8 +507,8 @@ class ControladorCDU:
             linhas.append(b.serializar())
         for dv in self._defvdfs:
             linhas.append(dv.serializar())
-        for dv in self._defvals:
-            linhas.append(dv.serializar())
+        for dval in self._defvals:
+            linhas.append(dval.serializar())
         linhas.append("FIMCDU")
         return "\n".join(linhas)
 
@@ -794,7 +795,7 @@ def _parsear_controlador(linhas: List[str], inicio: int, ctrl: ControladorCDU) -
         # Alguns blocos têm menos de 4 parâmetros, precisa contar corretamente
         n_params = TIPOS_PARAMETROS.get(tipo_upper, 4)  # default: 4 parâmetros
 
-        p_list = []
+        p_list: List[Optional[Union[str, float]]] = []
         for _ in range(n_params):
             if idx < len(partes):
                 p_list.append(_parse_param(partes[idx]))
