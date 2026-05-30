@@ -2,9 +2,9 @@
 
 on:
   push:
-    branches: [vivas]
+    branches: [vivas, main]
   pull_request:
-    branches: [vivas]
+    branches: [vivas, main]
 
 jobs:
   test:

@@ -9,6 +9,7 @@ Fluxo típico:
 """
 
 from __future__ import annotations
+
 import copy
 import glob
 import subprocess

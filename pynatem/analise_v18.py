@@ -7,14 +7,14 @@ v1.8.3: Séries Temporais (TIME/DSTO)
 """
 
 from dataclasses import dataclass, field
-from typing import List, Optional, Dict
-from pathlib import Path
 from enum import Enum
-
+from pathlib import Path
+from typing import List, Optional
 
 # ============================================================================
 # v1.8.1 — ANÁLISE DE CONTINGÊNCIA (§7.3)
 # ============================================================================
+
 
 @dataclass
 class Contingencia:
@@ -25,6 +25,7 @@ class Contingencia:
       TITULO: Título da contingência (14-92 caracteres)
       DEVT: Lista de eventos que definem a contingência
     """
+
     ident: str  # Identificador (1-12 chars)
     titulo: str  # Título (14-92 chars)
     eventos: List[str] = field(default_factory=list)  # Linhas DEVT
@@ -67,6 +68,7 @@ class AnalisadorContingencia:
     - Opção de paralelização (§7.3.1 item 7)
     - Geração automática de arquivos .stb, .out, .plt
     """
+
     caso_base_path: Path  # Arquivo .stb base
     historico_path: Path  # Arquivo histórico ANAREDE
     caso_numero: int  # Número do caso no histórico
@@ -107,7 +109,9 @@ class AnalisadorContingencia:
         if not self.contingencias:
             erros.append("Nenhuma contingência definida")
         if self.processos_paralelos < 1:
-            erros.append(f"Processos paralelos deve ser >= 1 (tem {self.processos_paralelos})")
+            erros.append(
+                f"Processos paralelos deve ser >= 1 (tem {self.processos_paralelos})"
+            )
         for ctg in self.contingencias:
             valido, ctg_erros = ctg.validar()
             if not valido:
@@ -137,8 +141,10 @@ Análise de Contingência (§7.3):
 # v1.8.2 — MULTI-INFEED (§36-37, EAMI/EAIF)
 # ============================================================================
 
+
 class TipoAnaliseMultiInfeed(Enum):
     """Tipos de análise multi-infeed disponíveis (§36-37)."""
+
     EAMI = "EAMI"  # Cálculo automático MIIF (elos HVDC LCC)
     EAIF = "EAIF"  # Interação fontes shunt controladas
     MANUAL = "MANUAL"  # Especificação manual via DMIF
@@ -150,6 +156,7 @@ class DefinicaoBarraMultiInfeed:
 
     DMIF permite selecionar barras CA para cálculo automático de índices.
     """
+
     nb: int  # Número da barra
 
     def serializar_dmif(self) -> str:
@@ -167,6 +174,7 @@ class AnalisadorMultiInfeed:
 
     Saída: Índices em OUT ou CSV (MIIF)
     """
+
     tipo: TipoAnaliseMultiInfeed
     barras: List[int] = field(default_factory=list)  # DMIF barras
     peco_enabled: bool = True  # Opção PECO (§7.3 item 8)
@@ -199,6 +207,7 @@ class AnalisadorMultiInfeed:
 
     def resumo_analise(self) -> str:
         """Gera resumo da análise multi-infeed."""
+        auto = "(automático HVDC)" if self.tipo == TipoAnaliseMultiInfeed.EAMI else ""
         tipo_nome = {
             TipoAnaliseMultiInfeed.EAMI: "Cálculo Automático MIIF (elos HVDC LCC)",
             TipoAnaliseMultiInfeed.EAIF: "Interação Fontes Shunt (DFNT)",
@@ -207,7 +216,7 @@ class AnalisadorMultiInfeed:
         return f"""
 Análise Multi-infeed (§36-37):
   Tipo: {tipo_nome[self.tipo]}
-  Barras: {len(self.barras)} {'(automático HVDC)' if self.tipo == TipoAnaliseMultiInfeed.EAMI else ''}
+  Barras: {len(self.barras)} {auto}
   Opção PECO: {'Habilitada' if self.peco_enabled else 'Desabilitada'}
   Exportar CSV: {'Sim (MIIF)' if self.exportar_csv else 'Não'}
 
@@ -223,6 +232,7 @@ Análise Multi-infeed (§36-37):
 # v1.8.3 — SÉRIES TEMPORAIS (§46.72 TIME, §46.60 DSTO)
 # ============================================================================
 
+
 @dataclass
 class Timestamp:
     """Timestamp do caso (§46.72, código TIME).
@@ -234,6 +244,7 @@ class Timestamp:
       - YYYY/MM/DD (12:00 UTC local)
       - YYYY/MM (Dia 1, 12:00 UTC local)
     """
+
     ano: int
     mes: int
     dia: int = 1
@@ -246,6 +257,7 @@ class Timestamp:
     def from_epoch(epoch: int) -> "Timestamp":
         """Cria timestamp a partir EPOCH (segundos Unix)."""
         from datetime import datetime
+
         dt = datetime.utcfromtimestamp(epoch)
         return Timestamp(
             ano=dt.year,
@@ -295,6 +307,7 @@ class CenarioEstocastico:
     Atualmente suporta séries hidrológicas (HIDRO).
     Integração com arquivo USIHID.csv.
     """
+
     tipo: str = "HIDRO"  # Tipo de estocasticidade
     serie: int = 1  # Número identificador série (coluna SERIE)
     patamar: int = 1  # Identificador patamar (coluna PATAMAR)
@@ -333,6 +346,7 @@ class AnaliseSerieTemporal:
     - Cenário Estocástico (DSTO): Qual série/patamar hidrológico
     - Bloco SERIET: Leitura de séries externas
     """
+
     timestamp: Optional[Timestamp] = None
     cenario: Optional[CenarioEstocastico] = None
     arquivo_usihid: Optional[Path] = None  # Arquivo de séries hidrológicas
@@ -376,10 +390,23 @@ class AnaliseSerieTemporal:
 
     def resumo_analise(self) -> str:
         """Gera resumo da análise série temporal."""
+        ts = (
+            f"{self.timestamp.ano:04d}/{self.timestamp.mes:02d}/"
+            f"{self.timestamp.dia:02d} "
+            f"{self.timestamp.hora:02d}:{self.timestamp.minuto:02d}"
+            if self.timestamp
+            else "Não definido"
+        )
+        cen = (
+            f"{self.cenario.tipo} série={self.cenario.serie} "
+            f"patamar={self.cenario.patamar}"
+            if self.cenario
+            else "Não definido"
+        )
         return f"""
 Análise com Séries Temporais (§46.72, §46.60):
-  Timestamp: {f'{self.timestamp.ano:04d}/{self.timestamp.mes:02d}/{self.timestamp.dia:02d} {self.timestamp.hora:02d}:{self.timestamp.minuto:02d}' if self.timestamp else 'Não definido'}
-  Cenário: {f'{self.cenario.tipo} série={self.cenario.serie} patamar={self.cenario.patamar}' if self.cenario else 'Não definido'}
+  Timestamp: {ts}
+  Cenário: {cen}
   Arquivo USIHID: {self.arquivo_usihid.name if self.arquivo_usihid else 'Não definido'}
 
   Integração Bloco SERIET:

@@ -9,20 +9,20 @@ Referência: Manual ANATEM 12.10 §5 (Pós-processamento)
 """
 
 from dataclasses import dataclass, field
-from typing import List, Optional, Tuple
 from enum import Enum
-from pathlib import Path
-
+from typing import List, Optional, Tuple
 
 # ============================================================================
 # v1.9.1 — CRITÉRIOS DE ESTABILIDADE TRANSITÓRIA (§7.4)
 # ============================================================================
 
+
 class NivelAlerta(Enum):
     """Níveis de alerta para violações (§7.4.2)."""
-    OK = 0          # Sem violação
-    ALERTA_1 = 1    # Violação média (fundo amarelo, fonte vermelha)
-    ALERTA_2 = 2    # Violação severa (fundo roxo, fonte preta)
+
+    OK = 0  # Sem violação
+    ALERTA_1 = 1  # Violação média (fundo amarelo, fonte vermelha)
+    ALERTA_2 = 2  # Violação severa (fundo roxo, fonte preta)
 
 
 @dataclass
@@ -36,6 +36,7 @@ class CriterioTensao:
     4. Variação final de tensão
     5. Tensão final vs. limite DGLT
     """
+
     tipo: int  # 1–5 (tipo de critério)
     vmin_percentual: Optional[float] = None  # Tensão mínima (% nominal)
     vmin_500kv: Optional[float] = None  # Tensão mínima específica para 500kV
@@ -49,24 +50,30 @@ class CriterioTensao:
         """Valida parâmetros do critério (§7.4)."""
         erros = []
         if self.tipo < 1 or self.tipo > 5:
-            erros.append(f"Tipo de critério tensão inválido: {self.tipo} (deve ser 1-5)")
+            erros.append(
+                f"Tipo de critério tensão inválido: {self.tipo} (deve ser 1-5)"
+            )
 
         if self.tipo in [1, 2]:
             if self.vmin_percentual is None or self.vmin_percentual <= 0:
-                erros.append(f"Critério Tensão {self.tipo}: vmin_percentual deve ser > 0")
+                erros.append(
+                    f"Critério Tensão {self.tipo}: vmin_percentual deve ser > 0"
+                )
 
         if self.tipo == 3:
             if self.tverif is None or self.tverif <= 0:
-                erros.append(f"Critério Tensão 3: tverif deve ser > 0")
+                erros.append("Critério Tensão 3: tverif deve ser > 0")
             if self.amax is None or self.amax < 0:
-                erros.append(f"Critério Tensão 3: amax deve ser >= 0")
+                erros.append("Critério Tensão 3: amax deve ser >= 0")
 
         if self.tipo == 4:
             if self.var_maxima is None or self.var_maxima < 0:
-                erros.append(f"Critério Tensão 4: var_maxima deve ser >= 0")
+                erros.append("Critério Tensão 4: var_maxima deve ser >= 0")
 
         if self.alerta_1 <= self.alerta_2:
-            erros.append(f"Alerta 1 ({self.alerta_1}) deve ser > Alerta 2 ({self.alerta_2})")
+            erros.append(
+                f"Alerta 1 ({self.alerta_1}) deve ser > Alerta 2 ({self.alerta_2})"
+            )
 
         return len(erros) == 0, erros
 
@@ -89,6 +96,7 @@ class CriterioReativoGER:
     Verifica se potências reativas terminais (QELE) atendem faixas
     especificadas em DBAR do Anarede.
     """
+
     habilitado: bool = True
     alerta_1: float = 85.0  # Limite alerta 1 (%)
     alerta_2: float = 80.0  # Limite alerta 2 (%)
@@ -97,7 +105,9 @@ class CriterioReativoGER:
         """Valida parâmetros."""
         erros = []
         if self.alerta_1 <= self.alerta_2:
-            erros.append(f"Alerta 1 ({self.alerta_1}) deve ser > Alerta 2 ({self.alerta_2})")
+            erros.append(
+                f"Alerta 1 ({self.alerta_1}) deve ser > Alerta 2 ({self.alerta_2})"
+            )
         return len(erros) == 0, erros
 
 
@@ -108,6 +118,7 @@ class CriterioReativoCER:
     Verifica se potências reativas terminais (BCES) atendem faixas
     especificadas em DCER do Anarede.
     """
+
     habilitado: bool = True
     # Sem parâmetros adicionais — usa limites de DCER
 
@@ -123,6 +134,7 @@ class CriterioCarregamento:
     Verifica se correntes de circuito (ILIN) atendem limites de
     emergência de curta duração em DLIN.
     """
+
     habilitado: bool = True
     percentual_limite: float = 100.0  # % do limite de emergência (DLIN)
     alerta_1: float = 95.0  # Limite alerta 1 (%)
@@ -132,9 +144,13 @@ class CriterioCarregamento:
         """Valida parâmetros."""
         erros = []
         if self.percentual_limite <= 0:
-            erros.append(f"Percentual limite deve ser > 0 (tem {self.percentual_limite})")
+            erros.append(
+                f"Percentual limite deve ser > 0 (tem {self.percentual_limite})"
+            )
         if self.alerta_1 <= self.alerta_2:
-            erros.append(f"Alerta 1 ({self.alerta_1}) deve ser > Alerta 2 ({self.alerta_2})")
+            erros.append(
+                f"Alerta 1 ({self.alerta_1}) deve ser > Alerta 2 ({self.alerta_2})"
+            )
         return len(erros) == 0, erros
 
 
@@ -148,6 +164,7 @@ class CriterioReles:
     - Sobrecorrente
     - Subfrequência
     """
+
     habilitado: bool = True
     monitorar_impedancia: bool = True
     monitorar_subtensao: bool = True
@@ -157,13 +174,15 @@ class CriterioReles:
 
     def validar(self) -> tuple[bool, List[str]]:
         """Valida configuração."""
-        at_menos_um = any([
-            self.monitorar_impedancia,
-            self.monitorar_subtensao,
-            self.monitorar_sobtensao,
-            self.monitorar_sobrecorrente,
-            self.monitorar_subfrequencia,
-        ])
+        at_menos_um = any(
+            [
+                self.monitorar_impedancia,
+                self.monitorar_subtensao,
+                self.monitorar_sobtensao,
+                self.monitorar_sobrecorrente,
+                self.monitorar_subfrequencia,
+            ]
+        )
         if not at_menos_um:
             return False, ["Deve monitorar ao menos um tipo de relé"]
         return True, []
@@ -177,6 +196,7 @@ class CriterioAngular:
     Avalia diferença angular entre Tucuruí e Paulo Afonso.
     Requer CDU com saída TUCPAQ.
     """
+
     habilitado: bool = False  # Desabilitado por padrão (específico)
     # Condição: A1 <= A2
     # A1 = ΔAngle(primeira_oscilação) - 90°
@@ -200,6 +220,7 @@ class AnalisadorEstabilidade:
     - Atuação de relés
     - Diferença angular (específico)
     """
+
     criterios_tensao: List[CriterioTensao] = field(default_factory=list)
     criterio_reativo_ger: Optional[CriterioReativoGER] = None
     criterio_reativo_cer: Optional[CriterioReativoCER] = None
@@ -207,22 +228,30 @@ class AnalisadorEstabilidade:
     criterio_reles: Optional[CriterioReles] = None
     criterio_angular: Optional[CriterioAngular] = None
 
-    def adicionar_criterio_tensao(self, criterio: CriterioTensao) -> "AnalisadorEstabilidade":
+    def adicionar_criterio_tensao(
+        self, criterio: CriterioTensao
+    ) -> "AnalisadorEstabilidade":
         """Adiciona critério de tensão (1-5)."""
         self.criterios_tensao.append(criterio)
         return self
 
-    def definir_reativo_ger(self, criterio: CriterioReativoGER) -> "AnalisadorEstabilidade":
+    def definir_reativo_ger(
+        self, criterio: CriterioReativoGER
+    ) -> "AnalisadorEstabilidade":
         """Define critério reativo em gerador."""
         self.criterio_reativo_ger = criterio
         return self
 
-    def definir_reativo_cer(self, criterio: CriterioReativoCER) -> "AnalisadorEstabilidade":
+    def definir_reativo_cer(
+        self, criterio: CriterioReativoCER
+    ) -> "AnalisadorEstabilidade":
         """Define critério reativo em compensador."""
         self.criterio_reativo_cer = criterio
         return self
 
-    def definir_carregamento(self, criterio: CriterioCarregamento) -> "AnalisadorEstabilidade":
+    def definir_carregamento(
+        self, criterio: CriterioCarregamento
+    ) -> "AnalisadorEstabilidade":
         """Define critério de carregamento."""
         self.criterio_carregamento = criterio
         return self
@@ -288,19 +317,19 @@ class AnalisadorEstabilidade:
                 linhas.append(f"    • Tipo {criterio.tipo}: {criterio.descrever()}")
 
         if self.criterio_reativo_ger and self.criterio_reativo_ger.habilitado:
-            linhas.append(f"  Reativo GER: Habilitado")
+            linhas.append("  Reativo GER: Habilitado")
 
         if self.criterio_reativo_cer and self.criterio_reativo_cer.habilitado:
-            linhas.append(f"  Reativo CER: Habilitado")
+            linhas.append("  Reativo CER: Habilitado")
 
         if self.criterio_carregamento and self.criterio_carregamento.habilitado:
-            linhas.append(f"  Carregamento Circuito: Habilitado")
+            linhas.append("  Carregamento Circuito: Habilitado")
 
         if self.criterio_reles and self.criterio_reles.habilitado:
-            linhas.append(f"  Relés: Habilitado")
+            linhas.append("  Relés: Habilitado")
 
         if self.criterio_angular and self.criterio_angular.habilitado:
-            linhas.append(f"  Angular (Tucuruí-PAF): Habilitado")
+            linhas.append("  Angular (Tucuruí-PAF): Habilitado")
 
         return "\n".join(linhas)
 
@@ -309,6 +338,7 @@ class AnalisadorEstabilidade:
 # v1.9.2 — PERDA DE SINCRONISMO (Loss of Synchronism)
 # ============================================================================
 
+
 @dataclass
 class IndicadorSincronismo:
     """Indicador de Perda de Sincronismo (Loss of Synchronism).
@@ -316,6 +346,7 @@ class IndicadorSincronismo:
     Monitora abertura angular de máquinas síncronas para detectar
     perda de síncrono (ângulo > 180° → instável).
     """
+
     ncdu: int  # Número identificador do CDU/máquina
     nome: str  # Identificação alfanumérica
     angulo_max_graus: float = 360.0  # Limite de ângulo máximo (default)
@@ -341,18 +372,27 @@ class IndicadorSincronismo:
             return False, f"Perda de síncrono: ângulo {angulo_observado:.1f}° > 180°"
         elif angulo_observado > self.angulo_max_graus:
             if self.opcao_peco and angulo_observado > 1000:
-                return True, f"Aviso: ângulo {angulo_observado:.1f}° > limite (transformado em aviso)"
+                return (
+                    True,
+                    f"Aviso: ângulo {angulo_observado:.1f}° > limite (transformado em aviso)",
+                )
             else:
-                return False, f"Ângulo {angulo_observado:.1f}° > limite {self.angulo_max_graus:.1f}°"
+                return (
+                    False,
+                    f"Ângulo {angulo_observado:.1f}° > limite {self.angulo_max_graus:.1f}°",
+                )
         return True, f"Estável: ângulo {angulo_observado:.1f}° < limite"
 
 
 @dataclass
 class MonitorSincronismo:
     """Monitor de Sincronismo para múltiplas máquinas."""
+
     indicadores: List[IndicadorSincronismo] = field(default_factory=list)
 
-    def adicionar_indicador(self, indicador: IndicadorSincronismo) -> "MonitorSincronismo":
+    def adicionar_indicador(
+        self, indicador: IndicadorSincronismo
+    ) -> "MonitorSincronismo":
         """Adiciona máquina a monitorar."""
         self.indicadores.append(indicador)
         return self
@@ -366,7 +406,7 @@ class MonitorSincronismo:
         Retorna:
             {ncdu: (estável, mensagem)}
         """
-        resultados = {}
+        resultados: dict[int, Tuple[Optional[bool], str]] = {}
         for ind in self.indicadores:
             if ind.ncdu in angulos:
                 estavel, msg = ind.avaliar_estabilidade(angulos[ind.ncdu])
@@ -380,12 +420,14 @@ class MonitorSincronismo:
 # v1.9.3 — RECUPERAÇÃO DE FREQUÊNCIA
 # ============================================================================
 
+
 @dataclass
 class AlgoritmoRecuperacaoFrequencia:
     """Algoritmo de recuperação de frequência pós-falta.
 
     Monitora frequência do sistema e detecta recuperação após distúrbio.
     """
+
     frecuencia_nominal: float = 60.0  # Hz (Brasil)
     df_max_admitida: float = 2.0  # Hz (máxima variação)
     tempo_recuperacao: float = 5.0  # segundos (tempo máximo recuperação)
@@ -395,16 +437,24 @@ class AlgoritmoRecuperacaoFrequencia:
         """Valida parâmetros."""
         erros = []
         if self.frecuencia_nominal <= 0:
-            erros.append(f"Frequência nominal deve ser > 0 (tem {self.frecuencia_nominal})")
+            erros.append(
+                f"Frequência nominal deve ser > 0 (tem {self.frecuencia_nominal})"
+            )
         if self.df_max_admitida <= 0:
             erros.append(f"ΔF máxima deve ser > 0 (tem {self.df_max_admitida})")
         if self.tempo_recuperacao <= 0:
-            erros.append(f"Tempo recuperação deve ser > 0 (tem {self.tempo_recuperacao})")
+            erros.append(
+                f"Tempo recuperação deve ser > 0 (tem {self.tempo_recuperacao})"
+            )
         if self.margem_estabilidade < 0:
-            erros.append(f"Margem estabilidade não pode ser < 0 (tem {self.margem_estabilidade})")
+            erros.append(
+                f"Margem estabilidade não pode ser < 0 (tem {self.margem_estabilidade})"
+            )
         return len(erros) == 0, erros
 
-    def avaliar_recuperacao(self, f_minima: float, t_recuperacao: float) -> Tuple[bool, str]:
+    def avaliar_recuperacao(
+        self, f_minima: float, t_recuperacao: float
+    ) -> Tuple[bool, str]:
         """Avalia se sistema se recupera adequadamente.
 
         Args:
@@ -420,12 +470,18 @@ class AlgoritmoRecuperacaoFrequencia:
             return False, f"ΔF = {delta_f:.2f} Hz > limite {self.df_max_admitida} Hz"
 
         if t_recuperacao > self.tempo_recuperacao:
-            return False, f"Recuperação em {t_recuperacao:.1f}s > limite {self.tempo_recuperacao:.1f}s"
+            return (
+                False,
+                f"Recuperação em {t_recuperacao:.1f}s > limite {self.tempo_recuperacao:.1f}s",
+            )
 
         if delta_f > self.frecuencia_nominal - self.margem_estabilidade:
             return False, f"Frequência mínima {f_minima:.2f} Hz < limite de segurança"
 
-        return True, f"Recuperação adequada: ΔF={delta_f:.2f} Hz em {t_recuperacao:.1f}s"
+        return (
+            True,
+            f"Recuperação adequada: ΔF={delta_f:.2f} Hz em {t_recuperacao:.1f}s",
+        )
 
 
 if __name__ == "__main__":
@@ -473,7 +529,7 @@ if __name__ == "__main__":
 
     # Simular ângulos observados
     angulos_observados = {
-        1: 45.0,   # Estável
+        1: 45.0,  # Estável
         2: 185.0,  # Instável (> 180°)
     }
 

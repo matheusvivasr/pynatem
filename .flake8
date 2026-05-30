@@ -1,0 +1,9 @@
+[flake8]
+max-line-length = 100
+# E203: conflita com o black (espaço antes de ':' em slices)
+# E741: 'l' é o nome oficial do campo de indutância no manual ANATEM (DCLI)
+extend-ignore = E203, E741
+# E402: testes usam imports por seção (organização temática deliberada)
+per-file-ignores =
+    tests/*: E402
+exclude = .git,__pycache__,build,dist,notas_trabalho,markdowns_reference

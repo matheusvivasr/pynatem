@@ -21,9 +21,26 @@ from pynatem.blocos import (
 )
 
 _IGNORAR = {
-    "DEVT", "DCAR", "DCAR IMPR", "DSIM", "DLTC", "DFLA", "DMAQ",
-    "DCLI", "DELO", "DGER", "DGER IMPR", "DOPC", "DCST", "DCAG",
-    "DCCT", "DMEL", "DMEL MD01", "EXSI", "999999", "FIMFLA",
+    "DEVT",
+    "DCAR",
+    "DCAR IMPR",
+    "DSIM",
+    "DLTC",
+    "DFLA",
+    "DMAQ",
+    "DCLI",
+    "DELO",
+    "DGER",
+    "DGER IMPR",
+    "DOPC",
+    "DCST",
+    "DCAG",
+    "DCCT",
+    "DMEL",
+    "DMEL MD01",
+    "EXSI",
+    "999999",
+    "FIMFLA",
 }
 
 
@@ -52,15 +69,29 @@ def test_dmaq_conforme_manual():
     """DMAQ §46.41 — exemplo oficial da página codigos_execucao/dmaq."""
     b = BlocoDMAQ()
     b.adicionar_maquina(barra=1432, grupo=10, mg=751)
-    b.adicionar_maquina(barra=3500, grupo=10, p=60, q=60, und=3, mg=753,
-                        mt=78, mv=126, me=144, me_cdu=True)
-    b.adicionar_maquina(barra=3500, grupo=20, p=40, q=40, und=2, mg=753,
-                        mt=81, mv=126, me=39)
-    _conferir([
-        " 1432   10                751",
-        " 3500   10  60  60   3    753     78    126    144u",
-        " 3500   20  40  40   2    753     81    126     39",
-    ], b.serializar())
+    b.adicionar_maquina(
+        barra=3500,
+        grupo=10,
+        p=60,
+        q=60,
+        und=3,
+        mg=753,
+        mt=78,
+        mv=126,
+        me=144,
+        me_cdu=True,
+    )
+    b.adicionar_maquina(
+        barra=3500, grupo=20, p=40, q=40, und=2, mg=753, mt=81, mv=126, me=39
+    )
+    _conferir(
+        [
+            " 1432   10                751",
+            " 3500   10  60  60   3    753     78    126    144u",
+            " 3500   20  40  40   2    753     81    126     39",
+        ],
+        b.serializar(),
+    )
 
 
 def test_devt_conforme_manual():
@@ -69,20 +100,26 @@ def test_devt_conforme_manual():
     b.curto_barra(barra=2, tini=0.05, tipo="APCB")
     b.curto_barra(barra=2, tini=0.25, tipo="RMCB")
     b.abertura_linha(de=2, para=3, tini=0.25)
-    _conferir([
-        "APCB      .05     2",
-        "RMCB      .25     2",
-        "ABCI      .25     2    3",
-    ], b.serializar())
+    _conferir(
+        [
+            "APCB      .05     2",
+            "RMCB      .25     2",
+            "ABCI      .25     2    3",
+        ],
+        b.serializar(),
+    )
 
 
 def test_dcar_conforme_manual():
     """DCAR §46.14 — parâmetros A/B/C/D em colunas fixas (52+)."""
     b = BlocoDCAR()
     b.adicionar(selecao="BARR     1 A BARR  9998", a=100, b=0, c=0, d=100)
-    _conferir([
-        "BARR     1 A BARR  9998                             100   0   0 100",
-    ], b.serializar())
+    _conferir(
+        [
+            "BARR     1 A BARR  9998                             100   0   0 100",
+        ],
+        b.serializar(),
+    )
 
 
 def test_dsim_conforme_manual():
@@ -97,11 +134,14 @@ def test_dltc_conforme_manual():
     b.adicionar(de=4, pa=2, mt=1, nst=40)
     b.adicionar(de=6, pa=18, mt=3, tmn=0.9, tmx=1.1, nst=40, kbs=-20)
     b.adicionar(de=1, pa=2, mt=5300, mt_usuario=True, nst=1)
-    _conferir([
-        "    4       2         1               40",
-        "    6      18         3    0.9   1.1  40    -20",
-        "    1       2      5300u               1",
-    ], b.serializar())
+    _conferir(
+        [
+            "    4       2         1               40",
+            "    6      18         3    0.9   1.1  40    -20",
+            "    1       2      5300u               1",
+        ],
+        b.serializar(),
+    )
 
 
 def test_dfla_conforme_manual():
@@ -113,14 +153,17 @@ def test_dfla_conforme_manual():
     area.adicionar_circuito(de=104, pa=183, nc=57)
     area.adicionar_circuito(de=104, pa=183, nc=59)
     area.adicionar_circuito(de=385, pa=149)
-    _conferir([
-        "  20 FRJ - Area RJ",
-        "  138   140  1",
-        "  138   140  2",
-        "  104   183 57",
-        "  104   183 59",
-        "  385   149",
-    ], b.serializar())
+    _conferir(
+        [
+            "  20 FRJ - Area RJ",
+            "  138   140  1",
+            "  138   140  2",
+            "  104   183 57",
+            "  104   183 59",
+            "  385   149",
+        ],
+        b.serializar(),
+    )
 
 
 def test_mnemonicos_eventos_oficiais():
@@ -131,11 +174,11 @@ def test_mnemonicos_eventos_oficiais():
     MDSH (shunt), TRGT/TRGV (referência de regulador).
     """
     b = BlocoDEVT()
-    b.curto_circuito(de=1, para=2, circ=1, tini=1.0)          # APCL
+    b.curto_circuito(de=1, para=2, circ=1, tini=1.0)  # APCL
     b.curto_circuito(de=1, para=2, circ=1, tini=1.1, tipo="RMCL")
-    b.abertura_linha(de=1, para=2, tini=0.5)                   # ABCI
-    b.fechamento_linha(de=1, para=2, tini=1.5)                 # FECI
-    b.modificacao_shunt(barra=7, tini=0.3, valor=-50.0)        # MDSH
+    b.abertura_linha(de=1, para=2, tini=0.5)  # ABCI
+    b.fechamento_linha(de=1, para=2, tini=1.5)  # FECI
+    b.modificacao_shunt(barra=7, tini=0.3, valor=-50.0)  # MDSH
     b.step_referencia(barra=3, unidade=1, tini=2.0, delta=5.0)  # TRGT
     t = b.serializar()
     oficiais = {"APCL", "RMCL", "ABCI", "FECI", "MDSH", "TRGT"}
@@ -153,6 +196,7 @@ def test_mnemonicos_eventos_oficiais():
 # right-aligned sem zeros ("   1") — numericamente idêntico em campo fixo.
 # ===========================================================================
 
+from pynatem.analise_v18 import CenarioEstocastico, Timestamp
 from pynatem.blocos import (
     BlocoDCAG,
     BlocoDCLI,
@@ -163,7 +207,6 @@ from pynatem.blocos import (
     BlocoDOPC,
     BlocoEXSI,
 )
-from pynatem.analise_v18 import CenarioEstocastico, Timestamp
 
 
 def test_dcst_conforme_manual():
@@ -204,22 +247,37 @@ def test_delo_conforme_manual():
     b.adicionar(ne=2, mp=10, mm=20)
     b.adicionar(ne=3, mp=10, mm=100, mm_usuario=True)
     b.adicionar(ne=4, mp=110, mp_usuario=True)
-    _conferir([
-        "   1       10     10",
-        "   2       10     20",
-        "   3       10    100u",
-        "   4      110u",
-    ], b.serializar())
+    _conferir(
+        [
+            "   1       10     10",
+            "   2       10     20",
+            "   3       10    100u",
+            "   4      110u",
+        ],
+        b.serializar(),
+    )
 
 
 def test_dger_conforme_manual():
     """DGER §46.35 — colunas A/B/C/D + VbP/VdP/VbQ/VdQ (exemplo oficial)."""
     b = BlocoDGER()
-    b.adicionar("BARR   1   A BARR 9998", a=0, b=0, c=100, d=0,
-                vbp=84.5, vdp=85.0, vbq=84.5, vdq=85.0)
-    _conferir([
-        "BARR   1   A BARR 9998                                0   0 100   0  84.5  85.0  84.5  85.0",
-    ], b.serializar())
+    b.adicionar(
+        "BARR   1   A BARR 9998",
+        a=0,
+        b=0,
+        c=100,
+        d=0,
+        vbp=84.5,
+        vdp=85.0,
+        vbq=84.5,
+        vdq=85.0,
+    )
+    _conferir(
+        [
+            "BARR   1   A BARR 9998                                0   0 100   0  84.5  85.0  84.5  85.0",  # noqa: E501
+        ],
+        b.serializar(),
+    )
 
 
 def test_dopc_conforme_manual():
@@ -246,6 +304,5 @@ def test_dsto_conforme_manual():
 
 def test_time_conforme_manual():
     """TIME §46.72 — formato YYYY/MM/DD hh:mm UTC -HH:MM (exemplo oficial)."""
-    ts = Timestamp(ano=2021, mes=9, dia=16, hora=12, minuto=0,
-                   utc_offset="-03:00")
+    ts = Timestamp(ano=2021, mes=9, dia=16, hora=12, minuto=0, utc_offset="-03:00")
     assert ts.serializar_time() == "TIME\n2021/09/16 12:00 UTC -03:00\n"

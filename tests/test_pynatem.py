@@ -2,13 +2,14 @@
 tests/test_pynatem.py – Suite de testes para o pynatem.
 """
 
-import sys, tempfile
+import sys
+import tempfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from pynatem import CasoAnatem, EnsaioAnatem, LeitorPLT, LeitorRelatorio
-from pynatem.blocos import BlocoDEVT, BlocoDPLT, BlocoDARQ, BlocoDSIM
+from pynatem.blocos import BlocoDARQ, BlocoDEVT, BlocoDPLT, BlocoDSIM
 
 # ===========================================================================
 # BLOCOS – serialização básica (sessão 2)
@@ -1694,7 +1695,6 @@ def test_dmaq_posicional_5h_espacos_em_branco_na_posicao(tmp_path):
     que campos ausentes não deslocam os campos seguintes.
     """
     from pynatem import CasoAnatem
-    from pynatem.blocos import BlocoDMAQ
 
     caso = CasoAnatem()
     caso.darq.sav = "rede.sav"
@@ -1745,7 +1745,7 @@ def test_dmaq_posicional_5h_espacos_em_branco_na_posicao(tmp_path):
 # v0.4.3 (etapa 0.4) – FACTS e HVDC
 # ===========================================================================
 
-from pynatem import BlocoSVC, BlocoTCSC, BlocoSTATCOM, BlocoHVDC
+from pynatem import BlocoHVDC, BlocoSTATCOM, BlocoSVC, BlocoTCSC
 
 
 def test_svc_serializa():
@@ -1810,7 +1810,7 @@ def test_facts_tem_dados():
 # v0.4.4 / v0.4.5 (etapa 0.4) – BlocoDCDU e CDU
 # ===========================================================================
 
-from pynatem import BlocoCDU, ParametroCDU, ValorInicialCDU, ControladorCDU, BlocoDCDU
+from pynatem import BlocoCDU, BlocoDCDU, ControladorCDU, ParametroCDU, ValorInicialCDU
 
 
 def test_cdu_parametro_defpar():
@@ -2113,7 +2113,7 @@ def test_relatorio_consolidado():
 # v0.4.7 (etapa 0.4) – LeitorSAV e validação cruzada
 # ===========================================================================
 
-from pynatem import LeitorSAV, ResultadoSAV
+from pynatem import LeitorSAV
 
 
 def test_leitor_sav_barras_minimo():
@@ -2282,7 +2282,7 @@ def test_leitor_sav_ignora_blocos_extras():
 def test_caso_tem_atributos_facts_hvdc():
     """CasoAnatem expõe svc, tcsc, statcom, hvdc e dcdu após __init__."""
     from pynatem import CasoAnatem
-    from pynatem.blocos import BlocoSVC, BlocoTCSC, BlocoSTATCOM, BlocoHVDC
+    from pynatem.blocos import BlocoHVDC, BlocoSTATCOM, BlocoSVC, BlocoTCSC
     from pynatem.cdu import BlocoDCDU
 
     caso = CasoAnatem()
@@ -2399,7 +2399,17 @@ def test_statcom_roundtrip(tmp_path):
     caso.darq.sav = "rede.sav"
     caso.dsim.tfim = 10.0
     caso.statcom.adicionar(
-        nv=1, de=200, np=1, cnvk=200.0, vb=1.0, xv=0.1, vst=1.0, st=0.1, ne=0, pa=300, nx=1
+        nv=1,
+        de=200,
+        np=1,
+        cnvk=200.0,
+        vb=1.0,
+        xv=0.1,
+        vst=1.0,
+        st=0.1,
+        ne=0,
+        pa=300,
+        nx=1,
     )
     p = tmp_path / "statcom.stb"
     caso.exportar(p)
@@ -2870,7 +2880,8 @@ def test_validar_dmaq_multiplas_maquinas_erros_individuais():
 def test_executar_contingencias_usa_darq_rela(tmp_path):
     """executar_contingencias usa caso.darq.rela quando definido."""
     import subprocess
-    from unittest.mock import patch, MagicMock
+    from unittest.mock import MagicMock, patch
+
     from pynatem import CasoAnatem
     from pynatem.ensaio import EnsaioAnatem
 
@@ -2905,7 +2916,8 @@ def test_executar_contingencias_usa_darq_rela(tmp_path):
 def test_executar_contingencias_fallback_sem_darq_rela(tmp_path):
     """executar_contingencias faz fallback para .rela quando darq.rela não definido."""
     import subprocess
-    from unittest.mock import patch, MagicMock
+    from unittest.mock import MagicMock, patch
+
     from pynatem import CasoAnatem
     from pynatem.ensaio import EnsaioAnatem
 
@@ -2938,7 +2950,8 @@ def test_executar_contingencias_fallback_sem_darq_rela(tmp_path):
 def test_executar_contingencias_sem_rela_usa_returncode(tmp_path):
     """executar_contingencias usa returncode quando nenhum .rela existe."""
     import subprocess
-    from unittest.mock import patch, MagicMock
+    from unittest.mock import MagicMock, patch
+
     from pynatem import CasoAnatem
     from pynatem.ensaio import EnsaioAnatem
 
@@ -2974,7 +2987,7 @@ def test_executar_contingencias_sem_rela_usa_returncode(tmp_path):
 # serializar -> parsear_dcdu (o parser é baseado em split()).
 # ===========================================================================
 
-from pynatem.cdu import parsear_dcdu, ValorDefaultCDU
+from pynatem.cdu import parsear_dcdu
 
 
 def _roundtrip_dcdu(dcdu):
@@ -3788,9 +3801,10 @@ def test_caso_exportar_char_fora_latin1_valueerror_descritivo():
     Antes, o usuário recebia um UnicodeEncodeError obscuro do codec; a meta
     v0.14.1 exige mensagem descritiva apontando o caractere e a linha.
     """
-    import pytest
     import tempfile
     from pathlib import Path
+
+    import pytest
 
     caso = CasoAnatem()
     caso.titulo = "Curto trifásico — barra 5"  # em-dash U+2014 fora de latin-1
@@ -3814,9 +3828,11 @@ def test_caso_exportar_char_fora_latin1_valueerror_descritivo():
 
 def test_caso_salvar_cdu_char_fora_latin1_valueerror_descritivo():
     """salvar_cdu() também valida latin-1 com mensagem clara (v0.14.1)."""
-    import pytest
     import tempfile
     from pathlib import Path
+
+    import pytest
+
     from pynatem import BlocoDCDU
 
     caso = CasoAnatem()
@@ -3938,8 +3954,19 @@ def test_dmot_tipo2_serializacao():
 
     b = BlocoDMOT()
     b.adicionar_tipo2(
-        nb=4, gr=2, h=3.0, k0=1.0, k1=0.5, k2=0.1, exp=2.0,
-        rr=0.02, xr=0.15, xs=0.10, xm=3.0, xp=0.20, tr0=0.8
+        nb=4,
+        gr=2,
+        h=3.0,
+        k0=1.0,
+        k1=0.5,
+        k2=0.1,
+        exp=2.0,
+        rr=0.02,
+        xr=0.15,
+        xs=0.10,
+        xm=3.0,
+        xp=0.20,
+        tr0=0.8,
     )
     t = b.serializar()
 
@@ -4062,8 +4089,21 @@ def test_ddfm_serializacao():
     from pynatem import BlocoDDFM
 
     b = BlocoDDFM()
-    b.adicionar(nb=6073, gr=10, p=100, q=100, und=66, mg=17, mt=90146, mc=90145,
-                xvd=21.50, nbc=2, slip=2.0, r=0, i=0)
+    b.adicionar(
+        nb=6073,
+        gr=10,
+        p=100,
+        q=100,
+        und=66,
+        mg=17,
+        mt=90146,
+        mc=90145,
+        xvd=21.50,
+        nbc=2,
+        slip=2.0,
+        r=0,
+        i=0,
+    )
     t = b.serializar()
 
     assert "DDFM" in t
@@ -4111,10 +4151,24 @@ def test_dgse_serializacao():
     from pynatem import BlocoDGSE
 
     b = BlocoDGSE()
-    b.adicionar(nb=100, gr=10, p=100, q=100, und=1, mg=1525,
-                mt=2000, mv=102, mc1=104, mc2=106,
-                freq=60, vtr0=1.0, vcap0=1.0,
-                mv_usuario=True, mc1_usuario=True, mc2_usuario=True)
+    b.adicionar(
+        nb=100,
+        gr=10,
+        p=100,
+        q=100,
+        und=1,
+        mg=1525,
+        mt=2000,
+        mv=102,
+        mc1=104,
+        mc2=106,
+        freq=60,
+        vtr0=1.0,
+        vcap0=1.0,
+        mv_usuario=True,
+        mc1_usuario=True,
+        mc2_usuario=True,
+    )
     t = b.serializar()
 
     assert "DGSE" in t
@@ -4162,8 +4216,19 @@ def test_dfnt_serializacao():
     from pynatem import BlocoDFNT
 
     b = BlocoDFNT()
-    b.adicionar(nb=10, gr=10, tipo='I', fp=100, fq=100, und=5,
-                mc=101, r_ou_g=1.2, x_ou_b=4.0, sbas=0.0, mc_usuario=True)
+    b.adicionar(
+        nb=10,
+        gr=10,
+        tipo="I",
+        fp=100,
+        fq=100,
+        und=5,
+        mc=101,
+        r_ou_g=1.2,
+        x_ou_b=4.0,
+        sbas=0.0,
+        mc_usuario=True,
+    )
     t = b.serializar()
 
     assert "DFNT" in t
@@ -4212,8 +4277,8 @@ def test_dmel_serializacao():
     from pynatem import BlocoDMEL
 
     b = BlocoDMEL()
-    b.adicionar_md01(no=10, tipo='C', tbp=0.0)
-    b.adicionar_md01(no=20, tipo='P', tbp=0.5)
+    b.adicionar_md01(no=10, tipo="C", tbp=0.0)
+    b.adicionar_md01(no=20, tipo="P", tbp=0.5)
     t = b.serializar()
 
     assert "DMEL" in t

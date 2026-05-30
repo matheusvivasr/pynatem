@@ -312,14 +312,10 @@ def validar_contra_sav(caso: "CasoAnatem", path_sav: Union[str, Path]) -> List[s
     # Barras referenciadas em eventos
     for ev in caso.devt._eventos:
         if ev.el and ev.el not in barras_sav:
-            erros.append(
-                f"DEVT: barra {ev.el} (evento {ev.codigo}) não existe no SAV."
-            )
+            erros.append(f"DEVT: barra {ev.el} (evento {ev.codigo}) não existe no SAV.")
         if ev.pa and ev.pa not in barras_sav:
-            erros.append(
-                f"DEVT: barra {ev.pa} (evento {ev.codigo}) não existe no SAV."
-            )
-        if ev.pa and (ev.nc or 1):
+            erros.append(f"DEVT: barra {ev.pa} (evento {ev.codigo}) não existe no SAV.")
+        if ev.el and ev.pa:
             chave = (min(ev.el, ev.pa), max(ev.el, ev.pa), ev.nc or 1)
             if chave not in circuitos_sav:
                 erros.append(

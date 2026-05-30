@@ -1,6 +1,7 @@
 """Extended validation tests (40+ tests)."""
 
 import pytest
+
 from pynatem import CasoAnatem
 
 
@@ -11,7 +12,7 @@ class TestValidationCruzada:
         """Test validation when SAV file doesn't exist."""
         caso = CasoAnatem()
         try:
-            resultado = caso.validar_contra_sav("inexistente.sav")
+            caso.validar_contra_sav("inexistente.sav")
             # Should handle gracefully
         except Exception:
             pass  # Expected
@@ -167,7 +168,7 @@ class TestErrorHandling:
         caso.dsim.tfim = None
 
         try:
-            avisos = caso.validar()
+            caso.validar()
             # Should handle gracefully
         except Exception:
             pass  # OK to raise for invalid state

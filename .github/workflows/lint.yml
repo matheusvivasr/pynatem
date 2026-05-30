@@ -23,7 +23,7 @@ jobs:
         run: isort --check-only pynatem/ tests/
 
       - name: Lint (flake8)
-        run: flake8 pynatem/ tests/ --max-line-length=100
+        run: flake8 pynatem/ tests/
 
       - name: Type check (mypy)
         run: mypy pynatem/ --ignore-missing-imports

@@ -35,8 +35,12 @@ Blocos desconhecidos são silenciosamente pulados.
 """
 
 from __future__ import annotations
+
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import TYPE_CHECKING, Tuple
+
+if TYPE_CHECKING:
+    from pynatem.caso import CasoAnatem
 
 
 def _strip_comment(linha: str) -> str:
@@ -269,6 +273,7 @@ class ParserSTB:
                 i += 1
                 continue
             if not linha_pos_lida:
+
                 def fatia(a: int, b: int) -> str:
                     return linha[a:b].strip() if len(linha) > a else ""
 
@@ -302,7 +307,11 @@ class ParserSTB:
             partes = linha.split()
             cod = partes[0].upper() if partes else ""
 
-            if cod in _DEVT_SIMPLES or cod in _DEVT_COM_CIRCUITO or cod in _DEVT_MAQUINA:
+            if (
+                cod in _DEVT_SIMPLES
+                or cod in _DEVT_COM_CIRCUITO
+                or cod in _DEVT_MAQUINA
+            ):
                 # leitura POSICIONAL pelas colunas oficiais da régua §46.31
                 # (fatias 0-indexadas; fim exclusivo)
                 def fatia(a: int, b: int) -> str:
@@ -1046,8 +1055,17 @@ class ParserSTB:
                 sbas = _safe_float(partes[9]) if len(partes) > 9 else 0.0
 
                 caso.dfnt.adicionar(
-                    nb=nb, gr=gr, tipo=tipo, fp=fp, fq=fq, und=und, mc=mc,
-                    r_ou_g=r_ou_g, x_ou_b=x_ou_b, sbas=sbas, mc_usuario=mc_u
+                    nb=nb,
+                    gr=gr,
+                    tipo=tipo,
+                    fp=fp,
+                    fq=fq,
+                    und=und,
+                    mc=mc,
+                    r_ou_g=r_ou_g,
+                    x_ou_b=x_ou_b,
+                    sbas=sbas,
+                    mc_usuario=mc_u,
                 )
             except (ValueError, IndexError):
                 pass
@@ -1308,9 +1326,22 @@ class ParserSTB:
                 i_val = int(partes[12]) if len(partes) > 12 else 0
 
                 caso.ddfm.adicionar(
-                    nb=nb, gr=gr, p=p, q=q, und=und, mg=mg, mt=mt, mc=mc,
-                    mt_usuario=mt_u, mc_usuario=mc_u, xvd=xvd, nbc=nbc,
-                    slip=slip, slip_usuario=slip_u, r=r, i=i_val
+                    nb=nb,
+                    gr=gr,
+                    p=p,
+                    q=q,
+                    und=und,
+                    mg=mg,
+                    mt=mt,
+                    mc=mc,
+                    mt_usuario=mt_u,
+                    mc_usuario=mc_u,
+                    xvd=xvd,
+                    nbc=nbc,
+                    slip=slip,
+                    slip_usuario=slip_u,
+                    r=r,
+                    i=i_val,
                 )
             except (ValueError, IndexError):
                 pass
@@ -1349,9 +1380,23 @@ class ParserSTB:
                 vcap0 = _safe_float(partes[12]) if len(partes) > 12 else 0.0
 
                 caso.dgse.adicionar(
-                    nb=nb, gr=gr, p=p, q=q, und=und, mg=mg, mt=mt, mv=mv, mc1=mc1, mc2=mc2,
-                    freq=freq, vtr0=vtr0, vcap0=vcap0,
-                    mt_usuario=mt_u, mv_usuario=mv_u, mc1_usuario=mc1_u, mc2_usuario=mc2_u
+                    nb=nb,
+                    gr=gr,
+                    p=p,
+                    q=q,
+                    und=und,
+                    mg=mg,
+                    mt=mt,
+                    mv=mv,
+                    mc1=mc1,
+                    mc2=mc2,
+                    freq=freq,
+                    vtr0=vtr0,
+                    vcap0=vcap0,
+                    mt_usuario=mt_u,
+                    mv_usuario=mv_u,
+                    mc1_usuario=mc1_u,
+                    mc2_usuario=mc2_u,
                 )
             except (ValueError, IndexError):
                 pass
@@ -1361,7 +1406,7 @@ class ParserSTB:
     @staticmethod
     def _ler_dcdu(linhas, inicio, caso) -> int:
         """Lê um bloco DCDU e popula caso.dcdu (se existir) ou ignora graciosamente."""
-        from pynatem.cdu import parsear_dcdu, BlocoDCDU
+        from pynatem.cdu import parsear_dcdu
 
         try:
             dcdu, proximo = parsear_dcdu(linhas, inicio)
