@@ -1009,7 +1009,7 @@ class _ModeloMD01:
 
         fr = self.fr if self.fr != 60.0 else None
         flag = self.corfreq if self.corfreq.upper() == "S" else None
-        return serializar_registro(
+        linha = serializar_registro(
             "DMDG",
             "MD01",
             self.no,
@@ -1024,6 +1024,8 @@ class _ModeloMD01:
                 None,
             ],
         )
+        assert linha is not None  # régua DMDG/MD01 consta no registro
+        return linha
 
 
 @dataclass

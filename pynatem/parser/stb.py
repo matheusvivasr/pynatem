@@ -534,15 +534,15 @@ class ParserSTB:
                 if not linha.strip() or linha.strip().startswith("("):
                     i += 1
                     continue
-                v = fatiar(linha, 0)
-                no = _safe_int(v[0])
-                ld = _safe_float(v[1]) if v[1] else 0.0
-                ra = _safe_float(v[2]) if v[2] else 0.0
-                h = _safe_float(v[3]) if v[3] else 0.0
-                d = _safe_float(v[4]) if v[4] else 0.0
-                mva = _safe_float(v[5]) if v[5] else 100.0
-                fr = _safe_float(v[6]) if v[6] else 60.0
-                corfreq = v[7].upper() if len(v) > 7 and v[7] else "N"
+                vals = fatiar(linha, 0)
+                no = _safe_int(vals[0])
+                ld = _safe_float(vals[1]) if vals[1] else 0.0
+                ra = _safe_float(vals[2]) if vals[2] else 0.0
+                h = _safe_float(vals[3]) if vals[3] else 0.0
+                d = _safe_float(vals[4]) if vals[4] else 0.0
+                mva = _safe_float(vals[5]) if vals[5] else 100.0
+                fr = _safe_float(vals[6]) if vals[6] else 60.0
+                corfreq = vals[7].upper() if len(vals) > 7 and vals[7] else "N"
                 caso.dmdg.adicionar_md01(
                     no=no, ld=ld, ra=ra, h=h, d=d, mva=mva, fr=fr, corfreq=corfreq
                 )
