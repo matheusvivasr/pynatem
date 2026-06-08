@@ -1413,11 +1413,32 @@ class _BlocoModeloMDxx(BlocoBase):
                 ordem.append(m.modelo)
             grupos[m.modelo].append(m)
 
+        from pynatem.reguas_mdxx import (
+            n_linhas_registro,
+            regua_oficial,
+            serializar_registro,
+        )
+
         linhas: list = []
         for variante in ordem:
             linhas.append(f"{self.keyword} {variante}\n")
+            n_lin = n_linhas_registro(self.keyword, variante)
+            # emite as réguas oficiais como comentário (estilo dos exemplos)
+            for k in range(n_lin):
+                r = regua_oficial(self.keyword, variante, k)
+                if r:
+                    linhas.append(r + "\n")
+            contador: dict = {}
             for m in grupos[variante]:
-                linhas.append(m.serializar() + "\n")
+                idx = contador.get(m.no, 0) % n_lin
+                contador[m.no] = contador.get(m.no, 0) + 1
+                posicional = serializar_registro(
+                    self.keyword, variante, m.no, m.parametros, idx
+                )
+                if posicional is not None:
+                    linhas.append(posicional + "\n")
+                else:
+                    linhas.append(m.serializar() + "\n")
             linhas.append(self._terminador())
         return "".join(linhas)
 
@@ -1493,20 +1514,22 @@ class BlocoDRGV(_BlocoModeloMDxx):
         lmx: float,
         dtb: float,
         d: float,
-        pbg: float,
-        pbt: float,
+        pbg: Optional[float] = None,
+        pbt: Optional[float] = None,
+        vel: Optional[float] = None,
     ) -> "BlocoDRGV":
         """Regulador de velocidade MD01 (§16.4), campos nomeados e validados.
 
-        Campos (na ordem da régua): R (estatismo permanente), Rp (estatismo
-        transitório), At (ganho da turbina), Qnl (vazão sem carga), Tw (água),
-        Tr (regulador), Tf (filtragem), Tg (servomotor), Lmn/Lmx (limites de
-        abertura da comporta), Dtb (amortecimento da turbina), D (amortecimento
-        da carga), Pbg (potência base do gerador, MVA), Pbt (potência base da
-        turbina, MW).
+        Campos (na ordem da régua oficial): R (estatismo permanente), Rp
+        (estatismo transitório), At (ganho da turbina), Qnl (vazão sem carga),
+        Tw (água), Tr (regulador), Tf (filtragem), Tg (servomotor), Vel
+        (velocidade da comporta — coluna comprovada pelo exemplo oficial),
+        Lmn/Lmx (limites de abertura da comporta), Dtb (amortecimento da
+        turbina), D (amortecimento da carga), Pbg/Pbt (potências base do
+        gerador [MVA] e da turbina [MW], opcionais).
         """
         return self.adicionar(
-            "MD01", no, r, rp, at, qnl, tw, tr, tf, tg, lmn, lmx, dtb, d, pbg, pbt
+            "MD01", no, r, rp, at, qnl, tw, tr, tf, tg, vel, lmn, lmx, dtb, d, pbg, pbt
         )
 
 

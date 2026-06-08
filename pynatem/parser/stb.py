@@ -766,6 +766,7 @@ class ParserSTB:
                 break
 
         i = inicio + 1
+        contador: dict = {}
         while i < len(linhas):
             linha = _strip_comment(linhas[i])
             if _e_terminador(linha) or _e_fim(linha):
@@ -774,15 +775,45 @@ class ParserSTB:
             if not stripped or stripped.startswith("("):
                 i += 1
                 continue
-            partes = stripped.split()
             try:
-                no = int(partes[0])
-                params = [_parse_valor(p) for p in partes[1:]]
+                no, params = ParserSTB._extrair_registro_mdxx(
+                    linha, atributo.upper(), variante, contador
+                )
                 bloco.adicionar(variante, no, *params)
             except (ValueError, IndexError):
                 pass
             i += 1
         return i
+
+    @staticmethod
+    def _extrair_registro_mdxx(linha, codigo, variante, contador):
+        """Extrai (no, params) de uma linha MDxx.
+
+        Usa fatiamento pelas colunas da régua oficial quando conhecida
+        (campos em branco viram None); caso contrário, tokens por espaço.
+        """
+        from pynatem.reguas_mdxx import REGUAS_MDXX, campos_da_regua
+
+        reguas = REGUAS_MDXX.get((codigo, variante.upper()))
+        if reguas:
+            campos = campos_da_regua(reguas[0])
+            _, ini, fim = campos[0]
+            tok_no = linha[ini : fim + 1].strip()
+            if tok_no.isdigit():
+                no = int(tok_no)
+                idx = contador.get(no, 0) % len(reguas)
+                contador[no] = contador.get(no, 0) + 1
+                campos_l = campos_da_regua(reguas[idx])
+                params = []
+                for _, a, b in campos_l[1:]:
+                    tok = linha[a : b + 1].strip() if len(linha) > a else ""
+                    params.append(_parse_valor(tok) if tok else None)
+                while params and params[-1] is None:
+                    params.pop()
+                return no, params
+        partes = linha.strip().split()
+        no = int(partes[0])
+        return no, [_parse_valor(p) for p in partes[1:]]
 
     @staticmethod
     def _ler_assoc_cdu(linhas, inicio, caso, atributo: str) -> int:

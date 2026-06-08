@@ -847,7 +847,7 @@ def test_roundtrip_drgv(tmp_path):
     assert len(lido.drgv._modelos) == 2
     m1, m3 = lido.drgv._modelos
     assert (m1.modelo, m1.no) == ("MD01", 1)
-    assert m1.parametros[0] == 0.05 and 90.0 in m1.parametros
+    assert m1.parametros[0] == 0.05 and 90.0 in m1.parametros  # Pbt
     assert (m3.modelo, m3.no, m3.parametros) == ("MD03", 2, [0.04, 1.5, 2.0])
     assert lido.drgv.serializar() == caso.drgv.serializar()
 
