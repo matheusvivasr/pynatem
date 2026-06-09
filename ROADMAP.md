@@ -153,7 +153,7 @@ v2.0.x abaixo e culmina no marco v3.0.0.
 
 | Patch | Meta |
 |-------|------|
-| v2.0.1 | **Réguas por variante MDxx** (DRGT MD01–24, DRGV MD01–07, DEST MD01–12, DMDG MD01–03, DMTC) — colunas exatas por modelo |
+| v2.0.1 | **Réguas por variante MDxx** — ✅ entregue (14 variantes com régua oficial: DMDG 3/3, DMTC 1/1, DRGT 3, DRGV 2, DEST 2 + DECS/DMCE/DMCS); demais variantes sem régua publicada no manual online seguem no formato genérico (documentado) |
 | v2.0.2 | Blocos FACTS/HVDC multilinha (DVSI, DCNV, DDFM, DMOT, DGSE) auditados char-a-char |
 | v2.0.3 | Demais códigos do Cap. 46 ainda sem teste de conformidade |
 

@@ -306,3 +306,265 @@ def test_time_conforme_manual():
     """TIME §46.72 — formato YYYY/MM/DD hh:mm UTC -HH:MM (exemplo oficial)."""
     ts = Timestamp(ano=2021, mes=9, dia=16, hora=12, minuto=0, utc_offset="-03:00")
     assert ts.serializar_time() == "TIME\n2021/09/16 12:00 UTC -03:00\n"
+
+
+# ===========================================================================
+# v2.0.1 — Modelos MDxx: conformidade por CAMPO (posição + valor).
+# O manual formata números de modos variados ("1.200" vs "1.2", "0101" vs
+# "  1"); como o ANATEM lê campos posicionais numericamente, a validação
+# correta é: cada campo da régua contém o MESMO VALOR nas MESMAS COLUNAS.
+# ===========================================================================
+
+from pynatem.reguas_mdxx import REGUAS_MDXX, campos_da_regua
+
+
+def _valores_por_campo(linha: str, regua: str):
+    """Fatia a linha pelos spans da régua e devolve os tokens por campo."""
+    out = []
+    for nome, a, b in campos_da_regua(regua):
+        tok = linha[a : b + 1].strip() if len(linha) > a else ""
+        out.append((nome, tok))
+    return out
+
+
+def _mesmo_valor(a: str, b: str) -> bool:
+    if a == b:
+        return True
+    try:
+        return float(a) == float(b)
+    except ValueError:
+        return False
+
+
+def _conferir_mdxx(codigo, variante, oficiais, geradas):
+    """Compara linhas oficiais × geradas campo a campo pelos spans da régua."""
+    reguas = REGUAS_MDXX[(codigo, variante)]
+    assert len(geradas) == len(oficiais)
+    for k, (of, ger) in enumerate(zip(oficiais, geradas)):
+        regua = reguas[k % len(reguas)]
+        for (nome, v_of), (_, v_ger) in zip(
+            _valores_por_campo(of, regua), _valores_por_campo(ger, regua)
+        ):
+            assert _mesmo_valor(v_of, v_ger), (
+                f"{codigo} {variante} campo {nome}: oficial={v_of!r} gerado={v_ger!r}"
+                f"\noficial |{of}|\ngerado  |{ger}|"
+            )
+
+
+def _linhas_de_dados_mdxx(texto: str):
+    return [
+        l
+        for l in texto.split("\n")
+        if l.strip()
+        and not l.strip().startswith("(")
+        and not l.strip().startswith("999999")
+        and not l.strip()
+        .split()[0]
+        .startswith(("DRGT", "DRGV", "DEST", "DMDG", "DMTC"))
+    ]
+
+
+def test_drgv_md01_conforme_manual():
+    """DRGV MD01 — dados do exemplo oficial (§46.58)."""
+    from pynatem.blocos import BlocoDRGV
+
+    b = BlocoDRGV()
+    b.adicionar_md01(
+        no=101,
+        r=0.05,
+        rp=0.38,
+        at=1.2,
+        qnl=0.15,
+        tw=1.5,
+        tr=7.0,
+        tf=0.05,
+        tg=0.5,
+        vel=9999,
+        lmn=0.0,
+        lmx=0.984,
+        dtb=0.5,
+        d=1.0,
+    )
+    _conferir_mdxx(
+        "DRGV",
+        "MD01",
+        [
+            "0101    0.05 0.381.200 0.15  1.5  7.0 0.05  0.5 9999  0.0 .984  0.5  1.0",
+        ],
+        _linhas_de_dados_mdxx(b.serializar()),
+    )
+
+
+def test_drgt_md01_conforme_manual():
+    """DRGT MD01 — dois modelos do exemplo oficial, com flags L/S glued."""
+    from pynatem.blocos import BlocoDRGT
+
+    b = BlocoDRGT()
+    b.adicionar_md01(
+        no=101,
+        cs=31,
+        ka=300.0,
+        ke=3.00,
+        kf=0.30,
+        tm=0.0,
+        ta=0.0,
+        te=6.00,
+        tf=3.00,
+        lmn=-1.1,
+        lmx=8.05,
+        l="E",
+        s="D",
+    )
+    b.adicionar_md01(
+        no=102,
+        cs=32,
+        ka=408.0,
+        ke=1.00,
+        kf=0.1046,
+        tm=0.0,
+        ta=0.0,
+        te=1.00,
+        tf=3.17,
+        lmn=-1.1,
+        lmx=8.05,
+        l="E",
+        s="I",
+    )
+    _conferir_mdxx(
+        "DRGT",
+        "MD01",
+        [
+            "0101     31  300. 3.00 0.30  0.0  0.0 6.00 3.00 -1.1 8.05ED",
+            "0102     32  408. 1.00.1046  0.0  0.0 1.00 3.17 -1.1 8.05EI",
+        ],
+        _linhas_de_dados_mdxx(b.serializar()),
+    )
+
+
+def test_drgt_md12_conforme_manual():
+    """DRGT MD12 — registro de DUAS linhas (réguas distintas) do exemplo oficial."""
+    from pynatem.blocos import BlocoDRGT
+
+    b = BlocoDRGT()
+    b.adicionar(
+        "MD12", 1201, 33, 25.0, -0.05, 0.080, 0.0, 1.0, 1.0, 0.0, 0.20, 0.50, 1.0, 0.0
+    )
+    b.adicionar("MD12", 1201, -1.0, 1.0, -4.6, 4.6, 0.0, 0.0, "D")
+    _conferir_mdxx(
+        "DRGT",
+        "MD12",
+        [
+            "1201     33  25.0 -.05 .080   .0  1.0  1.0   .0  .20  .50  1.0   .0",
+            "1201    -1.0  1.0 -4.6  4.6   .0   .0D",
+        ],
+        _linhas_de_dados_mdxx(b.serializar()),
+    )
+
+
+def test_dest_md07_conforme_manual():
+    """DEST MD07 — dados do exemplo oficial (§46.29)."""
+    from pynatem.blocos import BlocoDEST
+
+    b = BlocoDEST()
+    b.adicionar(
+        "MD07",
+        15,
+        22.78,
+        1.5,
+        0.02,
+        0.2927,
+        12.0,
+        1.0,
+        0.0,
+        -0.050,
+        0.050,
+        -999.0,
+        999.0,
+    )
+    _conferir_mdxx(
+        "DEST",
+        "MD07",
+        [
+            "0015   22.78  1.5 0.02.2927 12.0  1.0  0.0-.050 .050-999. 999.",
+        ],
+        _linhas_de_dados_mdxx(b.serializar()),
+    )
+
+
+def test_dmdg_md02_conforme_manual():
+    """DMDG MD02 — registro de 2 linhas do exemplo oficial (§46.46)."""
+    from pynatem.blocos import BlocoDMDG
+
+    b = BlocoDMDG()
+    b.adicionar_md02(
+        no=14,
+        cs=11,
+        ld=170.0,
+        lq=100.0,
+        ld_trans=37.0,
+        ld_sub=22.0,
+        ll=15.4,
+        td_trans=9.00,
+        td_sub=0.060,
+        tq_sub=0.200,
+        ra=0.0,
+        h=1.600,
+        d=0.0,
+        mva=300.0,
+    )
+    _conferir_mdxx(
+        "DMDG",
+        "MD02",
+        [
+            "0014     11 170.0100.0 37.0      22.0 15.4 9.00      .060 .200",
+            "0014        1.600      300.",
+        ],
+        _linhas_de_dados_mdxx(b.serializar()),
+    )
+
+
+def test_roundtrip_mdxx_posicional(tmp_path):
+    """Roundtrip completo dos MDxx com valores glued (estilo oficial)."""
+    from pynatem import CasoAnatem
+
+    caso = CasoAnatem()
+    caso.darq.sav = "rede.sav"
+    caso.drgv.adicionar_md01(
+        no=101,
+        r=0.05,
+        rp=0.38,
+        at=1.2,
+        qnl=0.15,
+        tw=1.5,
+        tr=7.0,
+        tf=0.05,
+        tg=0.5,
+        vel=9999,
+        lmn=0.0,
+        lmx=0.984,
+        dtb=0.5,
+        d=1.0,
+    )
+    caso.drgt.adicionar_md01(
+        no=102,
+        cs=32,
+        ka=408.0,
+        ke=1.00,
+        kf=0.1046,
+        tm=0.0,
+        ta=0.0,
+        te=1.00,
+        tf=3.17,
+        lmn=-1.1,
+        lmx=8.05,
+        l="E",
+        s="I",
+    )
+    p = tmp_path / "mdxx.stb"
+    caso.exportar(p)
+    lido = CasoAnatem.ler(p)
+    mv = lido.drgv._modelos[0]
+    assert mv.no == 101 and 9999 in mv.parametros and 0.984 in mv.parametros
+    mt = lido.drgt._modelos[0]
+    assert mt.no == 102 and 0.1046 in mt.parametros
+    assert "E" in mt.parametros and "I" in mt.parametros
