@@ -847,7 +847,7 @@ def test_roundtrip_drgv(tmp_path):
     assert len(lido.drgv._modelos) == 2
     m1, m3 = lido.drgv._modelos
     assert (m1.modelo, m1.no) == ("MD01", 1)
-    assert m1.parametros[0] == 0.05 and 90.0 in m1.parametros
+    assert m1.parametros[0] == 0.05 and 90.0 in m1.parametros  # Pbt
     assert (m3.modelo, m3.no, m3.parametros) == ("MD03", 2, [0.04, 1.5, 2.0])
     assert lido.drgv.serializar() == caso.drgv.serializar()
 
@@ -1157,9 +1157,9 @@ def test_dmdg_md01_serializa_campos_basicos():
     t = b.serializar()
     assert "DMDG MD01" in t
     assert "20" in t
-    assert "20.000" in t  # ld
-    assert "999.000" in t  # h
-    assert "9999.0" in t  # mva
+    assert "20.0" in t  # ld
+    assert "999.0" in t  # h
+    assert "9999" in t  # mva
     assert "999999" in t
 
 
@@ -1204,11 +1204,11 @@ def test_dmdg_md02_duas_reguas():
     assert "DMDG MD02" in t
     assert "14" in t
     # valores da régua 1
-    assert "170.000" in t
-    assert "100.000" in t
-    assert "37.000" in t
+    assert "170.0" in t
+    assert "100.0" in t
+    assert "37.0" in t
     # valores da régua 2
-    assert "300.000" in t  # h
+    assert "300.0" in t  # h
     assert "100.0" in t  # mva
     # duas linhas com "14" (régua 1 e régua 2)
     linhas_com_14 = [l for l in t.splitlines() if l.strip().startswith("14")]
@@ -1235,8 +1235,8 @@ def test_dmdg_md03_campos_extras():
     )
     t = b.serializar()
     assert "DMDG MD03" in t
-    assert "45.000" in t  # lq_trans
-    assert "1.5000" in t  # tq_trans
+    assert "45.0" in t  # lq_trans
+    assert "1.5" in t  # tq_trans
 
 
 def test_dmdg_mistura_md01_md02():

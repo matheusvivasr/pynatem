@@ -999,16 +999,32 @@ class _ModeloMD01:
     corfreq: str = "N"  # correção de frequência (S/N)
 
     def serializar(self) -> str:
-        fr_str = f"{self.fr:.1f}" if self.fr != 60.0 else ""
-        c_str = self.corfreq if self.corfreq.upper() == "S" else ""
-        linha = (
-            f"{self.no:>4}  {self.ld:>6.3f}{self.ra:>6.3f}"
-            f"{self.h:>7.3f}{self.d:>6.3f}{self.mva:>8.1f}"
+        """Colunas da régua oficial: (No)   (L'd)(Ra )( H )( D )(MVA)Fr M E.
+
+        Campos com valor no default do ANATEM (Ra=0, D=0, Fr=60) ficam em
+        branco, como nos exemplos oficiais; o flag de correção de frequência
+        ocupa a primeira coluna de flag após Fr.
+        """
+        from pynatem.reguas_mdxx import serializar_registro
+
+        fr = self.fr if self.fr != 60.0 else None
+        flag = self.corfreq if self.corfreq.upper() == "S" else None
+        linha = serializar_registro(
+            "DMDG",
+            "MD01",
+            self.no,
+            [
+                self.ld,
+                self.ra if self.ra else None,
+                self.h,
+                self.d if self.d else None,
+                self.mva,
+                fr,
+                flag,
+                None,
+            ],
         )
-        if fr_str:
-            linha += f"  {fr_str}"
-        if c_str:
-            linha += f"  {c_str}"
+        assert linha is not None  # régua DMDG/MD01 consta no registro
         return linha
 
 
@@ -1034,21 +1050,41 @@ class _ModeloMD02:
     corfreq: str = "N"
 
     def serializar(self) -> str:
-        cs_str = f"{self.cs:>4}"  # sempre emite (0 inclusive) — evita deslocamento de colunas
-        # régua 1
-        r1 = (
-            f"{self.no:>4}  {cs_str}"
-            f"  {self.ld:>7.3f} {self.lq:>7.3f} {self.ld_trans:>7.3f}"
-            f" {self.ld_sub:>7.3f} {self.ll:>7.3f}"
-            f"  {self.td_trans:>7.4f}  {self.td_sub:>7.4f} {self.tq_sub:>7.4f}"
+        """Duas linhas nas colunas das réguas oficiais do MD02 (§46.46)."""
+        from pynatem.reguas_mdxx import serializar_registro
+
+        fr = self.fr if self.fr != 60.0 else None
+        flag = self.corfreq if self.corfreq.upper() == "S" else None
+        r1 = serializar_registro(
+            "DMDG",
+            "MD02",
+            self.no,
+            [
+                self.cs,
+                self.ld,
+                self.lq,
+                self.ld_trans,
+                self.ld_sub,
+                self.ll,
+                self.td_trans,
+                self.td_sub,
+                self.tq_sub,
+            ],
+            0,
         )
-        # régua 2
-        fr_str = f"  {self.fr:.1f}" if self.fr != 60.0 else ""
-        c_str = f"  {self.corfreq}" if self.corfreq.upper() == "S" else ""
-        r2 = (
-            f"{self.no:>4}  {self.ra:>6.3f}"
-            f"  {self.h:>7.3f}{self.d:>6.3f}{self.mva:>8.1f}"
-            f"{fr_str}{c_str}"
+        r2 = serializar_registro(
+            "DMDG",
+            "MD02",
+            self.no,
+            [
+                self.ra if self.ra else None,
+                self.h,
+                self.d if self.d else None,
+                self.mva,
+                fr,
+                flag,
+            ],
+            1,
         )
         return f"{r1}\n{r2}"
 
@@ -1077,21 +1113,42 @@ class _ModeloMD03:
     corfreq: str = "N"
 
     def serializar(self) -> str:
-        cs_str = f"{self.cs:>4}"  # sempre emite (0 inclusive)
-        r1 = (
-            f"{self.no:>4}  {cs_str}"
-            f"  {self.ld:>7.3f} {self.lq:>7.3f}"
-            f" {self.ld_trans:>7.3f} {self.lq_trans:>7.3f}"
-            f" {self.ld_sub:>7.3f} {self.ll:>7.3f}"
-            f"  {self.td_trans:>7.4f} {self.tq_trans:>7.4f}"
-            f"  {self.td_sub:>7.4f} {self.tq_sub:>7.4f}"
+        from pynatem.reguas_mdxx import serializar_registro
+
+        fr = self.fr if self.fr != 60.0 else None
+        flag = self.corfreq if self.corfreq.upper() == "S" else None
+        r1 = serializar_registro(
+            "DMDG",
+            "MD03",
+            self.no,
+            [
+                self.cs,
+                self.ld,
+                self.lq,
+                self.ld_trans,
+                self.lq_trans,
+                self.ld_sub,
+                self.ll,
+                self.td_trans,
+                self.tq_trans,
+                self.td_sub,
+                self.tq_sub,
+            ],
+            0,
         )
-        fr_str = f"  {self.fr:.1f}" if self.fr != 60.0 else ""
-        c_str = f"  {self.corfreq}" if self.corfreq.upper() == "S" else ""
-        r2 = (
-            f"{self.no:>4}  {self.ra:>6.3f}"
-            f"  {self.h:>7.3f}{self.d:>6.3f}{self.mva:>8.1f}"
-            f"{fr_str}{c_str}"
+        r2 = serializar_registro(
+            "DMDG",
+            "MD03",
+            self.no,
+            [
+                self.ra if self.ra else None,
+                self.h,
+                self.d if self.d else None,
+                self.mva,
+                fr,
+                flag,
+            ],
+            1,
         )
         return f"{r1}\n{r2}"
 
@@ -1299,15 +1356,17 @@ class BlocoDMDG(BlocoBase):
 
         if self._md01:
             linhas.append("DMDG MD01\n")
-            linhas.append("(No) (L'd)(Ra )( H )( D )(MVA)Fr C\n")
+            linhas.append("(No)   (L'd)(Ra )( H )( D )(MVA)Fr M E\n")
             for m in self._md01:
                 linhas.append(m.serializar() + "\n")
             linhas.append("999999\n")
 
         if self._md02:
             linhas.append("DMDG MD02\n")
-            linhas.append('(No) (CS) (Ld )(Lq )(L\'d)(L"d)(Ll )(T\'d) (T"d)(T"q)\n')
-            linhas.append("(No) (Ra )( H )( D )(MVA)Fr C\n")
+            linhas.append(
+                '(No)   (CS) (Ld )(Lq )(L\'d)     (L"d)(Ll )(T\'d)     (T"d)(T"q)\n'
+            )
+            linhas.append("(No)   (Ra )( H )( D )(MVA)Fr C\n")
             for m2 in self._md02:
                 linhas.append(m2.serializar() + "\n")
             linhas.append("999999\n")
@@ -1315,9 +1374,9 @@ class BlocoDMDG(BlocoBase):
         if self._md03:
             linhas.append("DMDG MD03\n")
             linhas.append(
-                "(No) (CS) (Ld )(Lq )(L'd)(L'q)(L\"d)(Ll )(T'd)(T'q)(T\"d)(T\"q)\n"
+                "(No)   (CS) (Ld )(Lq )(L'd)(L'q)(L\"d)(Ll )(T'd)(T'q)(T\"d)(T\"q)\n"
             )
-            linhas.append("(No) (Ra )( H )( D )(MVA)Fr C\n")
+            linhas.append("(No)   (Ra )( H )( D )(MVA)Fr C\n")
             for m3 in self._md03:
                 linhas.append(m3.serializar() + "\n")
             linhas.append("999999\n")
@@ -1413,11 +1472,32 @@ class _BlocoModeloMDxx(BlocoBase):
                 ordem.append(m.modelo)
             grupos[m.modelo].append(m)
 
+        from pynatem.reguas_mdxx import (
+            n_linhas_registro,
+            regua_oficial,
+            serializar_registro,
+        )
+
         linhas: list = []
         for variante in ordem:
             linhas.append(f"{self.keyword} {variante}\n")
+            n_lin = n_linhas_registro(self.keyword, variante)
+            # emite as réguas oficiais como comentário (estilo dos exemplos)
+            for k in range(n_lin):
+                r = regua_oficial(self.keyword, variante, k)
+                if r:
+                    linhas.append(r + "\n")
+            contador: dict = {}
             for m in grupos[variante]:
-                linhas.append(m.serializar() + "\n")
+                idx = contador.get(m.no, 0) % n_lin
+                contador[m.no] = contador.get(m.no, 0) + 1
+                posicional = serializar_registro(
+                    self.keyword, variante, m.no, m.parametros, idx
+                )
+                if posicional is not None:
+                    linhas.append(posicional + "\n")
+                else:
+                    linhas.append(m.serializar() + "\n")
             linhas.append(self._terminador())
         return "".join(linhas)
 
@@ -1493,20 +1573,22 @@ class BlocoDRGV(_BlocoModeloMDxx):
         lmx: float,
         dtb: float,
         d: float,
-        pbg: float,
-        pbt: float,
+        pbg: Optional[float] = None,
+        pbt: Optional[float] = None,
+        vel: Optional[float] = None,
     ) -> "BlocoDRGV":
         """Regulador de velocidade MD01 (§16.4), campos nomeados e validados.
 
-        Campos (na ordem da régua): R (estatismo permanente), Rp (estatismo
-        transitório), At (ganho da turbina), Qnl (vazão sem carga), Tw (água),
-        Tr (regulador), Tf (filtragem), Tg (servomotor), Lmn/Lmx (limites de
-        abertura da comporta), Dtb (amortecimento da turbina), D (amortecimento
-        da carga), Pbg (potência base do gerador, MVA), Pbt (potência base da
-        turbina, MW).
+        Campos (na ordem da régua oficial): R (estatismo permanente), Rp
+        (estatismo transitório), At (ganho da turbina), Qnl (vazão sem carga),
+        Tw (água), Tr (regulador), Tf (filtragem), Tg (servomotor), Vel
+        (velocidade da comporta — coluna comprovada pelo exemplo oficial),
+        Lmn/Lmx (limites de abertura da comporta), Dtb (amortecimento da
+        turbina), D (amortecimento da carga), Pbg/Pbt (potências base do
+        gerador [MVA] e da turbina [MW], opcionais).
         """
         return self.adicionar(
-            "MD01", no, r, rp, at, qnl, tw, tr, tf, tg, lmn, lmx, dtb, d, pbg, pbt
+            "MD01", no, r, rp, at, qnl, tw, tr, tf, tg, vel, lmn, lmx, dtb, d, pbg, pbt
         )
 
 

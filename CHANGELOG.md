@@ -2,6 +2,36 @@
 
 Todas as mudanças notáveis estão documentadas aqui.
 
+## [2.0.1] — 2026-07-11 — Réguas posicionais dos modelos MDxx 📏
+
+### Novo
+- `pynatem/reguas_mdxx.py`: registro das réguas oficiais + motor de
+  serialização posicional (spans por campo, flags de 1 coluna, valores
+  formatados para caber no campo)
+- 14 variantes com colunas exatas: DMDG MD01–03, DRGT MD01/12/15,
+  DRGV MD01/04, DEST MD01/07, DMTC MD01, DECS/DMCE/DMCS MD01–02
+- 6 novos testes de conformidade por campo (posição + valor) contra os
+  exemplos oficiais — total 286 testes
+
+### Corrigido
+- **DRGV MD01 não tinha o campo Vel** (comprovado pelo exemplo oficial) —
+  tudo após Tg deslocava uma coluna; Pbg/Pbt (tabela §16.4) entram como
+  colunas finais opcionais
+- DMDG MD01–03: serialização na grade oficial de 5 colunas (larguras
+  próprias de 6/7 removidas); defaults do ANATEM (Ra=0, D=0, Fr=60)
+  ficam em branco como nos exemplos
+- Parser DMDG/MDxx por fatias de régua (valores glued, ex. `170.0100.0`)
+
+### Limitação documentada (sem inferência)
+- Variantes restantes (DRGT MD02–11/13–14/16–24, DRGV MD02–03/05–07,
+  DEST MD02–06/08–12) não têm régua posicional publicada no manual online
+  (as tabelas trazem nome/descrição sem colunas) — seguem no formato
+  genérico até obtenção das réguas (PDF impresso ou decks reais)
+
+### Compatibilidade
+- Decks gerados por versões < 2.0.1 dos MDxx usavam colunas próprias;
+  para relê-los com o parser posicional, re-exporte a partir da API
+
 ## [2.0.0] — 2026-07-11 — Primeiro lançamento público no PyPI 🚀
 
 Marco MAJOR: o pynatem passa a ser publicado no PyPI (`pip install pynatem`).

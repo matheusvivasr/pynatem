@@ -512,6 +512,16 @@ class ParserSTB:
                 variante = v
                 break
 
+        from pynatem.reguas_mdxx import REGUAS_MDXX, campos_da_regua
+
+        def fatiar(linha_txt: str, idx: int) -> list:
+            """Fatia a linha pelas colunas da régua oficial (strings, '' = branco)."""
+            regua = REGUAS_MDXX[("DMDG", variante)][idx]
+            vals = []
+            for _, a, b in campos_da_regua(regua):
+                vals.append(linha_txt[a : b + 1].strip() if len(linha_txt) > a else "")
+            return vals
+
         i = inicio + 1  # pula a linha da palavra-chave
 
         if variante == "MD01":
@@ -524,15 +534,15 @@ class ParserSTB:
                 if not linha.strip() or linha.strip().startswith("("):
                     i += 1
                     continue
-                p = linha.split()
-                no = _safe_int(p[0])
-                ld = _safe_float(p[1]) if len(p) > 1 else 0.0
-                ra = _safe_float(p[2]) if len(p) > 2 else 0.0
-                h = _safe_float(p[3]) if len(p) > 3 else 0.0
-                d = _safe_float(p[4]) if len(p) > 4 else 0.0
-                mva = _safe_float(p[5]) if len(p) > 5 else 100.0
-                fr = _safe_float(p[6]) if len(p) > 6 else 60.0
-                corfreq = p[7].upper() if len(p) > 7 else "N"
+                vals = fatiar(linha, 0)
+                no = _safe_int(vals[0])
+                ld = _safe_float(vals[1]) if vals[1] else 0.0
+                ra = _safe_float(vals[2]) if vals[2] else 0.0
+                h = _safe_float(vals[3]) if vals[3] else 0.0
+                d = _safe_float(vals[4]) if vals[4] else 0.0
+                mva = _safe_float(vals[5]) if vals[5] else 100.0
+                fr = _safe_float(vals[6]) if vals[6] else 60.0
+                corfreq = vals[7].upper() if len(vals) > 7 and vals[7] else "N"
                 caso.dmdg.adicionar_md01(
                     no=no, ld=ld, ra=ra, h=h, d=d, mva=mva, fr=fr, corfreq=corfreq
                 )
@@ -565,25 +575,25 @@ class ParserSTB:
                 if _e_terminador(linha2) or _e_fim(linha2):
                     return j + 1
 
-                p1 = linha1.split()
-                p2 = linha2.split()
-                no = _safe_int(p1[0])
-                cs = _safe_int(p1[1]) if len(p1) > 1 else 0
-                ld = _safe_float(p1[2]) if len(p1) > 2 else 0.0
-                lq = _safe_float(p1[3]) if len(p1) > 3 else 0.0
-                ld_trans = _safe_float(p1[4]) if len(p1) > 4 else 0.0
-                ld_sub = _safe_float(p1[5]) if len(p1) > 5 else 0.0
-                ll = _safe_float(p1[6]) if len(p1) > 6 else 0.0
-                td_trans = _safe_float(p1[7]) if len(p1) > 7 else 0.0
-                td_sub = _safe_float(p1[8]) if len(p1) > 8 else 0.0
-                tq_sub = _safe_float(p1[9]) if len(p1) > 9 else 0.0
-                # régua 2 (No já é p2[0], ignorado — usa No da régua 1)
-                ra = _safe_float(p2[1]) if len(p2) > 1 else 0.0
-                h = _safe_float(p2[2]) if len(p2) > 2 else 3.0
-                d = _safe_float(p2[3]) if len(p2) > 3 else 0.0
-                mva = _safe_float(p2[4]) if len(p2) > 4 else 100.0
-                fr = _safe_float(p2[5]) if len(p2) > 5 else 60.0
-                corfreq = p2[6].upper() if len(p2) > 6 else "N"
+                v1 = fatiar(linha1, 0)
+                v2 = fatiar(linha2, 1)
+                no = _safe_int(v1[0])
+                cs = _safe_int(v1[1]) if v1[1] else 0
+                ld = _safe_float(v1[2]) if v1[2] else 0.0
+                lq = _safe_float(v1[3]) if v1[3] else 0.0
+                ld_trans = _safe_float(v1[4]) if v1[4] else 0.0
+                ld_sub = _safe_float(v1[5]) if v1[5] else 0.0
+                ll = _safe_float(v1[6]) if v1[6] else 0.0
+                td_trans = _safe_float(v1[7]) if v1[7] else 0.0
+                td_sub = _safe_float(v1[8]) if v1[8] else 0.0
+                tq_sub = _safe_float(v1[9]) if v1[9] else 0.0
+                # régua 2 (No já é v2[0], ignorado — usa No da régua 1)
+                ra = _safe_float(v2[1]) if v2[1] else 0.0
+                h = _safe_float(v2[2]) if v2[2] else 3.0
+                d = _safe_float(v2[3]) if v2[3] else 0.0
+                mva = _safe_float(v2[4]) if v2[4] else 100.0
+                fr = _safe_float(v2[5]) if v2[5] else 60.0
+                corfreq = v2[6].upper() if len(v2) > 6 and v2[6] else "N"
                 caso.dmdg.adicionar_md02(
                     no=no,
                     cs=cs,
@@ -628,26 +638,26 @@ class ParserSTB:
                 if _e_terminador(linha2) or _e_fim(linha2):
                     return j + 1
 
-                p1 = linha1.split()
-                p2 = linha2.split()
-                no = _safe_int(p1[0])
-                cs = _safe_int(p1[1]) if len(p1) > 1 else 0
-                ld = _safe_float(p1[2]) if len(p1) > 2 else 0.0
-                lq = _safe_float(p1[3]) if len(p1) > 3 else 0.0
-                ld_trans = _safe_float(p1[4]) if len(p1) > 4 else 0.0
-                lq_trans = _safe_float(p1[5]) if len(p1) > 5 else 0.0
-                ld_sub = _safe_float(p1[6]) if len(p1) > 6 else 0.0
-                ll = _safe_float(p1[7]) if len(p1) > 7 else 0.0
-                td_trans = _safe_float(p1[8]) if len(p1) > 8 else 0.0
-                tq_trans = _safe_float(p1[9]) if len(p1) > 9 else 0.0
-                td_sub = _safe_float(p1[10]) if len(p1) > 10 else 0.0
-                tq_sub = _safe_float(p1[11]) if len(p1) > 11 else 0.0
-                ra = _safe_float(p2[1]) if len(p2) > 1 else 0.0
-                h = _safe_float(p2[2]) if len(p2) > 2 else 3.0
-                d = _safe_float(p2[3]) if len(p2) > 3 else 0.0
-                mva = _safe_float(p2[4]) if len(p2) > 4 else 100.0
-                fr = _safe_float(p2[5]) if len(p2) > 5 else 60.0
-                corfreq = p2[6].upper() if len(p2) > 6 else "N"
+                v1 = fatiar(linha1, 0)
+                v2 = fatiar(linha2, 1)
+                no = _safe_int(v1[0])
+                cs = _safe_int(v1[1]) if v1[1] else 0
+                ld = _safe_float(v1[2]) if v1[2] else 0.0
+                lq = _safe_float(v1[3]) if v1[3] else 0.0
+                ld_trans = _safe_float(v1[4]) if v1[4] else 0.0
+                lq_trans = _safe_float(v1[5]) if v1[5] else 0.0
+                ld_sub = _safe_float(v1[6]) if v1[6] else 0.0
+                ll = _safe_float(v1[7]) if v1[7] else 0.0
+                td_trans = _safe_float(v1[8]) if v1[8] else 0.0
+                tq_trans = _safe_float(v1[9]) if v1[9] else 0.0
+                td_sub = _safe_float(v1[10]) if v1[10] else 0.0
+                tq_sub = _safe_float(v1[11]) if v1[11] else 0.0
+                ra = _safe_float(v2[1]) if v2[1] else 0.0
+                h = _safe_float(v2[2]) if v2[2] else 3.0
+                d = _safe_float(v2[3]) if v2[3] else 0.0
+                mva = _safe_float(v2[4]) if v2[4] else 100.0
+                fr = _safe_float(v2[5]) if v2[5] else 60.0
+                corfreq = v2[6].upper() if len(v2) > 6 and v2[6] else "N"
                 caso.dmdg.adicionar_md03(
                     no=no,
                     cs=cs,
@@ -766,6 +776,7 @@ class ParserSTB:
                 break
 
         i = inicio + 1
+        contador: dict = {}
         while i < len(linhas):
             linha = _strip_comment(linhas[i])
             if _e_terminador(linha) or _e_fim(linha):
@@ -774,15 +785,45 @@ class ParserSTB:
             if not stripped or stripped.startswith("("):
                 i += 1
                 continue
-            partes = stripped.split()
             try:
-                no = int(partes[0])
-                params = [_parse_valor(p) for p in partes[1:]]
+                no, params = ParserSTB._extrair_registro_mdxx(
+                    linha, atributo.upper(), variante, contador
+                )
                 bloco.adicionar(variante, no, *params)
             except (ValueError, IndexError):
                 pass
             i += 1
         return i
+
+    @staticmethod
+    def _extrair_registro_mdxx(linha, codigo, variante, contador):
+        """Extrai (no, params) de uma linha MDxx.
+
+        Usa fatiamento pelas colunas da régua oficial quando conhecida
+        (campos em branco viram None); caso contrário, tokens por espaço.
+        """
+        from pynatem.reguas_mdxx import REGUAS_MDXX, campos_da_regua
+
+        reguas = REGUAS_MDXX.get((codigo, variante.upper()))
+        if reguas:
+            campos = campos_da_regua(reguas[0])
+            _, ini, fim = campos[0]
+            tok_no = linha[ini : fim + 1].strip()
+            if tok_no.isdigit():
+                no = int(tok_no)
+                idx = contador.get(no, 0) % len(reguas)
+                contador[no] = contador.get(no, 0) + 1
+                campos_l = campos_da_regua(reguas[idx])
+                params = []
+                for _, a, b in campos_l[1:]:
+                    tok = linha[a : b + 1].strip() if len(linha) > a else ""
+                    params.append(_parse_valor(tok) if tok else None)
+                while params and params[-1] is None:
+                    params.pop()
+                return no, params
+        partes = linha.strip().split()
+        no = int(partes[0])
+        return no, [_parse_valor(p) for p in partes[1:]]
 
     @staticmethod
     def _ler_assoc_cdu(linhas, inicio, caso, atributo: str) -> int:
