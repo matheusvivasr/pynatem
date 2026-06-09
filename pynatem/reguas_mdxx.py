@@ -82,6 +82,34 @@ REGUAS_MDXX: Dict[Tuple[str, str], List[str]] = {
 }
 
 
+# Réguas oficiais de códigos de associação/dados (linha única) — colhidas
+# dos exemplos do manual online oficial.
+REGUAS_CODIGOS: Dict[str, str] = {
+    "DVSI": "(Nv)   ( De) ( Pa) Nx np (  Cnvk  )M(Vb ) ( Rv)( Xv)(Vpt)(Vst)(St )(Tap) (Ne)",
+    "DCNV": "(No)   (Gkb)(Amn)(Amx)(Gmn)( Mc )u( S1 )u( S2 )u( S3 )u( S4 )u",
+    "DDFM": "( Nb)   Gr (P) (Q) Und ( Mg ) ( Mt )u( Mc )u(Xvd )(Nbc) ( Slip )uR I",
+    "DGSE": "( Nb)   Gr (P) (Q) Und ( Mg ) ( Mt )u( Mv )u( Mc1)u( Mc2)u(Freq0)(Vtr0 )(Vcap0)",
+    "DMOT": "( Nb)   Gr (  H ) ( K0 ) ( K1 ) ( K2 ) ( EXP) M ( Mt )",
+}
+
+
+def serializar_linha(regua: str, valores: list) -> str:
+    """Serializa uma linha completa pelas colunas da régua (todos os campos).
+
+    ``valores`` na ordem dos campos da régua; ``None`` deixa em branco.
+    """
+    campos = campos_da_regua(regua)
+    fim_total = campos[-1][2] + 1 if campos else len(regua)
+    canvas = [" "] * max(fim_total, len(regua))
+    for (nome, a, b), v in zip(campos, valores):
+        if v is None:
+            continue
+        larg = b - a + 1
+        s = f"{_ajustar_valor(v, larg):>{larg}}"
+        canvas[a : b + 1] = s
+    return "".join(canvas).rstrip()
+
+
 def campos_da_regua(regua: str) -> List[Tuple[str, int, int]]:
     """Extrai os campos de uma régua: lista de (nome, início, fim) inclusivos.
 
@@ -109,6 +137,12 @@ def campos_da_regua(regua: str) -> List[Tuple[str, int, int]]:
                 # flags glued de 1 coluna cada (ex.: "LS" = campos L e S)
                 for k, letra in enumerate(token):
                     campos.append((letra, i + k, i + k))
+            elif len(token) > 1 and "u" in token:
+                # 'u' minúsculo é flag de 1 coluna (ex.: "uR" = u + campo R)
+                pos = i
+                for letra in token:
+                    campos.append((letra, pos, pos))
+                    pos += 1
             else:
                 campos.append((token, i, j - 1))
             i = j
@@ -135,7 +169,7 @@ def _ajustar_valor(v, largura: int) -> str:
             return s
         return str(int(v))[:largura]
     # float não inteiro: tentar formas decrescentes de precisão
-    for prec in range(6, -1, -1):
+    for prec in range(min(largura, 12), -1, -1):
         s = f"{v:.{prec}f}"
         s = s.rstrip("0").rstrip(".") if "." in s else s
         if len(s) <= largura and float(s) == float(f"{v:.{prec}f}"):

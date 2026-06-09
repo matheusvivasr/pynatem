@@ -1778,7 +1778,7 @@ def test_statcom_serializa():
     t = b.serializar()
     assert "DVSI" in t
     assert "21" in t
-    assert "0.779696801" in t
+    assert ".779696801" in t  # estilo compacto do manual
 
 
 def test_hvdc_serializa():

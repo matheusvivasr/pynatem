@@ -2418,22 +2418,27 @@ class _ConversorVSI:
     tap: float = 1.0  # tap do trafo no lado secundário [pu]
 
     def serializar(self) -> str:
-        return (
-            _col_int(self.nv, 5)
-            + _col_int(self.de, 6)
-            + _col_int(self.pa, 6)
-            + _col_int(self.nx, 4)
-            + _col_int(self.np, 4)
-            + _col_float(self.cnvk, 14)
-            + f"{self.m:>2}"
-            + _col_float(self.vb, 10)
-            + _col_float(self.rv, 10)
-            + _col_float(self.xv, 10)
-            + _col_float(self.vpt, 10)
-            + _col_float(self.vst, 10)
-            + _col_float(self.st, 10)
-            + _col_float(self.tap, 8)
-            + _col_int(self.ne, 6)
+        from pynatem.reguas_mdxx import REGUAS_CODIGOS, serializar_linha
+
+        return serializar_linha(
+            REGUAS_CODIGOS["DVSI"],
+            [
+                self.nv,
+                self.de,
+                self.pa,
+                self.nx,
+                self.np,
+                self.cnvk,
+                self.m,
+                self.vb,
+                self.rv,
+                self.xv,
+                self.vpt,
+                self.vst,
+                self.st,
+                self.tap,
+                self.ne,
+            ],
         )
 
 
@@ -2494,24 +2499,9 @@ class BlocoSTATCOM(BlocoBase):
         return self
 
     def _guia(self) -> str:
-        rotulos = {
-            "nv": "(Nv)",
-            "de": "(De)",
-            "pa": "(Pa)",
-            "nx": "Nx",
-            "np": "np",
-            "cnvk": "(Cnvk)",
-            "m": "M",
-            "vb": "(Vb)",
-            "rv": "(Rv)",
-            "xv": "(Xv)",
-            "vpt": "(Vpt)",
-            "vst": "(Vst)",
-            "st": "(St)",
-            "tap": "(Tap)",
-            "ne": "(Ne)",
-        }
-        return "".join(f"{rotulos[nome]:>{w}}" for nome, w in _VSI_COLS) + "\n"
+        from pynatem.reguas_mdxx import REGUAS_CODIGOS
+
+        return REGUAS_CODIGOS["DVSI"] + "\n"
 
     def serializar(self) -> str:
         linhas = [self._cabecalho(), self._guia()]
@@ -2588,17 +2578,30 @@ class _ConversorCACC:
     s4_usuario: bool = False
 
     def serializar(self) -> str:
-        return (
-            _col_int(self.no, 5)
-            + _col_float(self.gkb, 8)
-            + _col_float(self.amn, 8)
-            + _col_float(self.amx, 8)
-            + _col_float(self.gmn, 8)
-            + _col_modelo(self.mc, self.mc_usuario, 7)
-            + _col_modelo(self.s1, self.s1_usuario, 7)
-            + _col_modelo(self.s2, self.s2_usuario, 7)
-            + _col_modelo(self.s3, self.s3_usuario, 7)
-            + _col_modelo(self.s4, self.s4_usuario, 7)
+        from pynatem.reguas_mdxx import REGUAS_CODIGOS, serializar_linha
+
+        def flag(num, usuario):
+            return "U" if (num is not None and usuario) else None
+
+        return serializar_linha(
+            REGUAS_CODIGOS["DCNV"],
+            [
+                self.no,
+                self.gkb,
+                self.amn,
+                self.amx,
+                self.gmn,
+                self.mc,
+                flag(self.mc, self.mc_usuario),
+                self.s1,
+                flag(self.s1, self.s1_usuario),
+                self.s2,
+                flag(self.s2, self.s2_usuario),
+                self.s3,
+                flag(self.s3, self.s3_usuario),
+                self.s4,
+                flag(self.s4, self.s4_usuario),
+            ],
         )
 
 
