@@ -4107,7 +4107,7 @@ def test_ddfm_serializacao():
     t = b.serializar()
 
     assert "DDFM" in t
-    assert "6073" in t and "100.0" in t
+    assert "6073" in t and "100" in t
 
 
 def test_ddfm_roundtrip():

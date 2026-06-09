@@ -2825,22 +2825,32 @@ class _AssocDFIG:
     i: int = 0  # flag RMSB
 
     def serializar(self) -> str:
-        partes = [
-            f"{self.nb:>5}",
-            f"{self.gr:>3}",
-            f"{self.p:>6.1f}",
-            f"{self.q:>6.1f}",
-            f"{self.und:>4}",
-            f"{self.mg:>4}",
-            f"{_sep_u(self.mt, self.mt_usuario):>6}",
-            f"{_sep_u(self.mc, self.mc_usuario):>6}",
-            f"{self.xvd:>7.2f}",
-            f"{self.nbc:>4}",
-            f"{_sep_u_float(self.slip, self.slip_usuario):>8}",
-            f"{self.r:>2}",
-            f"{self.i:>2}",
-        ]
-        return "".join(partes)
+        from pynatem.reguas_mdxx import REGUAS_CODIGOS, serializar_linha
+
+        def flag(usuario):
+            return "U" if usuario else None
+
+        return serializar_linha(
+            REGUAS_CODIGOS["DDFM"],
+            [
+                self.nb,
+                self.gr,
+                self.p,
+                self.q,
+                self.und,
+                self.mg,
+                self.mt,
+                flag(self.mt_usuario),
+                self.mc,
+                flag(self.mc_usuario),
+                self.xvd if self.xvd else None,
+                self.nbc if self.nbc else None,
+                self.slip,
+                flag(self.slip_usuario),
+                self.r if self.r else None,
+                self.i if self.i else None,
+            ],
+        )
 
 
 @dataclass
@@ -2936,7 +2946,9 @@ class BlocoDDFM(BlocoBase):
         return self
 
     def _guia(self) -> str:
-        return "( Nb) Gr  (P) (Q)Und  Mg ( Mt )u( Mc )u(Xvd )(Nbc) ( Slip )u R I\n"
+        from pynatem.reguas_mdxx import REGUAS_CODIGOS
+
+        return REGUAS_CODIGOS["DDFM"] + "\n"
 
     def serializar(self) -> str:
         linhas = [self._cabecalho(), self._guia()]
@@ -3103,22 +3115,33 @@ class _AssocGSE:
     mc2_usuario: bool = False
 
     def serializar(self) -> str:
-        partes = [
-            f"{self.nb:>5}",
-            f"{self.gr:>3}",
-            f"{self.p:>6.0f}",
-            f"{self.q:>6.0f}",
-            f"{self.und:>4}",
-            f"{self.mg:>5}",
-            f"{_sep_u(self.mt, self.mt_usuario):>6}",
-            f"{_sep_u(self.mv, self.mv_usuario):>6}",
-            f"{_sep_u(self.mc1, self.mc1_usuario):>6}",
-            f"{_sep_u(self.mc2, self.mc2_usuario):>6}",
-            f"{self.freq:>6.0f}",
-            f"{self.vtr0:>6.2f}",
-            f"{self.vcap0:>6.2f}",
-        ]
-        return "".join(partes)
+        from pynatem.reguas_mdxx import REGUAS_CODIGOS, serializar_linha
+
+        def flag(usuario):
+            return "U" if usuario else None
+
+        return serializar_linha(
+            REGUAS_CODIGOS["DGSE"],
+            [
+                self.nb,
+                self.gr,
+                self.p,
+                self.q,
+                self.und,
+                self.mg,
+                self.mt,
+                flag(self.mt_usuario),
+                self.mv,
+                flag(self.mv_usuario),
+                self.mc1,
+                flag(self.mc1_usuario),
+                self.mc2,
+                flag(self.mc2_usuario),
+                int(self.freq) if self.freq else None,
+                self.vtr0 if self.vtr0 else None,
+                self.vcap0 if self.vcap0 else None,
+            ],
+        )
 
 
 @dataclass
@@ -3217,9 +3240,9 @@ class BlocoDGSE(BlocoBase):
         return self
 
     def _guia(self) -> str:
-        return (
-            "( Nb) Gr (P) (Q)Und  Mg ( Mt )u( Mv )u(Mc1)u(Mc2)u(Freq)(Vtr0 )(Vcap0)\n"
-        )
+        from pynatem.reguas_mdxx import REGUAS_CODIGOS
+
+        return REGUAS_CODIGOS["DGSE"] + "\n"
 
     def serializar(self) -> str:
         linhas = [self._cabecalho(), self._guia()]

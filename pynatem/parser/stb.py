@@ -1177,6 +1177,48 @@ class ParserSTB:
         return i
 
     @staticmethod
+    def _tokens_para_regua(linha: str, codigo: str) -> list:
+        """Mapeia tokens de espaçamento livre para os campos da régua.
+
+        Flags 'U' coladas a números (ex.: 102U) são separadas na coluna de
+        flag correspondente; campos de flag sem valor ficam em branco.
+        """
+        from pynatem.reguas_mdxx import REGUAS_CODIGOS, campos_da_regua
+
+        campos = campos_da_regua(REGUAS_CODIGOS[codigo])
+        tokens = linha.split()
+        out = []
+        ti = 0
+        k = 0
+        while k < len(campos):
+            nome = campos[k][0]
+            eh_flag = nome in ("u", "U")
+            if eh_flag:
+                out.append("")  # preenchido ao separar a flag do token anterior
+                k += 1
+                continue
+            if ti < len(tokens):
+                tok = tokens[ti]
+                ti += 1
+                # flag U/u colada ao número → vai para o campo de flag seguinte
+                if (
+                    tok
+                    and tok[-1] in ("U", "u")
+                    and tok[:-1].replace(".", "").replace("-", "").isdigit()
+                    and k + 1 < len(campos)
+                    and campos[k + 1][0] in ("u", "U")
+                ):
+                    out.append(tok[:-1])
+                    out.append("U")
+                    k += 2
+                    continue
+                out.append(tok)
+            else:
+                out.append("")
+            k += 1
+        return out
+
+    @staticmethod
     def _fatiar_codigo(linha: str, codigo: str) -> list:
         """Fatia a linha pelos spans da régua oficial do código (strings)."""
         from pynatem.reguas_mdxx import REGUAS_CODIGOS, campos_da_regua
@@ -1301,117 +1343,86 @@ class ParserSTB:
 
     @staticmethod
     def _ler_ddfm(linhas, inicio, caso) -> int:
-        """Lê o bloco DDFM (§19.2) — associação de geradores eólicos DFIG (v1.5.3).
-
-        Formato livre: Nb Gr P Q Und Mg Mt[u] Mc[u] Xvd Nbc Slip[u] R I
-        """
+        """Lê o bloco DDFM (§19.2) pelas colunas da régua oficial."""
         i = inicio
         while i < len(linhas):
             linha = _strip_comment(linhas[i])
             if _e_terminador(linha) or _e_fim(linha):
                 return i + 1
-            stripped = linha.strip()
-            if not stripped:
+            if not linha.strip():
                 i += 1
                 continue
-            partes = stripped.split()
-            try:
-                nb = int(partes[0])
-                gr = int(partes[1])
-                p = _safe_float(partes[2]) if len(partes) > 2 else 0.0
-                q = _safe_float(partes[3]) if len(partes) > 3 else 0.0
-                und = int(partes[4]) if len(partes) > 4 else 1
-                mg = int(partes[5]) if len(partes) > 5 else 0
-                mt, mt_u = _sep_flag_u(partes[6]) if len(partes) > 6 else (0, False)
-                mc, mc_u = _sep_flag_u(partes[7]) if len(partes) > 7 else (0, False)
-                xvd = _safe_float(partes[8]) if len(partes) > 8 else 0.0
-                nbc = int(partes[9]) if len(partes) > 9 else 0
-                # Slip pode ser float (escorregamento) ou int com 'u' (CDU)
-                slip_val = partes[10] if len(partes) > 10 else "0"
-                if slip_val.endswith("U") or slip_val.endswith("u"):
-                    slip = float(slip_val[:-1])
-                    slip_u = True
-                else:
-                    slip = _safe_float(slip_val)
-                    slip_u = False
-                r = int(partes[11]) if len(partes) > 11 else 0
-                i_val = int(partes[12]) if len(partes) > 12 else 0
-
-                caso.ddfm.adicionar(
-                    nb=nb,
-                    gr=gr,
-                    p=p,
-                    q=q,
-                    und=und,
-                    mg=mg,
-                    mt=mt,
-                    mc=mc,
-                    mt_usuario=mt_u,
-                    mc_usuario=mc_u,
-                    xvd=xvd,
-                    nbc=nbc,
-                    slip=slip,
-                    slip_usuario=slip_u,
-                    r=r,
-                    i=i_val,
-                )
-            except (ValueError, IndexError):
-                pass
+            # campos: Nb Gr P Q Und Mg Mt u Mc u Xvd Nbc Slip u R I
+            # 1ª tentativa: colunas oficiais; 2ª: tokens (deck frouxo)
+            for extrator in (ParserSTB._fatiar_codigo, ParserSTB._tokens_para_regua):
+                try:
+                    v = extrator(linha, "DDFM")
+                    if not v[0] or not v[1]:
+                        raise ValueError("Nb ou Gr ausente")
+                    caso.ddfm.adicionar(
+                        nb=int(v[0]),
+                        gr=int(v[1]),
+                        p=_safe_float(v[2]) if v[2] else 0.0,
+                        q=_safe_float(v[3]) if v[3] else 0.0,
+                        und=int(v[4]) if v[4] else 1,
+                        mg=int(v[5]) if v[5] else 0,
+                        mt=int(v[6]) if v[6] else 0,
+                        mt_usuario=v[7].upper() == "U",
+                        mc=int(v[8]) if v[8] else 0,
+                        mc_usuario=v[9].upper() == "U",
+                        xvd=_safe_float(v[10]) if v[10] else 0.0,
+                        nbc=int(v[11]) if v[11] else 0,
+                        slip=_safe_float(v[12]) if v[12] else 0.0,
+                        slip_usuario=v[13].upper() == "U",
+                        r=int(v[14]) if v[14] else 0,
+                        i=int(v[15]) if v[15] else 0,
+                    )
+                    break
+                except (ValueError, IndexError):
+                    continue
             i += 1
         return i
 
     @staticmethod
     def _ler_dgse(linhas, inicio, caso) -> int:
-        """Lê o bloco DGSE (§20.2) — associação de geradores síncronos eólicos (v1.5.4).
-
-        Formato livre: Nb Gr P Q Und Mg Mt[u] Mv[u] Mc1[u] Mc2[u] Freq Vtr0 Vcap0
-        """
+        """Lê o bloco DGSE (§20.2) pelas colunas da régua oficial."""
         i = inicio
         while i < len(linhas):
             linha = _strip_comment(linhas[i])
             if _e_terminador(linha) or _e_fim(linha):
                 return i + 1
-            stripped = linha.strip()
-            if not stripped:
+            if not linha.strip():
                 i += 1
                 continue
-            partes = stripped.split()
-            try:
-                nb = int(partes[0])
-                gr = int(partes[1])
-                p = _safe_float(partes[2]) if len(partes) > 2 else 100.0
-                q = _safe_float(partes[3]) if len(partes) > 3 else 100.0
-                und = int(partes[4]) if len(partes) > 4 else 1
-                mg = int(partes[5]) if len(partes) > 5 else 0
-                mt, mt_u = _sep_flag_u(partes[6]) if len(partes) > 6 else (0, False)
-                mv, mv_u = _sep_flag_u(partes[7]) if len(partes) > 7 else (0, False)
-                mc1, mc1_u = _sep_flag_u(partes[8]) if len(partes) > 8 else (0, False)
-                mc2, mc2_u = _sep_flag_u(partes[9]) if len(partes) > 9 else (0, False)
-                freq = _safe_float(partes[10]) if len(partes) > 10 else 0.0
-                vtr0 = _safe_float(partes[11]) if len(partes) > 11 else 0.0
-                vcap0 = _safe_float(partes[12]) if len(partes) > 12 else 0.0
-
-                caso.dgse.adicionar(
-                    nb=nb,
-                    gr=gr,
-                    p=p,
-                    q=q,
-                    und=und,
-                    mg=mg,
-                    mt=mt,
-                    mv=mv,
-                    mc1=mc1,
-                    mc2=mc2,
-                    freq=freq,
-                    vtr0=vtr0,
-                    vcap0=vcap0,
-                    mt_usuario=mt_u,
-                    mv_usuario=mv_u,
-                    mc1_usuario=mc1_u,
-                    mc2_usuario=mc2_u,
-                )
-            except (ValueError, IndexError):
-                pass
+            # campos: Nb Gr P Q Und Mg Mt u Mv u Mc1 u Mc2 u Freq0 Vtr0 Vcap0
+            # 1ª tentativa: colunas oficiais; 2ª: tokens (deck frouxo)
+            for extrator in (ParserSTB._fatiar_codigo, ParserSTB._tokens_para_regua):
+                try:
+                    v = extrator(linha, "DGSE")
+                    if not v[0] or not v[1]:
+                        raise ValueError("Nb ou Gr ausente")
+                    caso.dgse.adicionar(
+                        nb=int(v[0]),
+                        gr=int(v[1]),
+                        p=_safe_float(v[2]) if v[2] else 0.0,
+                        q=_safe_float(v[3]) if v[3] else 0.0,
+                        und=int(v[4]) if v[4] else 1,
+                        mg=int(v[5]) if v[5] else 0,
+                        mt=int(v[6]) if v[6] else 0,
+                        mt_usuario=v[7].upper() == "U",
+                        mv=int(v[8]) if v[8] else 0,
+                        mv_usuario=v[9].upper() == "U",
+                        mc1=int(v[10]) if v[10] else 0,
+                        mc1_usuario=v[11].upper() == "U",
+                        mc2=int(v[12]) if v[12] else 0,
+                        mc2_usuario=v[13].upper() == "U",
+                        freq=_safe_float(v[14]) if v[14] else 0.0,
+                        vtr0=_safe_float(v[15]) if v[15] else 0.0,
+                        vcap0=_safe_float(v[16]) if v[16] else 0.0,
+                    )
+                    break
+                except (ValueError, IndexError):
+                    continue
             i += 1
         return i
 
