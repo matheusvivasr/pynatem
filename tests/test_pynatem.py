@@ -3944,7 +3944,7 @@ def test_dmot_tipo1_serializacao():
     t = b.serializar()
 
     assert "DMOT" in t
-    assert "3" in t and "1" in t and "2.5000" in t
+    assert "3" in t and "1" in t and "2.5" in t
     assert "1" in t  # tipo M=1
 
 
@@ -3971,9 +3971,11 @@ def test_dmot_tipo2_serializacao():
     t = b.serializar()
 
     assert "DMOT" in t
-    assert "4" in t and "2" in t and "3.0000" in t
-    assert "2" in t  # tipo M=2
-    assert "0.0200" in t  # Rr
+    assert "4" in t and "3.0" in t
+    assert " 2" in t  # tipo M=2
+    # rr/xr/... não são campos de entrada do DMOT oficial (só das equações
+    # do modelo, §15.1) e não aparecem na serialização
+    assert "0.02" not in t
 
 
 def test_dmot_roundtrip():
@@ -3989,8 +3991,8 @@ DSIM
 0.0 10.0 0.01
 999999
 DMOT
-3 1 2.5000 0.5000 0.2000 0.1000 1.5000 1
-4 2 3.0000 1.0000 0.5000 0.1000 2.0000 0.0200 0.1500 0.1000 3.0000 0.2000 0.8000 2
+3 1 2.5 0.5 0.2 0.1 1.5 1
+4 2 3.0 1.0 0.5 0.1 2.0 2 134
 999999
 DPLT
 999999
@@ -4014,7 +4016,9 @@ FIM
         # Validar tipo 2
         t2 = caso.dmot._tipo2[0]
         assert t2.nb == 4 and t2.gr == 2 and t2.h == 3.0
-        assert t2.rr == 0.02 and t2.xr == 0.15 and t2.tr0 == 0.8
+        # rr/xr/tr0 não são campos de entrada do DMOT oficial (só das
+        # equações do modelo, §15.1) — não são serializados nem lidos
+        assert t2.mt == 134
 
         # Roundtrip: exportar e ler novamente
         p2 = Path(tmp) / "dmot_roundtrip.stb"
@@ -4023,7 +4027,7 @@ FIM
         assert len(caso2.dmot._tipo1) == 1
         assert len(caso2.dmot._tipo2) == 1
         assert caso2.dmot._tipo1[0].nb == 3
-        assert caso2.dmot._tipo2[0].tr0 == 0.8
+        assert caso2.dmot._tipo2[0].mt == 134
 
 
 # ===========================================================================
