@@ -568,3 +568,260 @@ def test_roundtrip_mdxx_posicional(tmp_path):
     mt = lido.drgt._modelos[0]
     assert mt.no == 102 and 0.1046 in mt.parametros
     assert "E" in mt.parametros and "I" in mt.parametros
+
+
+# ===========================================================================
+# v2.0.2 — FACTS/HVDC multilinha: DVSI, DCNV, DDFM, DGSE, DMOT.
+# Mesma metodologia da v2.0.1 (comparação por campo, spans da régua oficial),
+# usando o registro de linha única REGUAS_CODIGOS.
+# ===========================================================================
+
+from pynatem.reguas_mdxx import REGUAS_CODIGOS
+
+
+def _conferir_codigo(codigo, oficiais, geradas):
+    """Compara linhas oficiais × geradas campo a campo (régua de linha única)."""
+    regua = REGUAS_CODIGOS[codigo]
+    assert len(geradas) == len(oficiais)
+    for of, ger in zip(oficiais, geradas):
+        for (nome, v_of), (_, v_ger) in zip(
+            _valores_por_campo(of, regua), _valores_por_campo(ger, regua)
+        ):
+            assert _mesmo_valor(v_of, v_ger), (
+                f"{codigo} campo {nome}: oficial={v_of!r} gerado={v_ger!r}"
+                f"\noficial |{of}|\ngerado  |{ger}|"
+            )
+
+
+def _linhas_de_dados(texto: str):
+    return [
+        l
+        for l in texto.split("\n")
+        if l.strip()
+        and not l.strip().startswith("(")
+        and l.strip() != "999999"
+        and not l.strip().split()[0].isalpha()
+    ]
+
+
+def test_dvsi_conforme_manual():
+    """DVSI §46.64 — dois conversores do exemplo oficial (Cnvk com 9 casas)."""
+    from pynatem.blocos import BlocoSTATCOM
+
+    b = BlocoSTATCOM()
+    b.adicionar(
+        nv=21,
+        de=2,
+        np=8,
+        cnvk=0.779696801,
+        vb=138.0,
+        xv=10.0,
+        vst=30.0,
+        st=80.0,
+        ne=11,
+        nx=1,
+        m="P",
+        tap=1.0,
+    )
+    b.adicionar(
+        nv=22,
+        de=3,
+        pa=4,
+        np=1,
+        cnvk=0.612372436,
+        vb=138.0,
+        xv=10.0,
+        vpt=138.0,
+        vst=13.8,
+        st=80.0,
+        ne=12,
+        nx=1,
+        m="P",
+        tap=1.0,
+    )
+    _conferir_codigo(
+        "DVSI",
+        [
+            "  21       2        1  8 .779696801P 138.        10.       30.  80.   1.   11",
+            "  22       3     4  1  1 .612372436P 138.        10. 138. 13.8  80.   1.   12",
+        ],
+        _linhas_de_dados(b.serializar()),
+    )
+
+
+def test_dcnv_conforme_manual():
+    """DCNV §46.21 — associação de conversor CA-CC (exemplo oficial).
+
+    No exemplo oficial o valor 100U ocupa o campo S2 (S1 fica em branco).
+    """
+    from pynatem.blocos import BlocoHVDC
+
+    b = BlocoHVDC()
+    b.adicionar(no=25, amn=5.0, amx=90.0, mc=1, s2=100, s2_usuario=True)
+    _conferir_codigo(
+        "DCNV",
+        [
+            "  25           5.  90.         01           100U",
+        ],
+        _linhas_de_dados(b.serializar()),
+    )
+
+
+def test_ddfm_conforme_manual():
+    """DDFM §19.2 — associação de gerador DFIG (exemplo oficial).
+
+    LIMITAÇÃO DOCUMENTADA: a régua-comentário do próprio manual tem 68
+    caracteres contra 67 da linha de dados desse exemplo (inconsistência de
+    transcrição no manual oficial, não em nosso código — confirmado
+    comparando caractere a caractere as duas linhas extraídas do fonte
+    oficial). Isso impede validar esta linha específica por alinhamento de
+    coluna byte-a-byte. Em vez disso, validamos que nosso próprio
+    serializar→ler preserva os valores (roundtrip via parser posicional),
+    que é o que garante corretude para decks gerados pela biblioteca.
+    """
+    from pynatem.blocos import BlocoDDFM
+    from pynatem.parser.stb import ParserSTB
+
+    b = BlocoDDFM()
+    b.adicionar(
+        nb=9901,
+        gr=10,
+        p=100,
+        q=100,
+        und=2,
+        mg=100,
+        mt=19901,
+        mt_usuario=True,
+        mc=29901,
+        mc_usuario=True,
+        slip=-0.25,
+        r=2,
+        i=2,
+    )
+
+    gerado = _linhas_de_dados(b.serializar())[0]
+    v = ParserSTB._fatiar_codigo(gerado, "DDFM")
+    assert v[0] == "9901" and v[1] == "10"
+    assert v[6] == "19901" and v[7] == "U"
+    assert v[8] == "29901" and v[9] == "U"
+    assert v[12] == "-0.25"
+    assert v[14] == "2" and v[15] == "2"
+
+
+def test_dgse_conforme_manual():
+    """DGSE §20.2 — associação de gerador síncrono eólico (exemplo oficial)."""
+    from pynatem.blocos import BlocoDGSE
+
+    b = BlocoDGSE()
+    b.adicionar(
+        nb=100,
+        gr=10,
+        p=100,
+        q=90,
+        und=15,
+        mg=1525,
+        mt=2000,
+        mv=102,
+        mv_usuario=True,
+        mc1=104,
+        mc1_usuario=True,
+        mc2=106,
+        mc2_usuario=True,
+        freq=60,
+        vtr0=1.0,
+        vcap0=1.0,
+    )
+    _conferir_codigo(
+        "DGSE",
+        [
+            "100     10 100  90  15   1525   2000    102U   104U   106U     60    1.0    1.0",
+        ],
+        _linhas_de_dados(b.serializar()),
+    )
+
+
+def test_dmot_conforme_manual():
+    """DMOT §15 — motores/gerador de indução (exemplo oficial, tipos 1 e 2).
+
+    No exemplo oficial o valor 1.0 ocupa o campo K2 (K0 e K1 ficam em branco).
+    """
+    from pynatem.blocos import BlocoDMOT
+
+    b = BlocoDMOT()
+    b.adicionar_tipo1(nb=2, gr=10, h=4.0, k2=1.0, exp=1.5)
+    b.adicionar_tipo2(nb=20, gr=10, h=4.0, k2=1.0, exp=1.5)
+    b.adicionar_tipo2(nb=100, gr=10, h=3.5, mt=134)
+    _conferir_codigo(
+        "DMOT",
+        [
+            "    2   10     4.                  1.0    1.5 1",
+            "   20   10     4.                  1.0    1.5 2",
+            "  100   10    3.5                             2    134",
+        ],
+        _linhas_de_dados(b.serializar()),
+    )
+
+
+def test_mnemonicos_facts_hvdc_roundtrip(tmp_path):
+    """Roundtrip completo dos 5 blocos FACTS/HVDC/indução (v2.0.2)."""
+    from pynatem import CasoAnatem
+
+    caso = CasoAnatem()
+    caso.darq.sav = "rede.sav"
+    caso.statcom.adicionar(
+        nv=21, de=2, np=8, cnvk=0.779696801, vb=138.0, xv=10.0, vst=30.0, st=80.0, ne=11
+    )
+    caso.hvdc.adicionar(no=25, amn=5.0, amx=90.0, mc=1, s1=100, s1_usuario=True)
+    caso.ddfm.adicionar(
+        nb=9901,
+        gr=10,
+        p=100,
+        q=100,
+        und=2,
+        mg=100,
+        mt=19901,
+        mt_usuario=True,
+        mc=29901,
+        mc_usuario=True,
+        slip=-0.25,
+        r=2,
+        i=2,
+    )
+    caso.dgse.adicionar(
+        nb=100,
+        gr=10,
+        p=100,
+        q=90,
+        und=15,
+        mg=1525,
+        mt=2000,
+        mv=102,
+        mv_usuario=True,
+        mc1=104,
+        mc1_usuario=True,
+        mc2=106,
+        mc2_usuario=True,
+        freq=60,
+        vtr0=1.0,
+        vcap0=1.0,
+    )
+    caso.dmot.adicionar_tipo2(nb=100, gr=10, h=3.5, mt=134)
+
+    p = tmp_path / "facts_hvdc.stb"
+    caso.exportar(p)
+    lido = CasoAnatem.ler(p)
+
+    v = lido.statcom._conversores[0]
+    assert v.nv == 21 and v.de == 2 and v.cnvk == 0.779696801
+
+    h = lido.hvdc._conversores[0]
+    assert h.no == 25 and h.mc == 1 and h.s1 == 100 and h.s1_usuario
+
+    d = lido.ddfm._dfigs[0]
+    assert d.nb == 9901 and d.mt == 19901 and d.mt_usuario and d.slip == -0.25
+
+    g = lido.dgse._gses[0]
+    assert g.nb == 100 and g.mg == 1525 and g.mv_usuario
+
+    m = lido.dmot._tipo2[0]
+    assert m.nb == 100 and m.mt == 134
