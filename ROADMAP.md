@@ -149,17 +149,18 @@ de 16 serializadores com o manual oficial, 280 testes, CI verde e repositório
 público limpo. A cobertura total do manual passa a ser perseguida nos patches
 v2.0.x abaixo e culmina no marco v3.0.0.
 
-## v2.0.x — Backlog de Conformidade (patches)
+## v2.0.x — Backlog de Conformidade (patches) ✅ **CONCLUÍDO**
 
 | Patch | Meta |
 |-------|------|
 | v2.0.1 | **Réguas por variante MDxx** — ✅ entregue (14 variantes com régua oficial: DMDG 3/3, DMTC 1/1, DRGT 3, DRGV 2, DEST 2 + DECS/DMCE/DMCS); demais variantes sem régua publicada no manual online seguem no formato genérico (documentado) |
 | v2.0.2 | **Blocos FACTS/HVDC/indução** — ✅ entregue (DVSI, DCNV, DDFM, DGSE, DMOT nas colunas oficiais; bug de perda de precisão corrigido no Cnvk do DVSI; DMOT reescrito para a régua de linha única oficial) |
-| v2.0.3 | Demais códigos do Cap. 46 ainda sem teste de conformidade |
+| v2.0.3 | **DCER/DFNT/DCSC** — ✅ entregue (DCER e DFNT nas colunas oficiais; DCSC documentado com a mesma inconsistência de transcrição do manual vista no DDFM). Todos os blocos que reivindicavam "Confiança: Alta" foram auditados; DMCV (exemplo degenerado, multi-registro) e cobertura exaustiva do Cap. 46 ficam para v3.0.0 |
 
 Método estabelecido: reproduzir o exemplo oficial via API e comparar com os
 fontes `_sources/*.rst.txt` do manual online; estender
-`tests/test_conformidade_manual.py` a cada código coberto.
+`tests/test_conformidade_manual.py` a cada código coberto. **295 testes
+passando, lint/mypy zerados** ao final da série.
 
 ---
 

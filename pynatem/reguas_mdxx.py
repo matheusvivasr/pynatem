@@ -90,6 +90,8 @@ REGUAS_CODIGOS: Dict[str, str] = {
     "DDFM": "( Nb)   Gr (P) (Q) Und ( Mg ) ( Mt )u( Mc )u(Xvd )(Nbc) ( Slip )uR I",
     "DGSE": "( Nb)   Gr (P) (Q) Und ( Mg ) ( Mt )u( Mv )u( Mc1)u( Mc2)u(Freq0)(Vtr0 )(Vcap0)",
     "DMOT": "( Nb)   Gr (  H ) ( K0 ) ( K1 ) ( K2 ) ( EXP) M ( Mt )",
+    "DCER": "( Nb)   Gr ( Mc )u( Me )u",
+    "DFNT": "( Nb)   Gr T (FP%) (FQ%)(Und)( Mc )u (R ou G) (X ou B) (Sbas)",
 }
 
 
