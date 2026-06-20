@@ -2234,14 +2234,22 @@ class _AssocCER:
     me_usuario: bool = True  # estabilizador só pode ser definido por CDU
 
     def serializar(self) -> str:
-        partes = [
-            f"{self.nb:>5}",
-            f"{self.gr:>4}",
-            f"{_sep_u(self.mc, self.mc_usuario):>7}",
-        ]
-        if self.me is not None:
-            partes.append(f"{_sep_u(self.me, self.me_usuario):>7}")
-        return "".join(partes)
+        from pynatem.reguas_mdxx import REGUAS_CODIGOS, serializar_linha
+
+        def flag(num, usuario):
+            return "U" if (num is not None and usuario) else None
+
+        return serializar_linha(
+            REGUAS_CODIGOS["DCER"],
+            [
+                self.nb,
+                self.gr,
+                self.mc,
+                flag(self.mc, self.mc_usuario),
+                self.me,
+                flag(self.me, self.me_usuario),
+            ],
+        )
 
 
 @dataclass
@@ -2275,7 +2283,9 @@ class BlocoSVC(BlocoBase):
         return self
 
     def serializar(self) -> str:
-        linhas = [self._cabecalho(), "( Nb) Gr ( Mc )u( Me )u\n"]
+        from pynatem.reguas_mdxx import REGUAS_CODIGOS
+
+        linhas = [self._cabecalho(), REGUAS_CODIGOS["DCER"] + "\n"]
         for eq in self._equipamentos:
             linhas.append(eq.serializar() + "\n")
         linhas.append(self._terminador())
@@ -3305,19 +3315,24 @@ class _FonteShuntCDU:
     sbas: float = 0.0
 
     def serializar(self) -> str:
-        partes = [
-            f"{self.nb:>5}",
-            f"{self.gr:>3}",
-            f"{self.tipo:>2}",
-            f"{self.fp:>7.0f}",
-            f"{self.fq:>7.0f}",
-            f"{self.und:>4}",
-            f"{_sep_u(self.mc, self.mc_usuario):>6}",
-            f"{self.r_ou_g:>6.2f}",
-            f"{self.x_ou_b:>6.2f}",
-            f"{self.sbas:>6.1f}" if self.sbas != 0.0 else "",
-        ]
-        return "".join(partes)
+        from pynatem.reguas_mdxx import REGUAS_CODIGOS, serializar_linha
+
+        return serializar_linha(
+            REGUAS_CODIGOS["DFNT"],
+            [
+                self.nb,
+                self.gr,
+                self.tipo,
+                self.fp,
+                self.fq,
+                self.und,
+                self.mc,
+                "U" if self.mc_usuario else None,
+                self.r_ou_g,
+                self.x_ou_b,
+                self.sbas if self.sbas else None,
+            ],
+        )
 
 
 @dataclass
@@ -3403,7 +3418,9 @@ class BlocoDFNT(BlocoBase):
         return self
 
     def _guia(self) -> str:
-        return "( Nb) Gr T (FP%)(FQ%)Und( Mc )u (R/G) (X/B) (Sbas)\n"
+        from pynatem.reguas_mdxx import REGUAS_CODIGOS
+
+        return REGUAS_CODIGOS["DFNT"] + "\n"
 
     def serializar(self) -> str:
         linhas = [self._cabecalho(), self._guia()]

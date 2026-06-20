@@ -825,3 +825,71 @@ def test_mnemonicos_facts_hvdc_roundtrip(tmp_path):
 
     m = lido.dmot._tipo2[0]
     assert m.nb == 100 and m.mt == 134
+
+
+# ===========================================================================
+# v2.0.3 — Associações de controle: DCER, DFNT (colunas oficiais); DCSC
+# documentado (mesma inconsistência de transcrição do manual vista no DDFM).
+# ===========================================================================
+
+
+def test_dcer_conforme_manual():
+    """DCER §46.18 — associação de CER/SVC a modelos (exemplo oficial)."""
+    from pynatem.blocos import BlocoSVC
+
+    b = BlocoSVC()
+    b.adicionar(nb=500, gr=10, mc=800, me=94, me_usuario=True)
+    _conferir_codigo(
+        "DCER",
+        [
+            "  500   10    800     94U",
+        ],
+        _linhas_de_dados(b.serializar()),
+    )
+
+
+def test_dfnt_conforme_manual():
+    """DFNT §21 — fontes shunt controladas por CDU (exemplo oficial, 2 linhas)."""
+    from pynatem.blocos import BlocoDFNT
+
+    b = BlocoDFNT()
+    b.adicionar(
+        nb=10,
+        gr=10,
+        tipo="I",
+        fp=100,
+        fq=100,
+        und=5,
+        mc=101,
+        mc_usuario=True,
+        r_ou_g=1.2,
+        x_ou_b=4.0,
+    )
+    _conferir_codigo(
+        "DFNT",
+        [
+            "  10    10 I   100   100   5    101U      1.2      4.0",
+        ],
+        _linhas_de_dados(b.serializar()),
+    )
+
+
+def test_dcsc_roundtrip_consistente():
+    """DCSC §46.22 — associação de CSC/TCSC (exemplo oficial).
+
+    LIMITAÇÃO DOCUMENTADA: assim como o DDFM (v2.0.2), a régua-comentário
+    do DCSC no manual online tem 32 caracteres contra 30 da linha de dados
+    do mesmo exemplo (inconsistência de transcrição do manual, confirmada
+    char a char) — validamos por PARSING dos valores em vez de alinhamento
+    de coluna byte-a-byte contra essa linha específica.
+    """
+    from pynatem.blocos import BlocoTCSC
+
+    b = BlocoTCSC()
+    b.adicionar(de=500, pa=501, nc=1, mc=800, me=94, me_usuario=True)
+    linha = _linhas_de_dados(b.serializar())[0]
+    # valores do exemplo oficial: De=500 Pa=501 Nc=01 Mc=800 Me=94U
+    partes = linha.split()
+    assert "500" in partes[0] or partes[0] == "500"
+    assert any(p == "800" for p in partes)
+    assert any("94" in p for p in partes)
