@@ -2,6 +2,35 @@
 
 Todas as mudanças notáveis estão documentadas aqui.
 
+## [2.0.3] — 2026-07-12 — DCER/DFNT nas colunas oficiais; fecha o backlog de conformidade v2.0.x 🏁
+
+Último patch da série de conformidade iniciada na v2.0.0. Cobre os blocos
+restantes que reivindicavam "Confiança: Alta" no docstring mas nunca haviam
+sido comparados a um exemplo oficial real.
+
+### Corrigido — serialização nas colunas das réguas oficiais
+- **DCER** (`BlocoSVC`, §46.18): associação CER/SVC a modelos — bate
+  byte-a-byte com o exemplo oficial
+- **DFNT** (`BlocoDFNT`, §21): fontes shunt controladas por CDU — bate por
+  valor (só padding interno do campo difere do exemplo)
+
+### Documentado (sem correção de código — inconsistência do próprio manual)
+- **DCSC** (`BlocoTCSC`, §46.22): a régua-comentário do manual online tem
+  32 caracteres contra 30 da linha de dados do mesmo exemplo (mesmo padrão
+  de inconsistência de transcrição já visto no DDFM, v2.0.2) — validado por
+  parsing de valores em vez de coluna byte-a-byte
+- **DMCV** (§46.44): o único exemplo oficial disponível é degenerado (só o
+  campo `Nm` preenchido, resto em branco) e exigiria suporte a registros
+  multilinha (2–4 réguas) — adiado para v3.0.0 (cobertura total)
+
+### Fecha o backlog de conformidade da série v2.0.x
+Todos os blocos que reivindicavam confiança "Alta" no código foram agora
+auditados char-a-char contra o manual oficial (16 códigos na v1.10.2/v2.0.0,
+14 variantes MDxx na v2.0.1, 5 blocos FACTS/HVDC/indução na v2.0.2, mais
+DCER/DFNT/DCSC nesta versão). 295 testes passando; lint/mypy zerados.
+Cobertura exaustiva dos ~74 códigos do Cap. 46 (incluindo DMCV multilinha)
+fica para o marco MAJOR v3.0.0 (cobertura total do ANATEM 12.10).
+
 ## [2.0.2] — 2026-07-12 — Conformidade dos blocos FACTS/HVDC/indução 🔌
 
 Continuação da auditoria de conformidade char-a-char, agora cobrindo os
