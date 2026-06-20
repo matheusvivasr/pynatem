@@ -2418,22 +2418,27 @@ class _ConversorVSI:
     tap: float = 1.0  # tap do trafo no lado secundário [pu]
 
     def serializar(self) -> str:
-        return (
-            _col_int(self.nv, 5)
-            + _col_int(self.de, 6)
-            + _col_int(self.pa, 6)
-            + _col_int(self.nx, 4)
-            + _col_int(self.np, 4)
-            + _col_float(self.cnvk, 14)
-            + f"{self.m:>2}"
-            + _col_float(self.vb, 10)
-            + _col_float(self.rv, 10)
-            + _col_float(self.xv, 10)
-            + _col_float(self.vpt, 10)
-            + _col_float(self.vst, 10)
-            + _col_float(self.st, 10)
-            + _col_float(self.tap, 8)
-            + _col_int(self.ne, 6)
+        from pynatem.reguas_mdxx import REGUAS_CODIGOS, serializar_linha
+
+        return serializar_linha(
+            REGUAS_CODIGOS["DVSI"],
+            [
+                self.nv,
+                self.de,
+                self.pa,
+                self.nx,
+                self.np,
+                self.cnvk,
+                self.m,
+                self.vb,
+                self.rv,
+                self.xv,
+                self.vpt,
+                self.vst,
+                self.st,
+                self.tap,
+                self.ne,
+            ],
         )
 
 
@@ -2494,24 +2499,9 @@ class BlocoSTATCOM(BlocoBase):
         return self
 
     def _guia(self) -> str:
-        rotulos = {
-            "nv": "(Nv)",
-            "de": "(De)",
-            "pa": "(Pa)",
-            "nx": "Nx",
-            "np": "np",
-            "cnvk": "(Cnvk)",
-            "m": "M",
-            "vb": "(Vb)",
-            "rv": "(Rv)",
-            "xv": "(Xv)",
-            "vpt": "(Vpt)",
-            "vst": "(Vst)",
-            "st": "(St)",
-            "tap": "(Tap)",
-            "ne": "(Ne)",
-        }
-        return "".join(f"{rotulos[nome]:>{w}}" for nome, w in _VSI_COLS) + "\n"
+        from pynatem.reguas_mdxx import REGUAS_CODIGOS
+
+        return REGUAS_CODIGOS["DVSI"] + "\n"
 
     def serializar(self) -> str:
         linhas = [self._cabecalho(), self._guia()]
@@ -2588,17 +2578,30 @@ class _ConversorCACC:
     s4_usuario: bool = False
 
     def serializar(self) -> str:
-        return (
-            _col_int(self.no, 5)
-            + _col_float(self.gkb, 8)
-            + _col_float(self.amn, 8)
-            + _col_float(self.amx, 8)
-            + _col_float(self.gmn, 8)
-            + _col_modelo(self.mc, self.mc_usuario, 7)
-            + _col_modelo(self.s1, self.s1_usuario, 7)
-            + _col_modelo(self.s2, self.s2_usuario, 7)
-            + _col_modelo(self.s3, self.s3_usuario, 7)
-            + _col_modelo(self.s4, self.s4_usuario, 7)
+        from pynatem.reguas_mdxx import REGUAS_CODIGOS, serializar_linha
+
+        def flag(num, usuario):
+            return "U" if (num is not None and usuario) else None
+
+        return serializar_linha(
+            REGUAS_CODIGOS["DCNV"],
+            [
+                self.no,
+                self.gkb,
+                self.amn,
+                self.amx,
+                self.gmn,
+                self.mc,
+                flag(self.mc, self.mc_usuario),
+                self.s1,
+                flag(self.s1, self.s1_usuario),
+                self.s2,
+                flag(self.s2, self.s2_usuario),
+                self.s3,
+                flag(self.s3, self.s3_usuario),
+                self.s4,
+                flag(self.s4, self.s4_usuario),
+            ],
         )
 
 
@@ -2757,10 +2760,24 @@ class _MotorTipo1:
     exp: float = 0.0  # η
     m: int = 1  # tipo (fixo em 1)
 
+    mt: "Optional[int]" = None  # modelo CDU de turbina (geradores de indução)
+
     def serializar(self) -> str:
-        return (
-            f"{self.nb:>5}{self.gr:>5}{self.h:>10.4f}{self.k0:>10.4f}"
-            f"{self.k1:>10.4f}{self.k2:>10.4f}{self.exp:>10.4f}{self.m:>5}"
+        from pynatem.reguas_mdxx import REGUAS_CODIGOS, serializar_linha
+
+        return serializar_linha(
+            REGUAS_CODIGOS["DMOT"],
+            [
+                self.nb,
+                self.gr,
+                self.h,
+                self.k0 if self.k0 else None,
+                self.k1 if self.k1 else None,
+                self.k2 if self.k2 else None,
+                self.exp if self.exp else None,
+                self.m,
+                self.mt,
+            ],
         )
 
 
@@ -2783,12 +2800,30 @@ class _MotorTipo2:
     tr0: float = 0.0  # constante tempo rotor [s]
     m: int = 2  # tipo (fixo em 2)
 
+    mt: "Optional[int]" = None  # modelo CDU de turbina (geradores de indução)
+
     def serializar(self) -> str:
-        return (
-            f"{self.nb:>5}{self.gr:>5}{self.h:>10.4f}{self.k0:>10.4f}"
-            f"{self.k1:>10.4f}{self.k2:>10.4f}{self.exp:>10.4f}{self.rr:>10.4f}"
-            f"{self.xr:>10.4f}{self.xs:>10.4f}{self.xm:>10.4f}{self.xp:>10.4f}"
-            f"{self.tr0:>10.4f}{self.m:>5}"
+        """Linha única do formato oficial DMOT.
+
+        Os atributos rr/xr/xs/xm/xp/tr0 são mantidos por compatibilidade de
+        API, mas NÃO são campos de entrada do DMOT oficial (aparecem apenas
+        nas equações do modelo, §15.1) e não são serializados.
+        """
+        from pynatem.reguas_mdxx import REGUAS_CODIGOS, serializar_linha
+
+        return serializar_linha(
+            REGUAS_CODIGOS["DMOT"],
+            [
+                self.nb,
+                self.gr,
+                self.h,
+                self.k0 if self.k0 else None,
+                self.k1 if self.k1 else None,
+                self.k2 if self.k2 else None,
+                self.exp if self.exp else None,
+                self.m,
+                self.mt,
+            ],
         )
 
 
@@ -2822,22 +2857,32 @@ class _AssocDFIG:
     i: int = 0  # flag RMSB
 
     def serializar(self) -> str:
-        partes = [
-            f"{self.nb:>5}",
-            f"{self.gr:>3}",
-            f"{self.p:>6.1f}",
-            f"{self.q:>6.1f}",
-            f"{self.und:>4}",
-            f"{self.mg:>4}",
-            f"{_sep_u(self.mt, self.mt_usuario):>6}",
-            f"{_sep_u(self.mc, self.mc_usuario):>6}",
-            f"{self.xvd:>7.2f}",
-            f"{self.nbc:>4}",
-            f"{_sep_u_float(self.slip, self.slip_usuario):>8}",
-            f"{self.r:>2}",
-            f"{self.i:>2}",
-        ]
-        return "".join(partes)
+        from pynatem.reguas_mdxx import REGUAS_CODIGOS, serializar_linha
+
+        def flag(usuario):
+            return "U" if usuario else None
+
+        return serializar_linha(
+            REGUAS_CODIGOS["DDFM"],
+            [
+                self.nb,
+                self.gr,
+                self.p,
+                self.q,
+                self.und,
+                self.mg,
+                self.mt,
+                flag(self.mt_usuario),
+                self.mc,
+                flag(self.mc_usuario),
+                self.xvd if self.xvd else None,
+                self.nbc if self.nbc else None,
+                self.slip,
+                flag(self.slip_usuario),
+                self.r if self.r else None,
+                self.i if self.i else None,
+            ],
+        )
 
 
 @dataclass
@@ -2933,7 +2978,9 @@ class BlocoDDFM(BlocoBase):
         return self
 
     def _guia(self) -> str:
-        return "( Nb) Gr  (P) (Q)Und  Mg ( Mt )u( Mc )u(Xvd )(Nbc) ( Slip )u R I\n"
+        from pynatem.reguas_mdxx import REGUAS_CODIGOS
+
+        return REGUAS_CODIGOS["DDFM"] + "\n"
 
     def serializar(self) -> str:
         linhas = [self._cabecalho(), self._guia()]
@@ -2993,6 +3040,7 @@ class BlocoDMOT(BlocoBase):
         k1: float = 0.0,
         k2: float = 0.0,
         exp: float = 0.0,
+        mt: Optional[int] = None,
     ) -> "BlocoDMOT":
         """Adiciona motor tipo 1 (sem efeito transitório no rotor, M=1).
 
@@ -3006,7 +3054,9 @@ class BlocoDMOT(BlocoBase):
         Returns:
             self (encadeável).
         """
-        self._tipo1.append(_MotorTipo1(nb=nb, gr=gr, h=h, k0=k0, k1=k1, k2=k2, exp=exp))
+        self._tipo1.append(
+            _MotorTipo1(nb=nb, gr=gr, h=h, k0=k0, k1=k1, k2=k2, exp=exp, mt=mt)
+        )
         return self
 
     def adicionar_tipo2(
@@ -3024,6 +3074,7 @@ class BlocoDMOT(BlocoBase):
         xm: float = 0.0,
         xp: float = 0.0,
         tr0: float = 0.0,
+        mt: Optional[int] = None,
     ) -> "BlocoDMOT":
         """Adiciona motor tipo 2 (com efeito transitório no rotor, M=2).
 
@@ -3057,15 +3108,15 @@ class BlocoDMOT(BlocoBase):
                 xm=xm,
                 xp=xp,
                 tr0=tr0,
+                mt=mt,
             )
         )
         return self
 
     def _guia(self) -> str:
-        return (
-            "( Nb)( Gr)      H        K0        K1        K2       EXP  M   "
-            "( Rr  Xr  Xs  Xm  Xp Tr0)  M\n"
-        )
+        from pynatem.reguas_mdxx import REGUAS_CODIGOS
+
+        return REGUAS_CODIGOS["DMOT"] + "\n"
 
     def serializar(self) -> str:
         linhas = [self._cabecalho(), self._guia()]
@@ -3100,22 +3151,33 @@ class _AssocGSE:
     mc2_usuario: bool = False
 
     def serializar(self) -> str:
-        partes = [
-            f"{self.nb:>5}",
-            f"{self.gr:>3}",
-            f"{self.p:>6.0f}",
-            f"{self.q:>6.0f}",
-            f"{self.und:>4}",
-            f"{self.mg:>5}",
-            f"{_sep_u(self.mt, self.mt_usuario):>6}",
-            f"{_sep_u(self.mv, self.mv_usuario):>6}",
-            f"{_sep_u(self.mc1, self.mc1_usuario):>6}",
-            f"{_sep_u(self.mc2, self.mc2_usuario):>6}",
-            f"{self.freq:>6.0f}",
-            f"{self.vtr0:>6.2f}",
-            f"{self.vcap0:>6.2f}",
-        ]
-        return "".join(partes)
+        from pynatem.reguas_mdxx import REGUAS_CODIGOS, serializar_linha
+
+        def flag(usuario):
+            return "U" if usuario else None
+
+        return serializar_linha(
+            REGUAS_CODIGOS["DGSE"],
+            [
+                self.nb,
+                self.gr,
+                self.p,
+                self.q,
+                self.und,
+                self.mg,
+                self.mt,
+                flag(self.mt_usuario),
+                self.mv,
+                flag(self.mv_usuario),
+                self.mc1,
+                flag(self.mc1_usuario),
+                self.mc2,
+                flag(self.mc2_usuario),
+                int(self.freq) if self.freq else None,
+                self.vtr0 if self.vtr0 else None,
+                self.vcap0 if self.vcap0 else None,
+            ],
+        )
 
 
 @dataclass
@@ -3214,9 +3276,9 @@ class BlocoDGSE(BlocoBase):
         return self
 
     def _guia(self) -> str:
-        return (
-            "( Nb) Gr (P) (Q)Und  Mg ( Mt )u( Mv )u(Mc1)u(Mc2)u(Freq)(Vtr0 )(Vcap0)\n"
-        )
+        from pynatem.reguas_mdxx import REGUAS_CODIGOS
+
+        return REGUAS_CODIGOS["DGSE"] + "\n"
 
     def serializar(self) -> str:
         linhas = [self._cabecalho(), self._guia()]

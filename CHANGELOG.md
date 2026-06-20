@@ -2,6 +2,41 @@
 
 Todas as mudanças notáveis estão documentadas aqui.
 
+## [2.0.2] — 2026-07-12 — Conformidade dos blocos FACTS/HVDC/indução 🔌
+
+Continuação da auditoria de conformidade char-a-char, agora cobrindo os
+blocos multilinha de FACTS/HVDC e máquinas de indução (backlog da v2.0.0).
+
+### Corrigido — serialização nas colunas das réguas oficiais
+- **DVSI** (`BlocoSTATCOM`, §46.64): régua completa de 15 campos; corrigido
+  bug real de **perda de precisão** no campo Cnvk (`.779696801` era truncado
+  para 5 casas decimais na serialização anterior — agora preserva 9 casas)
+- **DCNV** (`BlocoHVDC`, §46.21): flags `u` de S1–S4 em coluna própria
+- **DDFM** (`BlocoDDFM`, §19.2): flags `u` de Mt/Mc em coluna própria; campos
+  opcionais (Xvd, Nbc) em branco quando omitidos
+- **DGSE** (`BlocoDGSE`, §20.2): mesmo padrão de flags e campos opcionais
+- **DMOT** (`BlocoDMOT`, §15): reescrito para a **régua de linha única**
+  oficial (`Nb Gr H K0 K1 K2 EXP M Mt`); novo campo `mt` (modelo CDU de
+  turbina). Documentado: os atributos `rr/xr/xs/xm/xp/tr0` do tipo 2
+  **não são campos de entrada** do DMOT oficial (aparecem só nas equações
+  do modelo, §15.1) — mantidos na API por compatibilidade mas não são
+  mais serializados nem lidos
+
+### Novo
+- `REGUAS_CODIGOS` em `reguas_mdxx.py`: registro de réguas de linha única
+  para códigos de associação (generalização do motor da v2.0.1, antes
+  restrito a variantes MDxx)
+- Parsers reescritos por fatiamento posicional (com fallback tolerante a
+  tokens para decks de espaçamento livre) para os 5 blocos
+- 6 novos testes de conformidade por campo — total **292 testes**
+
+### Limitação documentada
+- A régua-comentário do DDFM no manual oficial tem 68 caracteres contra
+  67 da linha de dados do próprio exemplo (inconsistência de transcrição
+  do manual, confirmada char a char) — o teste correspondente valida via
+  roundtrip serializar→ler em vez de alinhamento byte-a-byte contra essa
+  linha específica
+
 ## [2.0.1] — 2026-07-11 — Réguas posicionais dos modelos MDxx 📏
 
 ### Novo
