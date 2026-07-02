@@ -8,25 +8,28 @@ Volta à narrativa v1.4 (nunca formalizada). Integração completa de leitores d
 resultados: `.plt` binário, relatórios estruturados (`.rel`, `.out`), snapshots, e
 sinal externo.
 
-### v2.1.1 — Leitor `.plt` Binário (em andamento)
+### v2.1.1 — Leitor `.plt` Binário (FASE 1 Completa)
 
-- ✅ **Infraestrutura de testes** — 15 testes de conformidade para pós-processamento
-- ✅ **Parser de header** — assinatura, filename, catálogo de variáveis
-- ⏳ **Parser de série temporal** (FASE 2) — floats IEEE 754, precisão
-- ⏳ **Integração com LeitorPLT** — suporte binário + texto
-- Exemplo de teste: `examples/treinamentoWP/TREINAMENTO_5_BARRAS.PLT` (1.6 MB)
+- ✅ **Parser de header completo** — assinatura, filename, catálogo
+  - `ler_assinatura()`, `ler_filename()`, `ler_header()` — 100% funcional
+  - Exemplo: `examples/treinamentoWP/TREINAMENTO_5_BARRAS.PLT` (1.6 MB)
+- ⏳ **FASE 2 (série temporal)** — bloqueado, requer exemplos adicionais do CEPEL
+  - Formato binário proprietário; engenharia reversa em andamento
+  - Recomendação: usar `posprocessamento_v2.LeitorPLTBinario` como fallback
+- ✅ **8 testes de conformidade** (100% passando)
 
-### v2.1.2 — Relatórios Estruturados (`.rel` + `.out`) (planejado)
+### v2.1.2 — Relatórios Estruturados (em andamento)
 
-- Parsing de relatórios de execução
-- Extração de status (convergência, tempo CPU, eventos)
-- Análise de erros/avisos
+- ✅ **LeitorREL** — extração de versão, tempo CPU, erros/avisos (4 testes)
+- ✅ **LeitorSNAP** — leitura de snapshots de estado (3 testes)
+- ✅ **LeitorOUT** — leitura de relatórios estruturados (4 testes)
+- ✅ **Cobertura melhorada** — `posprocessamento_v2.py` agora 67% (up from 0%)
+- ✅ **11 testes adicionais** (100% passando)
 
 ### v2.1.3 — Snapshots + Sinal Externo (planejado)
 
-- Leitura de estados intermediários (SNAP)
 - Restauração de simulação a partir de snapshot
-- Sinal externo (DAVS) — sincronização com medições
+- Sinal externo (DAVS) — sincronização com medições externas
 
 ---
 

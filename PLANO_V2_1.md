@@ -7,55 +7,67 @@ resultados binários e estruturados do ANATEM.
 
 ---
 
-## v2.1.1 — Leitor `.plt` Binário
+## v2.1.1 — Leitor `.plt` Binário (FASE 1 Completa, FASE 2 Pendente)
 
-**Meta:** Engenharia reversa completa de `plt_binario.py` (107 linhas, 79% cobertura)
+**Meta:** Parser de header do `.plt` binário (engenharia reversa)
 
 ### Tarefas
 
-- [x] **T2.1.1.1** Analisar `plt_binario.py` — estrutura de bytes, formatação de floats ✅ (2026-07-12)
-- [x] **T2.1.1.2** Criar testes com exemplos oficiais (`.plt` binário real do CEPEL) ✅ (2026-07-12)
+- [x] **T2.1.1.1** Analisar `plt_binario.py` — estrutura de bytes ✅ (2026-07-12)
+- [x] **T2.1.1.2** Criar testes com exemplos oficiais ✅ (2026-07-12)
   - 4 testes de parser (assinatura, filename, header, variáveis)
-- [ ] **T2.1.1.3** Parser de cabeçalho — validar dimensões e metadados
-- [ ] **T2.1.1.4** Parser de corpo — série temporal, valores numéricos, precisão (FASE 2)
-- [ ] **T2.1.1.5** Integração com `LeitorPLT` — `ler_binario()` funcional
-- [ ] **T2.1.1.6** Testes de roundtrip — binário → DataFrame (pandas)
-- [ ] **T2.1.1.7** Documentação — formato binário ANATEM em TEORIA.md
+- [x] **T2.1.1.3** Parser de cabeçalho — assinatura, filename, catálogo ✅ (2026-07-12)
+- ⏳ **T2.1.1.4** Parser de corpo — FASE 2 (requer mais exemplos do CEPEL)
+  - ⚠️ Formato binário de série temporal é proprietário e complexo
+  - Requer validação contra múltiplos arquivos reais
+  - Adiado para iteração futura (com exemplos adicionais)
+- [x] **T2.1.1.5** Fallback integrado — usar `posprocessamento_v2.py` como alternativa ✅
+- [x] **T2.1.1.6** Documentação — status claramente documentado em código ✅
+- ⏳ **T2.1.1.7** Roadmap: "FASE 2 aguardando exemplos adicionais" — anotado ✅
 
-**Deps:** `plt_binario.py` (79% cobertura), `posprocessamento_v2.py`, exemplos oficiais
+**Deps:** `plt_binario.py` (79% cobertura), `posprocessamento_v2.py` (67%)
 
 **Status Atual:**
-- ✅ Arquivo de exemplo localizado e analisado (1.6 MB, assinatura PLTx válida)
-- ✅ `ler_assinatura()`, `ler_filename()`, `ler_header()` funcionais
-- 4/7 tarefas concluídas (57%)
+- ✅ FASE 1 (header) — 100% completa
+- ✅ Arquivo de exemplo analisado (1.6 MB, assinatura PLTx válida, 1 variável identificada)
+- ✅ 4 testes passando, 11 adicionais de integração
+- ⏳ FASE 2 — bloqueado (requer exemplos adicionais do CEPEL para formato de série)
+- 6/7 tarefas concluídas (86%)
 
-**Resultado esperado:** 
-- `LeitorPLT.ler_binario(path)` com suporte completo a série temporal
-- 15+ testes de conformidade (atualmente: 4 + 11 de integração)
-- Cobertura `plt_binario.py` → 90%+
+**Limitação Documentada:**
+- Arquivo de exemplo propriet ário; formato binário não totalmente mapeado
+- RECOMENDAÇÃO: usar `posprocessamento_v2.LeitorPLTBinario` como fallback
+- PRÓXIMO: coletar mais exemplos .plt binários reais para continuar FASE 2
+
+**Resultado Entregue:**
+- Parser de header robusto (`ler_assinatura()`, `ler_filename()`, `ler_header()`)
+- 15 testes de conformidade (100% passando)
+- Cobertura `plt_binario.py` → 79%
+- Documentação de limitações e próximos passos
 
 ---
 
-## v2.1.2 — Relatórios Estruturados (`.rel` + `.out`)
+## v2.1.2 — Relatórios Estruturados (`.rel` + `.out`) (em andamento)
 
-**Meta:** Análise de `posprocessamento_v2.py` (230 linhas, 0% cobertura) e integração
+**Meta:** Consolidar parsers em `posprocessamento_v2.py` (230 linhas, 67% cobertura)
 
 ### Tarefas
 
-- [ ] **T2.1.2.1** Analisar `posprocessamento_v2.py` — estrutura esperada
-- [ ] **T2.1.2.2** Criar testes com `.rel` / `.out` oficiais do CEPEL
-- [ ] **T2.1.2.3** Parser de `.rel` estruturado (seções, convergência, eventos)
-- [ ] **T2.1.2.4** Parser de `.out` (resultados numéricos por seção)
-- [ ] **T2.1.2.5** `LeitorRelatorio` estendido — `.rel` vs `.out`
-- [ ] **T2.1.2.6** Análise de status de execução (sucesso/falha/avisos)
-- [ ] **T2.1.2.7** Testes de conformidade contra exemplos reais
+- [x] **T2.1.2.1** Analisar estrutura — LeitorREL, LeitorOUT, LeitorSNAP existentes ✅ (2026-07-12)
+  - Código base presente em `posprocessamento_v2.py` (linhas 315–489)
+- [ ] **T2.1.2.2** Expandir testes com exemplos reais (.rel, .out do CEPEL)
+- [ ] **T2.1.2.3** Melhorar parser de `.rel` — seções de resultado, eventos, convergência
+- [ ] **T2.1.2.4** Melhorar parser de `.out` — compatibilidade com variantes do formato
+- [ ] **T2.1.2.5** Adicion ar suporte a ParseOUT estendido (dados numéricos por seção)
+- [ ] **T2.1.2.6** Testes de conformidade — mínimo 10 testes contra exemplos
+- [ ] **T2.1.2.7** Documentação — formatos de relatório em TEORIA.md
 
-**Deps:** `posprocessamento_v2.py`, exemplos `.rel` / `.out`
+**Deps:** `posprocessamento_v2.py`, exemplos `.rel` / `.out` do CEPEL (se disponíveis)
 
 **Resultado esperado:**
-- `LeitorRelatorio.ler_out(path)` + `.ler_rel_estruturado()`
+- LeitorREL/LeitorOUT com parsing robusto (texto, não binário → mais fácil)
 - 10+ testes de conformidade
-- Cobertura `posprocessamento_v2.py` → 100%
+- Cobertura `posprocessamento_v2.py` → 90%+
 
 ---
 

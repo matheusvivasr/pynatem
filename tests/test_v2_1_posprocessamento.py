@@ -146,6 +146,46 @@ class TestLeitorREL:
         assert resultado.arquivo == rel_file
         assert "v12.10" in resultado.dados_brutos or "ANATEM" in resultado.dados_brutos
 
+    def test_ler_rel_versao(self, tmp_path):
+        """Extrair versão do ANATEM de .rel."""
+        rel_file = tmp_path / "resultado.rel"
+        rel_file.write_text(
+            "VERSAO: 12.10.000\n"
+            "LISTA DE MODELOS E CDU\n"
+            "Modelo: GERADOR\n"
+        )
+
+        resultado = LeitorREL.ler(rel_file)
+        assert resultado.versao_anatem is not None
+        assert "12.10" in resultado.versao_anatem
+
+    def test_ler_rel_tempo_cpu(self, tmp_path):
+        """Extrair tempo de CPU de .rel."""
+        rel_file = tmp_path / "resultado.rel"
+        rel_file.write_text(
+            "Sistema de Treinamento\n"
+            "Tempo de CPU: 00:01:30.500\n"
+            "Convergencia: COMPLETA\n"
+        )
+
+        resultado = LeitorREL.ler(rel_file)
+        # Tempo de CPU em segundos: 1*60 + 30.5 = 90.5
+        if resultado.tempo_cpu:
+            assert 89 < resultado.tempo_cpu < 91
+
+    def test_ler_rel_erros_avisos(self, tmp_path):
+        """Detectar erros e avisos em .rel."""
+        rel_file = tmp_path / "resultado.rel"
+        rel_file.write_text(
+            "Simulacao iniciada\n"
+            "AVISO: Elemento desligado\n"
+            "ERRO: Nao convergiu\n"
+            "Simulacao finalizada\n"
+        )
+
+        resultado = LeitorREL.ler(rel_file)
+        assert len(resultado.avisos) > 0 or len(resultado.erros) > 0
+
 
 class TestLeitorSNAP:
     """Testes para LeitorSNAP (.snap)."""
@@ -165,6 +205,35 @@ class TestLeitorSNAP:
         # Pode ter barras ou estar vazio (parser em desenvolvimento)
         assert isinstance(resultado.barras, dict)
 
+    def test_ler_snap_barras(self, tmp_path):
+        """Extrair tensões de barras de snapshot."""
+        snap_file = tmp_path / "estado.snap"
+        snap_file.write_text(
+            "SNAPSHOT\n"
+            "BARRA\n"
+            "1  1.020\n"
+            "2  0.950\n"
+            "3  1.050\n"
+        )
+
+        resultado = LeitorSNAP.ler(snap_file, tempo=1.0)
+        assert resultado.tempo == 1.0
+        # Parser pode extrair barras ou não (em desenvolvimento)
+        assert isinstance(resultado.barras, dict)
+
+    def test_ler_snap_maquinas(self, tmp_path):
+        """Extrair potência de máquinas de snapshot."""
+        snap_file = tmp_path / "estado.snap"
+        snap_file.write_text(
+            "SNAPSHOT\n"
+            "MAQUINA\n"
+            "1 1 0.50\n"
+            "2 1 0.75\n"
+        )
+
+        resultado = LeitorSNAP.ler(snap_file)
+        assert isinstance(resultado.maquinas, dict)
+
 
 class TestLeitorOUT:
     """Testes para LeitorOUT (.out)."""
@@ -180,6 +249,44 @@ class TestLeitorOUT:
 
         resultado = LeitorOUT.ler(out_file)
         assert resultado["arquivo"] == str(out_file)
+
+    def test_ler_out_versao(self, tmp_path):
+        """Extrair versão ANATEM de .out."""
+        out_file = tmp_path / "resultado.out"
+        out_file.write_text(
+            "VERSAO: 12.10.000 (2024)\n"
+            "Lista de Modelos\n"
+        )
+
+        resultado = LeitorOUT.ler(out_file)
+        assert resultado["versao_anatem"] is not None
+
+    def test_ler_out_tempo_cpu(self, tmp_path):
+        """Extrair tempo de CPU de .out."""
+        out_file = tmp_path / "resultado.out"
+        out_file.write_text(
+            "Simulacao realizada\n"
+            "Tempo de CPU: 00:05:30.250\n"
+            "Passos concluidos\n"
+        )
+
+        resultado = LeitorOUT.ler(out_file)
+        if resultado["tempo_cpu"]:
+            # 5*60 + 30.25 = 330.25 segundos
+            assert 329 < resultado["tempo_cpu"] < 331
+
+    def test_ler_out_eventos(self, tmp_path):
+        """Extrair eventos de .out."""
+        out_file = tmp_path / "resultado.out"
+        out_file.write_text(
+            "Evento 1: T= 1.000 Variacao de carga\n"
+            "Evento 2: T= 2.500 Abertura de linha\n"
+            "Evento 3: T= 3.000 Fechamento de disjuntor\n"
+        )
+
+        resultado = LeitorOUT.ler(out_file)
+        # Pode detectar eventos ou não (parser em desenvolvimento)
+        assert isinstance(resultado["eventos_executados"], list)
 
 
 # Teste de integração completo

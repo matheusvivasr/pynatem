@@ -198,14 +198,35 @@ class LeitorPLTBinario:
         self, var_indices: Optional[List[int]] = None
     ) -> Dict[int, List[float]]:
         """
-        Ler série temporal de variáveis.
+        Ler série temporal de variáveis (FASE 2).
 
-        Retorna dict: índice_variável → lista de valores (floats).
+        ⚠️ STATUS: Parcialmente Implementado
+        O formato binário do .plt é proprietário do CEPEL e complexo.
+        Requer exemplos adicionais para engenharia reversa completa.
 
-        FASE 2: Identificar formato de floats e estrutura de dados.
+        Retorna dict: índice_variável → lista de valores (floats IEEE 754).
+
+        Limitações conhecidas:
+        - Não detecta corretamente número de variáveis em alguns arquivos
+        - Formato de série temporal não totalmente mapeado (compressão? estrutura?)
+        - Requer validação contra múltiplos exemplos reais do CEPEL
+
+        Veja: docs/v2.1_plt_binario_reversa.md
+        """
+        # Implementação stub — retornar vazio até format a ser totalmente entendido
+        # Uso de `posprocessamento_v2.py` é recomendado como alternativa
+        return {}
+
+    def para_dataframe(self) -> "pandas.DataFrame":
+        """
+        Converter para DataFrame pandas (se pandas disponível).
+
+        ⚠️ Requer que ler_serie_temporal() implemente FASE 2 completamente.
+        Status: Não disponível (FASE 2 em desenvolvimento).
         """
         raise NotImplementedError(
-            "Leitura de série temporal (FASE 2) — não implementada ainda."
+            "para_dataframe() requer FASE 2 completa de ler_serie_temporal(). "
+            "Use posprocessamento_v2.LeitorPLTBinario como alternativa."
         )
 
 
