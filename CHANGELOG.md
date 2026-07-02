@@ -2,6 +2,34 @@
 
 Todas as mudanças notáveis estão documentadas aqui.
 
+## [2.1.0] — Em Desenvolvimento — Pós-processamento Consolidado 🔍
+
+Volta à narrativa v1.4 (nunca formalizada). Integração completa de leitores de
+resultados: `.plt` binário, relatórios estruturados (`.rel`, `.out`), snapshots, e
+sinal externo.
+
+### v2.1.1 — Leitor `.plt` Binário (em andamento)
+
+- ✅ **Infraestrutura de testes** — 15 testes de conformidade para pós-processamento
+- ✅ **Parser de header** — assinatura, filename, catálogo de variáveis
+- ⏳ **Parser de série temporal** (FASE 2) — floats IEEE 754, precisão
+- ⏳ **Integração com LeitorPLT** — suporte binário + texto
+- Exemplo de teste: `examples/treinamentoWP/TREINAMENTO_5_BARRAS.PLT` (1.6 MB)
+
+### v2.1.2 — Relatórios Estruturados (`.rel` + `.out`) (planejado)
+
+- Parsing de relatórios de execução
+- Extração de status (convergência, tempo CPU, eventos)
+- Análise de erros/avisos
+
+### v2.1.3 — Snapshots + Sinal Externo (planejado)
+
+- Leitura de estados intermediários (SNAP)
+- Restauração de simulação a partir de snapshot
+- Sinal externo (DAVS) — sincronização com medições
+
+---
+
 ## [2.0.3] — 2026-07-12 — DCER/DFNT nas colunas oficiais; fecha o backlog de conformidade v2.0.x 🏁
 
 Último patch da série de conformidade iniciada na v2.0.0. Cobre os blocos

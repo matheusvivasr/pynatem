@@ -1,26 +1,26 @@
 # Pynatem
 
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
-[![Tests](https://img.shields.io/badge/tests-280%20passing-green.svg)](tests/)
-[![Coverage](https://img.shields.io/badge/coverage-87%25-green.svg)](tests/)
+[![Tests](https://img.shields.io/badge/tests-295%20passing-green.svg)](tests/)
+[![Coverage](https://img.shields.io/badge/coverage-65%25-yellow.svg)](tests/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![Type hints](https://img.shields.io/badge/type%20hints-full-brightgreen.svg)](pynatem/)
 
-**v2.0.0 — Primeiro Lançamento Público (PyPI)** 🚀 | `pip install pynatem`
+**v2.0.3 — Backlog de Conformidade Concluído** 🚀 | `pip install pynatem`
 
 Biblioteca Python para **geração, manipulação, parsing e execução automatizada** de arquivos de caso do simulador de estabilidade eletromecânica transitória **ANATEM** (CEPEL).
 
 O pynatem representa um arquivo `.stb` como um grafo de blocos serializáveis (padrão *AST + Serializer*): cada bloco é um objeto Python que sabe se serializar no texto posicional exato esperado pelo ANATEM, e o parser reconstrói a mesma árvore a partir de um `.stb` existente, garantindo *roundtrip*.
 
-> **Versão:** 2.0.0 — **Primeiro Lançamento Público no PyPI**
-> **Status:** 280 testes (17 de conformidade externa); etapas v1.1–v1.10 concluídas ✅
+> **Versão:** 2.0.3 — **Backlog de Conformidade da série v2.0.x Concluído**
+> **Status:** 295 testes (30+ de conformidade externa); etapas v1.1–v1.10 e v2.0.1–v2.0.3 concluídas ✅
 > Referência técnica: Manual ANATEM 12.10 (CEPEL) — validado contra o manual
 > online oficial (https://see.cepel.br/manual/anatem/)
 
 ---
 
-## Estado Atual (v2.0.0)
+## Estado Atual (v2.0.3)
 
 ✅ **Estável: API testada e documentada; endurecendo a confiabilidade (etapa v1.1)**
 
@@ -48,24 +48,26 @@ O pynatem representa um arquivo `.stb` como um grafo de blocos serializáveis (p
 | **1.9** | Algoritmos de Pós-Falta (critérios, sincronismo, frequência) | ✅ (estabilidade_v19) |
 | **1.10** | DSA — Avaliação de Segurança Dinâmica (RSEG, snapshots) | ✅ (dsa_v110) |
 | **1.10.2** | **Conformidade char-a-char com o manual oficial (16 códigos)** | ✅ (test_conformidade_manual.py) |
+| **2.0.1** | Réguas posicionais por variante MDxx (14 variantes) | ✅ v2.0.1 |
+| **2.0.2** | Conformidade dos blocos FACTS/HVDC/indução (DVSI/DCNV/DDFM/DGSE/DMOT) | ✅ v2.0.2 |
+| **2.0.3** | DCER/DFNT/DCSC — fecha o backlog de conformidade da série v2.0.x | ✅ v2.0.3 |
 
-### Destaques v2.0.0
+### Destaques v2.0.3
 
-- ✅ **280 testes** — incluindo **17 testes de conformidade externa** que comparam
+- ✅ **295 testes** — incluindo testes de conformidade externa que comparam
   a saída char-a-char com os exemplos oficiais do manual do Cepel
-- ✅ **16 serializadores auditados e corrigidos** contra o manual online oficial:
-  DEVT, DSIM, DMAQ, DCAR, DLTC, DFLA, DCST, DCAG/DCCT, DCLI, DMEL, DELO, DGER,
-  DOPC, EXSI, DSTO, TIME
+- ✅ **Todos os blocos que reivindicavam "Confiança: Alta" auditados char-a-char**
+  contra o manual online oficial — 16 códigos na v1.10.2/v2.0.0, 14 variantes
+  MDxx na v2.0.1, blocos FACTS/HVDC/indução (DVSI/DCNV/DDFM/DGSE/DMOT) na
+  v2.0.2, DCER/DFNT/DCSC na v2.0.3
 - ✅ **Mnemônicos de evento 100% oficiais** — ABCI/FECI, APCL/RMCL, TRGT/TRGV,
   MDSH (removidos os inexistentes ABLN/FCLN/ABSH/FCSH/RMCC/ALTG)
 - ✅ **Serialização posicional** pelas réguas oficiais (campos opcionais em branco
   onde o manual omite)
-- ✅ **Referências corrigidas** — 421 listagens de código dos markdowns
-  reconstruídas a partir dos fontes oficiais
 - ✅ **CI/CD automático** — GitHub Actions (Python 3.9–3.12), Codecov, black, mypy
-- ✅ **32 blocos + módulos v1.7–v1.10** com type hints, API estável
+- ✅ **32+ blocos + módulos v1.7–v1.10** com type hints, API estável
 
-**Próximo:** v2.0.1 — Réguas por variante MDxx (backlog de conformidade rumo à cobertura total, marco v3.0.0). Veja [ROADMAP.md](ROADMAP.md).
+**Próximo:** v3.0.0 — cobertura exaustiva dos ~74 códigos do Cap. 46 (incluindo DMCV multilinha), marco MAJOR de cobertura total do ANATEM 12.10. Veja [ROADMAP.md](ROADMAP.md).
 
 ---
 
@@ -97,7 +99,7 @@ O pynatem representa um arquivo `.stb` como um grafo de blocos serializáveis (p
 
 **Para aprender na prática**, veja:
 
-- **[examples/](examples/)** — 7 scripts runnable de básico a avançado
+- **[examples/](examples/)** — 13 scripts runnable de básico a avançado
 - **[docs/tutorial.md](docs/tutorial.md)** — Tutorial estruturado em 6 partes
 
 ---
@@ -255,7 +257,7 @@ A biblioteca segue o padrão **AST + Serializer**:
 
 ## Confiabilidade dos Códigos
 
-Para transparência sobre validação (v1.0.0):
+Para transparência sobre validação (v2.0.3):
 
 | Componente | Confiança | Base de Validação | Desde |
 |---|---|---|---|
@@ -305,20 +307,20 @@ Para transparência sobre validação (v1.0.0):
 > barras/cargas alvo é tratada como string opaca e preservada bruta no roundtrip.
 > O parsing estruturado da seleção é um item próprio do roadmap (A43, v1.9.2).
 
-**Safeguards em v1.0.0:**
+**Safeguards em v2.0.3:**
 
 - ✅ **Encoding latin-1 garantido** — sem corrupção silenciosa, `ValueError` descritivo se fora do intervalo
 - ✅ **Desambiguação CDU por tipo** — IMPORT/EXPORT/INPUT/OUTPUT/SERIET/LOGIC/COMPAR reconhecidos corretamente (Cap. 29)
 - ✅ **Validação cruzada automática** — DMAQ ↔ DMDG, caminhos de arquivo, campos vazios em IMPORT/EXPORT
 - ✅ **Parser CDU robusto** — Roundtrip garantido para IMPORT/EXPORT com `stip`, LOGIC/COMPAR, blocos com <4 parâmetros
-- ✅ **206 testes** cobrindo roundtrip, encoding, blocos, parser, CDU, pós-processamento, validação
+- ✅ **295 testes** cobrindo roundtrip, encoding, blocos, parser, CDU, pós-processamento, validação
 - ✅ **Documentação consolidada** — README.md, TEORIA.md, ROADMAP, CHANGELOG, docs/ e exemplos
 
 **Recomendação:** Para famílias ainda marcadas como Média (ex.: DPLT 4-letra, OLTC), valide contra um `.stb`/`.plt` real ou o manual. O método `linha_bruta()` (em `BlocoDEVT` e `BlocoDPLT`) é a alternativa segura para confirmação verbatim.
 
 ---
 
-## Componentes Principais (v1.0.0)
+## Componentes Principais (v2.0.3)
 
 | Classe | Descrição | Desde | Status |
 |---|---|---|---|
@@ -353,14 +355,14 @@ Para transparência sobre validação (v1.0.0):
 | **LeitorSAV / ResultadoSAV** | Parser `.sav` (ANAREDE), validação cruzada de barras/circuitos | v0.4.7 | ✅ |
 | **ParserSTB** | Parser `.stb`, reconstrói árvore AST, roundtrip garantido | v0.4.0 | ✅ |
 
-**Total: 20+ classes públicas | 206 testes | 87%+ cobertura | Encoding garantido | Type hints completos**
+**Total: 20+ classes públicas | 295 testes | 65%+ cobertura | Encoding garantido | Type hints completos**
 
 ---
 
 ## Testes
 
 ```bash
-# Rodar suite de testes (206 testes)
+# Rodar suite de testes (295 testes)
 pytest tests/ -v
 
 # Com cobertura de código
@@ -373,7 +375,7 @@ mypy pynatem/ --ignore-missing-imports
 pytest tests/ -v
 ```
 
-**Cobertura:** 206 testes cobrindo roundtrip, encoding latin-1, blocos, parser, CDU, validação e pós-processamento.
+**Cobertura:** 295 testes cobrindo roundtrip, encoding latin-1, blocos, parser, CDU, validação e pós-processamento.
 
 ---
 
@@ -381,7 +383,19 @@ pytest tests/ -v
 
 | Versão | Status | Destaques |
 |--------|--------|----------|
-| **v1.3.4** | ⭐ **Atual (Estável)** | **DFLA: fluxo agregado de intercâmbio §13.1 — fecha a etapa v1.3, 243 testes** |
+| **v2.0.3** | ⭐ **Atual (Estável)** | **DCER/DFNT nas colunas oficiais; fecha o backlog de conformidade da série v2.0.x — 295 testes** |
+| v2.0.2 | Estável | Conformidade FACTS/HVDC/indução (DVSI/DCNV/DDFM/DGSE/DMOT) — bug de precisão no Cnvk do DVSI corrigido |
+| v2.0.1 | Estável | Réguas posicionais dos modelos MDxx (14 variantes) |
+| v2.0.0 | Estável | Primeiro lançamento público (PyPI); 16 serializadores auditados char-a-char contra o manual |
+| v1.10.2 | Estável | Conformidade char-a-char com o manual oficial (16 códigos) |
+| v1.10 | Estável | DSA — Avaliação de Segurança Dinâmica (RSEG, snapshots) |
+| v1.9 | Estável | Algoritmos de pós-falta (critérios, sincronismo, frequência) |
+| v1.8 | Estável | Modos de análise (contingência N-1, multi-infeed, séries temporais) |
+| v1.7 | Estável | CDU avançado (inicialização, topologia, relés/SEP, mensagens) |
+| v1.6.4 | Estável | HVDC & FACTS completos (DMEL/DMCV/DCLI/CER/CSC/VSI/LCC) |
+| v1.5.5 | Estável | Geração renovável (DMOT/DGSE/DDFM/DFNT) |
+| v1.4 | Estável | Pós-processamento (.plt binário, .out, .rel, .snap) |
+| v1.3.4 | Estável | DFLA: fluxo agregado de intercâmbio §13.1 — fecha a etapa v1.3, 243 testes |
 | v1.3.3 | Estável | Transformadores OLTC: controle DMTC (§14.1) + associação DLTC (§46.40) |
 | v1.3.2 | Estável | Bancos shunt: evento MDSH (§12.1) + plotagem QSHT/QBSH/NUBSH (§12.2) |
 | v1.3.1 | Estável | DCAR: cargas estáticas funcionais (modelo ZIP) §46.14 |
@@ -405,7 +419,7 @@ pytest tests/ -v
 | v0.6.0 | Estável | FACTS, HVDC, CDU, pós-processamento, LeitorSAV |
 | v0.4.x–0.5.x | Arquivada | MVP: blocos, parser, ensaios, DMAQ posicional |
 
-**Recomendação:** Use **v1.3.4** para novos projetos. Todas as versões estão disponíveis no repositório como referência histórica.
+**Recomendação:** Use **v2.0.3** para novos projetos. Todas as versões estão disponíveis no repositório como referência histórica.
 
 ---
 

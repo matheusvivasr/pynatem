@@ -164,6 +164,102 @@ passando, lint/mypy zerados** ao final da série.
 
 ---
 
+## v2.1.0 — Pós-processamento Consolidado 🔍
+
+*Completa a narrativa v1.4 (nunca formalizada). Integra leitura de resultados
+binários e estruturados.*
+
+| Patch | Meta | Deps |
+|-------|------|------|
+| **v2.1.1** | **Leitor `.plt` binário** — engenharia reversa de `plt_binario.py`, parser estruturado, testes contra exemplos oficiais | `plt_binario.py` (107 linhas, 0% → 100% cobertura) |
+| **v2.1.2** | **Relatórios Estruturados** (`.rel` + `.out`) — análise de convergência, erros/avisos, resultados numéricos | `posprocessamento_v2.py` (230 linhas, 0% → 100%) |
+| **v2.1.3** | **Snapshots + Sinal Externo** (SNAP, DAVS) — estados intermediários e sinais de análise | Integra SNAP/DAVS ao `LeitorPLT` |
+
+**Saída:** LeitorPLT/LeitorRelatorio/LeitorSAV com suporte binário e `.out`; pipeline de
+pós-processamento completo; 320+ testes.
+
+---
+
+## v2.2.0 — CDU Avançado Integrado 🔌
+
+*Completa a narrativa v1.7 (planejada mas não formalizada). Eleva `cdu_v17.py`
+de 0% para integração plena.*
+
+| Patch | Meta | Deps |
+|-------|------|------|
+| **v2.2.1** | **Inicialização de Modelos CDU** (DEFVAL/DEFVDF/DEFPLT) — construtores tipados, validação de valores iniciais | `cdu_v17.py` (408 linhas, 0% → cobertura) |
+| **v2.2.2** | **Topologia e Controladores Genéricos** (DTDU/ACDU) — desambiguação de controladores não-específicos, malha inativa | Extends `BlocoCDU` |
+| **v2.2.3** | **Relés e SEP** (DREL) — relés de proteção, esquemas especiais de proteção integrados a CDU | Novo `BlocoREL` |
+| **v2.2.4** | **Mensagens e Algoritmos OTM** (DMSG, OTMx) — malha inativa, lógica de controle não-linear | Integra `OTM*` blocos |
+
+**Saída:** CDU com inicialização, topologia, proteção e mensagens; API fluente para definir
+controladores avançados; 340+ testes.
+
+---
+
+## v2.3.0 — Modos de Análise Estruturados 📊
+
+*Completa a narrativa v1.8 (planejada mas não formalizada). Integra `analise_v18.py`.*
+
+| Patch | Meta | Deps |
+|-------|------|------|
+| **v2.3.1** | **Análise de Contingências N-1** (ANAC) — perturbação automática de equipamentos, iteração sobre casos variados | `analise_v18.py` base |
+| **v2.3.2** | **Análise de CDU Isolada** (ACDU) — teste de controlador sem simulação da rede | Reusa `ControladorCDU` |
+| **v2.3.3** | **Multi-Infeed** (DMIF/EAMI) — análise de interação entre infeedores CA | Novos blocos DMIF/EAMI |
+| **v2.3.4** | **Interação Fontes Shunt** (EAIF) — acoplamento dinâmico de shunts/FACTS | Novo `BlocoEAIF` |
+| **v2.3.5** | **Séries Temporais** (DSTR/DSTO) — varrida paramétrica, análise temporal | Novos `BlocoDSTR/DSTO` |
+
+**Saída:** Framework de análises nativas; automação de contingências; 360+ testes.
+
+---
+
+## v2.4.0 — Opções de Execução & Linguagem de Seleção 🎛️
+
+*Completa a narrativa v1.9 (planejada mas não formalizada). Endurecimento final
+de opções e seleção.*
+
+| Patch | Meta | Deps |
+|-------|------|------|
+| **v2.4.1** | **Opções de Controle Completas** (Cap. 47, ~112 opções) — parseador estruturado, construtores tipados | `BlocoOPC` expansion |
+| **v2.4.2** | **Linguagem de Seleção** (Cap. 42) — parser de seleção (barras, equipamentos, cargas) por critério; integração com DCAR | Novo `ParserSelecao`, extends `DCAR` |
+| **v2.4.3** | **Definição Automática de Arquivos** (USIHID/SUISHI) — geração automática de caminhos e nomes | Novo `GeradorCaminhos` |
+| **v2.4.4** | **Diagnóstico de Convergência** (Cap. 41) — análise de MXIT, NPAS, tempo de simulação | Novo `AnalisadorConvergencia` |
+
+**Saída:** API para todas as opções globais; seleção estruturada; automação de arquivos;
+diagnósticos; 380+ testes.
+
+---
+
+## v2.5.0 — Algoritmos de Estabilidade Integrados ⚡
+
+*Integra `estabilidade_v19.py` (planejada como v1.9 estendida). Análise pós-falta
+e dinâmica de sincronismo.*
+
+| Patch | Meta | Deps |
+|-------|------|------|
+| **v2.5.1** | **Critérios de Pós-Falta** (v1.9 original) — ângulo máximo, tempo de recuperação, taxa de amortecimento | `estabilidade_v19.py` base |
+| **v2.5.2** | **Sincronismo Pós-Falta** — coerência de máquinas, clustering, velocidade de recuperação | Extends `estabilidade_v19.py` |
+| **v2.5.3** | **Análise de Frequência & Inércia** — modos eletromecânicos, amortecimento, ROCOF | Novo `AnalisadorFrequencia` |
+
+**Saída:** Critérios numéricos de estabilidade; análise modal; 400+ testes.
+
+---
+
+## v2.6.0 — DSA Consolidado 🛡️
+
+*Completa a narrativa v1.10 (planejada mas não formalizada). Integra `dsa_v110.py`.*
+
+| Patch | Meta | Deps |
+|-------|------|------|
+| **v2.6.1** | **Snapshots Estruturados** (SNAP, estados intermediários) — salvamento de estados, reinicialização a partir de snapshots | `dsa_v110.py` base |
+| **v2.6.2** | **Avaliação de Segurança Dinâmica** (RSEG) — limites de operação dinâmica, margens de segurança | Novo `RSEG` em `dsa_v110.py` |
+| **v2.6.3** | **Sinal Externo Integrado** (DAVS) — sincronização com medições externas, feedback em tempo real | Novo `BlocoDAVS` |
+| **v2.6.4** | **Batch de Análises DSA** — varredura de cenários, relatórios consolidados | Automação em `EnsaioAnatem` |
+
+**Saída:** Pipeline completo de DSA; snapshots; RSEG; 420+ testes.
+
+---
+
 ## 🏁 v3.0.0 — Cobertura Total ANATEM 12.10
 
 Marco **MAJOR**. Critérios de aceite:
