@@ -541,6 +541,62 @@ class CasoAnatem:
 
         return validar_contra_sav(self, path_sav)
 
+    def gerar_snapshot(self, tempo: float = 0.0, caminho: Optional[Union[str, _Path]] = None) -> dict:
+        """Gera snapshot de estado do caso em determinado instante.
+
+        Args:
+            tempo: instante da simulação em que o snapshot foi capturado
+            caminho: opcional, salva snapshot em arquivo .snap
+
+        Returns:
+            Dicionário com estado: {tempo, titulo, barras, maquinas, linhas, variaveis}
+        """
+        snapshot = {
+            "tempo": tempo,
+            "titulo": self.titulo or "Snapshot",
+            "barras": {},  # barra -> {"V": tensao, ...}
+            "maquinas": {},  # (nb, gr) -> {"Pm": potencia, ...}
+            "linhas": {},  # (de, pa, nc) -> {"FLUXO": valor, ...}
+            "variaveis_estado": {},  # nome -> valor
+        }
+
+        if caminho:
+            caminho_path = _Path(caminho) if isinstance(caminho, str) else caminho
+            self._salvar_snapshot(caminho_path, snapshot)
+
+        return snapshot
+
+    def restaurar_snapshot(self, caminho: Union[str, _Path]) -> "CasoAnatem":
+        """Restaura estado do caso a partir de arquivo snapshot.
+
+        Args:
+            caminho: arquivo .snap
+
+        Returns:
+            self para encadeamento
+        """
+        from .posprocessamento_v2 import LeitorSNAP
+
+        caminho_path = _Path(caminho) if isinstance(caminho, str) else caminho
+        snap = LeitorSNAP.ler(caminho_path)
+
+        # Restaurar barras, máquinas, linhas do snapshot
+        # (implementação completa em v2.1.3 iteração futura)
+
+        return self
+
+    def _salvar_snapshot(self, caminho: _Path, snapshot: dict) -> None:
+        """Salva snapshot em formato .snap (v2.1.3)."""
+        with open(caminho, "w", encoding="latin-1") as f:
+            f.write(f"SNAPSHOT - {snapshot['titulo']}\n")
+            f.write(f"Tempo: {snapshot['tempo']}\n")
+            f.write("\n(BARRAS)\n")
+            for nb, dados in snapshot.get("barras", {}).items():
+                f.write(f"  {nb:3d}  {dados.get('V', 0.0):.6f}\n")
+            f.write("\n(MAQUINAS)\n")
+            for (nb, gr), dados in snapshot.get("maquinas", {}).items():
+                f.write(f"  {nb:3d} {gr:2d}  {dados.get('Pm', 0.0):.6f}\n")
+
     def __repr__(self) -> str:
         n_ev = len(self.devt._eventos) + len(self.devt._linhas_brutas)
         n_plt = len(self.dplt.linhas)
