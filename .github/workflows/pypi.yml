@@ -3,7 +3,9 @@ name: Publish to PyPI
 on:
   push:
     tags:
-      - "v*"
+      # Só marcos maiores (vN.0.0) são publicados no PyPI. Patches e minors
+      # ficam na vivas e não geram release — ver convenção de tags do projeto.
+      - "v*.0.0"
 
 jobs:
   build:
