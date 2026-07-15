@@ -40,7 +40,7 @@ target-version = "py39"
 Homepage = "https://github.com/matheusvivasr/pynatem"
 Repository = "https://github.com/matheusvivasr/pynatem"
 Issues = "https://github.com/matheusvivasr/pynatem/issues"
-Changelog = "https://github.com/matheusvivasr/pynatem/blob/vivas/CHANGELOG.md"
+Changelog = "https://github.com/matheusvivasr/pynatem/blob/main/CHANGELOG.md"
 
 [tool.black]
 target-version = ["py39", "py310", "py311", "py312"]

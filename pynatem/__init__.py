@@ -3,6 +3,8 @@ pynatem – Biblioteca Python para geração, manipulação, parsing e execuçã
 automatizada de arquivos ANATEM (.stb, .dat, .cdu, .blt).
 """
 
+from importlib.metadata import PackageNotFoundError, version
+
 from .anarede import LeitorSAV, ResultadoSAV
 from .blocos import (
     BlocoDARQ,
@@ -100,4 +102,10 @@ __all__ = [
     "ResultadoSAV",
 ]
 
-__version__ = "1.6.4"
+try:
+    # Fonte única da versão: o campo `version` do pyproject.toml, lido do
+    # metadata do pacote instalado. Evita o drift entre as duas declarações.
+    __version__ = version("pynatem")
+except PackageNotFoundError:
+    # Execução direta do repositório, sem instalação (ex.: `python -c` na raiz).
+    __version__ = "0.0.0.dev0"
