@@ -7,15 +7,19 @@ Cobre integração de:
   - LeitorPLT estendido (texto + binário)
 """
 
-import pytest
 from pathlib import Path
-from pynatem.parser.plt_binario import LeitorPLTBinario, HeaderPLT
+
+import pytest
+
+from pynatem.parser.plt_binario import HeaderPLT, LeitorPLTBinario
 from pynatem.posprocessamento_v2 import (
-    LeitorPLTBinario as LeitorPLTBinarioV2,
-    ResultadoPLT,
+    LeitorOUT,
+)
+from pynatem.posprocessamento_v2 import LeitorPLTBinario as LeitorPLTBinarioV2
+from pynatem.posprocessamento_v2 import (
     LeitorREL,
     LeitorSNAP,
-    LeitorOUT,
+    ResultadoPLT,
 )
 
 
@@ -24,7 +28,9 @@ from pynatem.posprocessamento_v2 import (
 def plt_binario_exemplo():
     """Arquivo de exemplo .plt binário do CEPEL."""
     # Procurar a partir de raiz do projeto
-    caminho = Path(__file__).parent.parent / "examples/treinamentoWP/TREINAMENTO_5_BARRAS.PLT"
+    caminho = (
+        Path(__file__).parent.parent / "examples/treinamentoWP/TREINAMENTO_5_BARRAS.PLT"
+    )
     if not caminho.exists():
         pytest.skip(f"Arquivo de exemplo não encontrado: {caminho}")
     return caminho
@@ -96,7 +102,10 @@ class TestPLTBinarioParserV2:
                 assert len(var.tipo) > 0
                 assert var.num_elem >= 0
                 # Valores devem acompanhar tempo
-                assert len(var.valores) == len(resultado.tempo_global) or len(var.valores) == 0
+                assert (
+                    len(var.valores) == len(resultado.tempo_global)
+                    or len(var.valores) == 0
+                )
 
     def test_numero_pontos(self, plt_binario_exemplo):
         """num_pontos() retorna número de passos de simulação."""
@@ -125,8 +134,10 @@ class TestPlotadorSerie:
     )
     def test_plotador_disponivel(self):
         """PlotadorSerie disponível se matplotlib presente."""
-        from pynatem.posprocessamento_v2 import PlotadorSerie, MATPLOTLIB_DISPONIVEL
+        from pynatem.posprocessamento_v2 import MATPLOTLIB_DISPONIVEL, PlotadorSerie
+
         assert MATPLOTLIB_DISPONIVEL
+        assert PlotadorSerie is not None
 
 
 class TestLeitorREL:
@@ -150,9 +161,7 @@ class TestLeitorREL:
         """Extrair versão do ANATEM de .rel."""
         rel_file = tmp_path / "resultado.rel"
         rel_file.write_text(
-            "VERSAO: 12.10.000\n"
-            "LISTA DE MODELOS E CDU\n"
-            "Modelo: GERADOR\n"
+            "VERSAO: 12.10.000\n" "LISTA DE MODELOS E CDU\n" "Modelo: GERADOR\n"
         )
 
         resultado = LeitorREL.ler(rel_file)
@@ -209,11 +218,7 @@ class TestLeitorSNAP:
         """Extrair tensões de barras de snapshot."""
         snap_file = tmp_path / "estado.snap"
         snap_file.write_text(
-            "SNAPSHOT\n"
-            "BARRA\n"
-            "1  1.020\n"
-            "2  0.950\n"
-            "3  1.050\n"
+            "SNAPSHOT\n" "BARRA\n" "1  1.020\n" "2  0.950\n" "3  1.050\n"
         )
 
         resultado = LeitorSNAP.ler(snap_file, tempo=1.0)
@@ -224,12 +229,7 @@ class TestLeitorSNAP:
     def test_ler_snap_maquinas(self, tmp_path):
         """Extrair potência de máquinas de snapshot."""
         snap_file = tmp_path / "estado.snap"
-        snap_file.write_text(
-            "SNAPSHOT\n"
-            "MAQUINA\n"
-            "1 1 0.50\n"
-            "2 1 0.75\n"
-        )
+        snap_file.write_text("SNAPSHOT\n" "MAQUINA\n" "1 1 0.50\n" "2 1 0.75\n")
 
         resultado = LeitorSNAP.ler(snap_file)
         assert isinstance(resultado.maquinas, dict)
@@ -242,9 +242,7 @@ class TestLeitorOUT:
         """Ler arquivo .out mínimo."""
         out_file = tmp_path / "resultado.out"
         out_file.write_text(
-            "ANATEM v12.10\n"
-            "Sistema de: Teste\n"
-            "Tempo de CPU: 00:00:10.500\n"
+            "ANATEM v12.10\n" "Sistema de: Teste\n" "Tempo de CPU: 00:00:10.500\n"
         )
 
         resultado = LeitorOUT.ler(out_file)
@@ -253,10 +251,7 @@ class TestLeitorOUT:
     def test_ler_out_versao(self, tmp_path):
         """Extrair versão ANATEM de .out."""
         out_file = tmp_path / "resultado.out"
-        out_file.write_text(
-            "VERSAO: 12.10.000 (2024)\n"
-            "Lista de Modelos\n"
-        )
+        out_file.write_text("VERSAO: 12.10.000 (2024)\n" "Lista de Modelos\n")
 
         resultado = LeitorOUT.ler(out_file)
         assert resultado["versao_anatem"] is not None
@@ -265,9 +260,7 @@ class TestLeitorOUT:
         """Extrair tempo de CPU de .out."""
         out_file = tmp_path / "resultado.out"
         out_file.write_text(
-            "Simulacao realizada\n"
-            "Tempo de CPU: 00:05:30.250\n"
-            "Passos concluidos\n"
+            "Simulacao realizada\n" "Tempo de CPU: 00:05:30.250\n" "Passos concluidos\n"
         )
 
         resultado = LeitorOUT.ler(out_file)

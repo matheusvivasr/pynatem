@@ -7,6 +7,7 @@ Cobre integração de:
 """
 
 import pytest
+
 from pynatem.cdu_v17 import DEFVAL
 
 

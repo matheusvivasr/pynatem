@@ -541,7 +541,9 @@ class CasoAnatem:
 
         return validar_contra_sav(self, path_sav)
 
-    def gerar_snapshot(self, tempo: float = 0.0, caminho: Optional[Union[str, _Path]] = None) -> dict:
+    def gerar_snapshot(
+        self, tempo: float = 0.0, caminho: Optional[Union[str, _Path]] = None
+    ) -> dict:
         """Gera snapshot de estado do caso em determinado instante.
 
         Args:
@@ -578,7 +580,7 @@ class CasoAnatem:
         from .posprocessamento_v2 import LeitorSNAP
 
         caminho_path = _Path(caminho) if isinstance(caminho, str) else caminho
-        snap = LeitorSNAP.ler(caminho_path)
+        LeitorSNAP.ler(caminho_path)
 
         # Restaurar barras, máquinas, linhas do snapshot
         # (implementação completa em v2.1.3 iteração futura)

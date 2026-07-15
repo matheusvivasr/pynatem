@@ -17,7 +17,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import BinaryIO, Dict, List, Optional
+from typing import TYPE_CHECKING, BinaryIO, Dict, List, Optional
+
+if TYPE_CHECKING:
+    import pandas
 
 
 @dataclass
